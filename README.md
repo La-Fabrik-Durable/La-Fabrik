@@ -25,11 +25,6 @@ Built with React, Three.js, and Vite. Runs in the browser, no installation requi
 | [@react-three/postprocessing](https://github.com/pmndrs/postprocessing) | https://github.com/pmndrs/postprocessing |
 | [GSAP](https://gsap.com/docs/v3/Installation/) | https://gsap.com/docs/v3/ |
 
-### State
-| Package | Doc |
-|--------|-----|
-| [Zustand](https://zustand.docs.pmnd.rs/) | https://zustand.docs.pmnd.rs/ |
-
 ### Performance & Effects
 | Package | Doc |
 |--------|-----|
@@ -43,7 +38,7 @@ Built with React, Three.js, and Vite. Runs in the browser, no installation requi
 la-fabrik/
 ├── public/
 │   ├── models/
-│   │   ├── map/               # Base map — loaded once at start
+│   │   ├── map/                            # Base map — loaded once at start
 │   │   ├── workshop/
 │   │   ├── powerGrid/
 │   │   └── farm/
@@ -76,13 +71,13 @@ la-fabrik/
     │       └── LoadingScreen.tsx           # Asset progress
     │
     ├── stateManager/                       # All logic, state, orchestration
-    │   ├── GameManager.ts                  # Orchestrator: phase, missions, steps
+    │   ├── GameManager.ts                  # Single source of truth: phase, zone, mission
     │   ├── CinematicManager.ts             # GSAP timelines, camera lock/unlock
     │   ├── AudioManager.ts                 # Music, SFX, spatial audio
-    │   ├── NPCManager.ts                   # Dialogues, NPC state
     │   └── ZoneManager.ts                  # Zone detection, LOD triggers
     │
     ├── hooks/                              # React hooks — thin wrappers on managers
+    │   ├── useGameState.ts                 # Subscribes to GameManager
     │   ├── useZoneDetection.ts
     │   ├── useInteraction.ts
     │   ├── useCinematic.ts
@@ -91,7 +86,8 @@ la-fabrik/
     │
     ├── data/
     │   ├── zones.ts                        # { id, position, radius, missionId }
-    │   └── dialogues.ts                    # Narrative scripts per zone
+    │   ├── dialogues.ts                    # Narrative scripts, PNJ states
+    │   └── missions.ts                     # Mission definitions, steps
     │
     ├── shaders/
     │   └── hologram/
@@ -100,8 +96,6 @@ la-fabrik/
     │
     ├── utils/
     │   ├── Debug.ts                        # lil-gui panel
-    │   ├── Sizes.ts                        # Viewport dimensions, resize listener
-    │   ├── Time.ts                         # Delta, elapsed — outside useFrame
     │   ├── EventEmitter.ts                 # Decoupled event bus between managers
     │   └── Dispose.ts                      # traverse() + dispose() helper
     │
@@ -198,17 +192,107 @@ export class WorkshopZone implements WorldObject {
 ```
  
 ---
- 
-### 3. Memory Management — `traverse()` + `dispose()`
- 
-**Every `destroy()` must call `Dispose.object()` before removing anything from the scene.** Skipping this leaks GPU memory (VRAM) silently — no error thrown, just a crash after a few zone transitions.
- 
-**Rule: traverse first, remove second. Always.**
- 
+
+### 3. State Management — Single Source of Truth
+
+The project uses a single authoritative `GameManager` for durable gameplay state. React components subscribe to this state through thin custom hooks. **High-frequency values such as movement, camera interpolation, or physics never go through React state and stay in refs or frame-based systems.**
+
+```ts
+// GameManager.ts — single source of truth
+type Phase = 'loading' | 'intro' | 'exploring' | 'cinematic' | 'outro'
+type ZoneId = 'workshop' | 'powerGrid' | 'farm' | null
+
+type GameSnapshot = {
+  phase: Phase
+  activeZone: ZoneId
+  missionId: string | null
+  missionStep: number
+  inputLocked: boolean
+  dialogueId: string | null
+}
+
+export class GameManager {
+  private static _instance: GameManager | null = null
+  private listeners = new Set<() => void>()
+
+  private state: GameSnapshot = {
+    phase: 'loading',
+    activeZone: null,
+    missionId: null,
+    missionStep: 0,
+    inputLocked: false,
+    dialogueId: null,
+  }
+
+  static getInstance(): GameManager {
+    if (!GameManager._instance) {
+      GameManager._instance = new GameManager()
+    }
+    return GameManager._instance
+  }
+
+  getState(): GameSnapshot {
+    return this.state
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private emit(): void {
+    this.listeners.forEach((cb) => cb())
+  }
+
+  setPhase(phase: Phase): void {
+    this.state.phase = phase
+    this.emit()
+  }
+
+  setActiveZone(zone: ZoneId): void {
+    this.state.activeZone = zone
+    this.emit()
+  }
+
+  startMission(id: string): void {
+    this.state.missionId = id
+    this.state.missionStep = 0
+    this.emit()
+  }
+}
+```
+
+```ts
+// hooks/useGameState.ts
+import { useEffect, useState } from 'react'
+import { GameManager } from '@/stateManager/GameManager'
+
+export function useGameState() {
+  const game = GameManager.getInstance()
+  const [state, setState] = useState(game.getState())
+
+  useEffect(() => {
+    return game.subscribe(() => {
+      setState({ ...game.getState() })
+    })
+  }, [game])
+
+  return state
+}
+```
+
+All other managers (Cinemactic, Audio, Zone) remain as side effects that communicate through `GameManager`
+
+---
+
+### 4. Memory Management — `traverse()` + `dispose()`
+
+**Every `destroy()` must call `Dispose.object()` before removing anything from the scene.** Skipping this leaks GPU memory (VRAM) silently — no error thrown, just a crash after a few zone transitions. **Rule: traverse first, remove second. Always.**
+
 ```ts
 // utils/Dispose.ts
 import * as THREE from 'three'
- 
+
 export class Dispose {
   /**
    * Recursively disposes all geometries, materials, and textures
@@ -219,15 +303,15 @@ export class Dispose {
   static object(obj: THREE.Object3D): void {
     obj.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return
- 
+
       // 1. Dispose geometry buffers
       child.geometry.dispose()
- 
+
       // 2. Handle single and multi-material meshes
       const materials = Array.isArray(child.material)
         ? child.material
         : [child.material]
- 
+
       for (const mat of materials) {
         // 3. Dispose every texture referenced by the material
         for (const value of Object.values(mat)) {
@@ -240,7 +324,7 @@ export class Dispose {
       }
     })
   }
- 
+
   /**
    * Dispose a WebGL render target and its textures.
    */
@@ -250,73 +334,18 @@ export class Dispose {
   }
 }
 ```
- 
+
 Usage pattern — identical in every `destroy()`:
- 
+
 ```ts
 destroy(): void {
   Dispose.object(this.mesh)     // Frees VRAM: geometries, materials, textures
   this.scene.remove(this.mesh)  // Then removes from scene graph
 }
 ```
- 
+
 ---
- 
-### 4. Manager Coordination
- 
-`GameManager` is the **single entry point** for all logic. Components and hooks never import `CinematicManager` or `AudioManager` directly — always through `GameManager`. This keeps the dependency graph flat and every interaction auditable from one place.
- 
-```
-Component / Hook
-      ↓
-GameManager.getInstance()
-      ├── .cinematic.play('intro_workshop')
-      ├── .audio.playAmbience('workshop')
-      ├── .zone.setActive('workshop')
-      └── .npc.startDialogue('mechanic_greeting')
-```
- 
-```ts
-// hooks/useCinematic.ts — thin wrapper, no logic
-export function useCinematic() {
-  const trigger = useCallback((id: string) => {
-    GameManager.getInstance().cinematic.play(id)
-  }, [])
- 
-  return { trigger }
-}
-```
- 
-Zustand is used **only for UI reactivity** — to push state from managers into React components. The logic lives in the manager class, not in the store.
- 
-```ts
-// stateManager/GameManager.ts — Zustand as a thin reactive bridge
-import { create } from 'zustand'
- 
-type GameState = {
-  phase: 'loading' | 'intro' | 'exploring' | 'cinematic' | 'outro'
-  activeZone: 'workshop' | 'powerGrid' | 'farm' | null
-  setPhase: (phase: GameState['phase']) => void
-  setActiveZone: (zone: GameState['activeZone']) => void
-}
- 
-export const useGameStore = create<GameState>((set) => ({
-  phase: 'loading',
-  activeZone: null,
-  setPhase: (phase) => set({ phase }),
-  setActiveZone: (zone) => set({ activeZone: zone }),
-}))
- 
-// GameManager writes — React components read
-export class GameManager {
-  setPhase(phase: GameState['phase']): void {
-    useGameStore.getState().setPhase(phase)
-  }
-}
-```
- 
----
- 
+
 ### 5. Debug Utility
  
 Activate the debug panel by appending `?debug` to the URL (`http://localhost:5173?debug`). Never scatter `if (isDev)` blocks across files — all debug logic flows through `Debug.ts`.
