@@ -1,1 +1,1 @@
-# public/models/map/*
+# public/models/map/\*

@@ -1,1 +1,1 @@
-# public/models/powerGrid/*
+# public/models/powerGrid/\*

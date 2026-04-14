@@ -1,1 +1,1 @@
-# public/models/farm/*
+# public/models/farm/\*

@@ -1,1 +1,1 @@
-# public/textures/*
+# public/textures/\*

@@ -1,1 +1,1 @@
-# public/sounds/*
+# public/sounds/\*
