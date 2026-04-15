@@ -123,7 +123,7 @@ npm run dev
 ```
 
 Open `http://localhost:5173` — standard experience.
-Open `http://localhost:5173?debug` — debug panel + r3f-perf overlay + free debug camera.
+Open `http://localhost:5173?debug` — debug panel + r3f-perf overlay. The free debug camera is enabled from the debug panel.
 
 ## 🧭 Conventions
 
