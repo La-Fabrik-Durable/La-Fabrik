@@ -8,6 +8,8 @@ Append `?debug` to the URL:
 http://localhost:5173?debug
 ```
 
+The free debug camera is toggled from the debug panel, not mounted permanently.
+
 ## Debug singleton
 
 ```ts
