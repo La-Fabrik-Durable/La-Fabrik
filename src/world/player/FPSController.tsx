@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
@@ -26,10 +26,10 @@ export function FPSController(): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const keys = useRef<PlayerKeys>({ ...DEFAULT_KEYS });
   const interact = useRef<() => void>(() => {});
-  const forward = useMemo(() => new THREE.Vector3(), []);
-  const right = useMemo(() => new THREE.Vector3(), []);
-  const movement = useMemo(() => new THREE.Vector3(), []);
-  const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const forward = useRef(new THREE.Vector3());
+  const right = useRef(new THREE.Vector3());
+  const movement = useRef(new THREE.Vector3());
+  const up = useRef(new THREE.Vector3(0, 1, 0));
 
   useEffect(() => {
     camera.position.copy(PLAYER_SPAWN_POSITION);
@@ -84,39 +84,47 @@ export function FPSController(): React.JSX.Element {
   }, []);
 
   useFrame((_, delta) => {
-    movement.set(0, 0, 0);
+    const currentForward = forward.current;
+    const currentRight = right.current;
+    const currentMovement = movement.current;
 
-    camera.getWorldDirection(forward);
-    forward.y = 0;
+    currentMovement.set(0, 0, 0);
 
-    if (forward.lengthSq() > 0) {
-      forward.normalize();
-      right.crossVectors(forward, up).normalize();
+    camera.getWorldDirection(currentForward);
+    currentForward.setY(0);
+
+    if (currentForward.lengthSq() > 0) {
+      currentForward.normalize();
+      currentRight.crossVectors(currentForward, up.current).normalize();
     }
 
     if (keys.current.forward) {
-      movement.add(forward);
+      currentMovement.add(currentForward);
     }
 
     if (keys.current.backward) {
-      movement.sub(forward);
+      currentMovement.sub(currentForward);
     }
 
     if (keys.current.left) {
-      movement.sub(right);
+      currentMovement.sub(currentRight);
     }
 
     if (keys.current.right) {
-      movement.add(right);
+      currentMovement.add(currentRight);
     }
 
-    if (movement.lengthSq() > 0) {
-      movement.normalize().multiplyScalar(MOVE_SPEED * delta);
-      camera.position.add(movement);
+    if (currentMovement.lengthSq() > 0) {
+      currentMovement.normalize().multiplyScalar(MOVE_SPEED * delta);
+      camera.position.add(currentMovement);
     }
 
     if (camera.position.y < PLAYER_EYE_HEIGHT) {
-      camera.position.y = PLAYER_EYE_HEIGHT;
+      camera.position.set(
+        camera.position.x,
+        PLAYER_EYE_HEIGHT,
+        camera.position.z,
+      );
     }
   });
 
