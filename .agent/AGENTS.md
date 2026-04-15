@@ -80,6 +80,7 @@ import { useGameState } from "@/hooks/useGameState";
 
 See `.agent/skills/` for detailed patterns per technology:
 
+- `best-practices.md` — Code generation conventions (W3C, simple, scalable, modern)
 - `r3f.md` — React Three Fiber component patterns
 - `three.md` — Three.js conventions and AnimationMixer
 - `gsap.md` — GSAP timeline and cinematic patterns
