@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { Crosshair } from "@/components/ui/Crosshair";
-import { DebugPerf } from "@/debug/DebugPerf";
+import { DebugPerf } from "@/utils/debug/DebugPerf";
 import { World } from "@/world/World";
 
 function App(): React.JSX.Element {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { AmbientLight, DirectionalLight } from "three";
-import { Debug } from "@/debug/Debug";
+import { Debug } from "@/utils/debug/Debug";
 
 type LightingState = {
   ambientIntensity: number;
@@ -27,22 +27,16 @@ export function Lighting(): React.JSX.Element {
     const debug = Debug.getInstance();
 
     if (!debug.active) {
-      return undefined;
+      return;
     }
 
     const folder = debug.createFolder("Lighting");
-
-    if (!folder) {
-      return undefined;
-    }
 
     folder.add(LIGHTING_STATE, "ambientIntensity", 0, 5, 0.1).name("Ambient");
     folder.add(LIGHTING_STATE, "sunIntensity", 0, 8, 0.1).name("Sun Intensity");
     folder.add(LIGHTING_STATE, "sunX", -100, 100, 1).name("Sun X");
     folder.add(LIGHTING_STATE, "sunY", 0, 150, 1).name("Sun Y");
     folder.add(LIGHTING_STATE, "sunZ", -100, 100, 1).name("Sun Z");
-
-    return undefined;
   }, []);
 
   useFrame(() => {

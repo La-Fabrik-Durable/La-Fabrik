@@ -1,1 +1,0 @@
-// src/hooks/useInteraction.ts

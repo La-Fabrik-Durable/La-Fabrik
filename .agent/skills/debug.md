@@ -13,7 +13,7 @@ The free debug camera is toggled from the debug panel, not mounted permanently.
 ## Debug singleton
 
 ```ts
-// src/debug/Debug.ts
+// src/utils/debug/Debug.ts
 import GUI from "lil-gui";
 
 export class Debug {
@@ -58,9 +58,9 @@ if (debug.active) {
 r3f-perf is loaded only in debug mode to avoid dependency issues in production:
 
 ```tsx
-// src/debug/DebugPerf.tsx
+// src/utils/debug/DebugPerf.tsx
 import { Suspense, lazy } from "react";
-import { Debug } from "@/debug/Debug";
+import { Debug } from "@/utils/debug/Debug";
 
 const Perf = lazy(() => import("r3f-perf").then((m) => ({ default: m.Perf })));
 

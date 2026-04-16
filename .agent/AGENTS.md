@@ -31,7 +31,7 @@ Scene objects are **never** singleton classes. Managers are **never** React comp
 - Scene components live in `src/world/` and `src/components/3d/`
 - UI overlays live in `src/components/ui/`
 - Managers live in `src/stateManager/`
-- Debug tooling lives in `src/debug/`
+- Debug tooling lives in `src/utils/debug/`
 - Hooks live in `src/hooks/`
 - Static data lives in `src/data/`
 - Shaders live in `src/shaders/`
@@ -55,9 +55,9 @@ import { useGameState } from "@/hooks/useGameState";
 ### Debug
 
 - Debug panel activates with `?debug` in URL
-- All debug logic goes through `Debug.getInstance()` from `src/debug/Debug.ts`
+- All debug logic goes through `Debug.getInstance()` from `src/utils/debug/Debug.ts`
 - Never scatter `if (isDev)` blocks across files
-- `r3f-perf` is lazy-loaded only in debug mode via `src/debug/DebugPerf.tsx`
+- `r3f-perf` is lazy-loaded only in debug mode via `src/utils/debug/DebugPerf.tsx`
 
 ## Managers (4 max)
 

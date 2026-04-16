@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { DebugCameraControls } from "@/debug/scene/DebugCameraControls";
-import { DebugHelpers } from "@/debug/scene/DebugHelpers";
-import { useCameraMode } from "@/debug/useCameraMode";
+import { useCameraMode } from "@/hooks/debug/useCameraMode";
+import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";
+import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
 import { Lighting } from "@/world/Lighting";
 import { Map } from "@/world/Map";
