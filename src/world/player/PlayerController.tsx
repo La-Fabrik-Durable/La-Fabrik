@@ -3,30 +3,32 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { PLAYER_EYE_HEIGHT } from "@/world/player/PlayerCamera";
 
-const JUMP_HEIGHT = 1;
-const GRAVITY = 18;
-const JUMP_VELOCITY = Math.sqrt(2 * GRAVITY * JUMP_HEIGHT);
 const MOVE_SPEED = 5;
+const GRAVITY = -20;
+const JUMP_VELOCITY = 7;
+const FLOOR_Y = 0;
 
-type PlayerKeys = {
+type Keys = {
   forward: boolean;
   backward: boolean;
   left: boolean;
   right: boolean;
+  jump: boolean;
 };
 
-const DEFAULT_KEYS: PlayerKeys = {
+const DEFAULT_KEYS: Keys = {
   forward: false,
   backward: false,
   left: false,
   right: false,
+  jump: false,
 };
 
 export function PlayerController(): null {
   const camera = useThree((state) => state.camera);
-  const keys = useRef<PlayerKeys>({ ...DEFAULT_KEYS });
-  const interact = useRef<() => void>(() => {});
-  const verticalVelocity = useRef(0);
+  const keys = useRef<Keys>({ ...DEFAULT_KEYS });
+  const velocityY = useRef(0);
+  const isGrounded = useRef(false);
   const forward = useRef(new THREE.Vector3());
   const right = useRef(new THREE.Vector3());
   const movement = useRef(new THREE.Vector3());
@@ -49,15 +51,8 @@ export function PlayerController(): null {
           case "d":
             keys.current.right = pressed;
             break;
-          case "e":
-            if (pressed) {
-              interact.current();
-            }
-            break;
           case " ":
-            if (pressed && camera.position.y <= PLAYER_EYE_HEIGHT) {
-              verticalVelocity.current = JUMP_VELOCITY;
-            }
+            if (pressed) keys.current.jump = true;
             break;
           default:
             return;
@@ -77,14 +72,12 @@ export function PlayerController(): null {
       window.removeEventListener("keyup", handleKeyUp);
       keys.current = { ...DEFAULT_KEYS };
     };
-  }, [camera]);
+  }, []);
 
   useFrame((_, delta) => {
     const currentForward = forward.current;
     const currentRight = right.current;
     const currentMovement = movement.current;
-
-    currentMovement.set(0, 0, 0);
 
     camera.getWorldDirection(currentForward);
     currentForward.setY(0);
@@ -94,40 +87,35 @@ export function PlayerController(): null {
       currentRight.crossVectors(currentForward, up.current).normalize();
     }
 
-    if (keys.current.forward) {
-      currentMovement.add(currentForward);
-    }
+    currentMovement.set(0, 0, 0);
 
-    if (keys.current.backward) {
-      currentMovement.sub(currentForward);
-    }
-
-    if (keys.current.left) {
-      currentMovement.sub(currentRight);
-    }
-
-    if (keys.current.right) {
-      currentMovement.add(currentRight);
-    }
+    if (keys.current.forward) currentMovement.add(currentForward);
+    if (keys.current.backward) currentMovement.sub(currentForward);
+    if (keys.current.left) currentMovement.sub(currentRight);
+    if (keys.current.right) currentMovement.add(currentRight);
 
     if (currentMovement.lengthSq() > 0) {
       currentMovement.normalize().multiplyScalar(MOVE_SPEED * delta);
       camera.position.add(currentMovement);
     }
 
-    verticalVelocity.current -= GRAVITY * delta;
+    const groundY = FLOOR_Y + PLAYER_EYE_HEIGHT;
+    isGrounded.current = camera.position.y <= groundY + 0.01;
 
-    const nextY = camera.position.y + verticalVelocity.current * delta;
-    camera.position.set(camera.position.x, nextY, camera.position.z);
-
-    if (camera.position.y < PLAYER_EYE_HEIGHT) {
-      verticalVelocity.current = 0;
-      camera.position.set(
-        camera.position.x,
-        PLAYER_EYE_HEIGHT,
-        camera.position.z,
-      );
+    if (keys.current.jump && isGrounded.current) {
+      velocityY.current = JUMP_VELOCITY;
+      keys.current.jump = false;
     }
+
+    if (!isGrounded.current) {
+      velocityY.current += GRAVITY * delta;
+    } else if (velocityY.current < 0) {
+      velocityY.current = 0;
+    }
+
+    camera.position.setY(
+      Math.max(groundY, camera.position.y + velocityY.current * delta),
+    );
   });
 
   return null;

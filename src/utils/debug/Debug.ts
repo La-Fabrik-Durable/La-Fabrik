@@ -7,6 +7,7 @@ export class Debug {
   public readonly active: boolean;
   private readonly gui: GUI | null;
   private readonly folders = new Map<string, GUI>();
+  private readonly registeredFolders = new Set<string>();
   private readonly listeners = new Set<() => void>();
   private readonly controls: { cameraMode: CameraMode } = {
     cameraMode: "player",
@@ -41,12 +42,21 @@ export class Debug {
     }
   }
 
-  createFolder(name: string): GUI;
-  createFolder(name: string): GUI | null;
+  /**
+   * Creates a named GUI folder. Returns the folder on first call, null on
+   * subsequent calls with the same name — callers should skip `.add()` when
+   * null is returned to avoid duplicating controls under StrictMode double-mount.
+   */
   createFolder(name: string): GUI | null {
     if (!this.gui) {
       return null;
     }
+
+    if (this.registeredFolders.has(name)) {
+      return null;
+    }
+
+    this.registeredFolders.add(name);
 
     const existingFolder = this.folders.get(name);
 
