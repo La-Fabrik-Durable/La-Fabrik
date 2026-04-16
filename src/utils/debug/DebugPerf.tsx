@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Debug } from "@/debug/Debug";
+import { Debug } from "@/utils/debug/Debug";
 
 const Perf = lazy(() => import("r3f-perf").then((m) => ({ default: m.Perf })));
 

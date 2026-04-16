@@ -1,6 +1,5 @@
 import GUI from "lil-gui";
-
-export type CameraMode = "player" | "debug";
+import type { CameraMode } from "@/types/debug";
 
 export class Debug {
   private static instance: Debug | null = null;
@@ -9,8 +8,9 @@ export class Debug {
   private readonly gui: GUI | null;
   private readonly folders = new Map<string, GUI>();
   private readonly listeners = new Set<() => void>();
-  private readonly controls = { cameraMode: "player" as CameraMode };
-  private cameraMode: CameraMode = "player";
+  private readonly controls: { cameraMode: CameraMode } = {
+    cameraMode: "player",
+  };
 
   static getInstance(): Debug {
     if (!Debug.instance) {
@@ -27,17 +27,22 @@ export class Debug {
     if (this.gui) {
       const folder = this.createFolder("Debug");
 
+      if (!folder) {
+        return;
+      }
+
       folder
-        ?.add(this.controls, "cameraMode", { Player: "player", Debug: "debug" })
+        .add(this.controls, "cameraMode", { Player: "player", Debug: "debug" })
         .name("Camera Mode")
         .onChange((value: CameraMode) => {
           this.controls.cameraMode = value;
-          this.cameraMode = value;
           this.emit();
         });
     }
   }
 
+  createFolder(name: string): GUI;
+  createFolder(name: string): GUI | null;
   createFolder(name: string): GUI | null {
     if (!this.gui) {
       return null;
@@ -63,19 +68,8 @@ export class Debug {
     };
   }
 
-  isDebugCameraEnabled(): boolean {
-    return this.cameraMode === "debug";
-  }
-
   getCameraMode(): CameraMode {
-    return this.cameraMode;
-  }
-
-  destroy(): void {
-    this.listeners.clear();
-    this.folders.clear();
-    this.gui?.destroy();
-    Debug.instance = null;
+    return this.controls.cameraMode;
   }
 
   private emit(): void {

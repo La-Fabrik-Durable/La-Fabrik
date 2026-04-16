@@ -1,4 +1,4 @@
-import { Debug } from "@/debug/Debug";
+import { Debug } from "@/utils/debug/Debug";
 
 export function DebugHelpers(): React.JSX.Element | null {
   const debug = Debug.getInstance();
