@@ -32,6 +32,11 @@ export function Lighting(): React.JSX.Element {
 
     const folder = debug.createFolder("Lighting");
 
+    // null = already registered (StrictMode double-mount), skip adding controls
+    if (!folder) {
+      return;
+    }
+
     folder.add(LIGHTING_STATE, "ambientIntensity", 0, 5, 0.1).name("Ambient");
     folder.add(LIGHTING_STATE, "sunIntensity", 0, 8, 0.1).name("Sun Intensity");
     folder.add(LIGHTING_STATE, "sunX", -100, 100, 1).name("Sun X");
