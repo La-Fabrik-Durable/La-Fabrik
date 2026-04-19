@@ -1,11 +1,10 @@
 import { INTERACT_KEY } from "@/data/keybindings";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
-import { useInteractionSelector } from "@/hooks/useInteraction";
+import { useInteraction } from "@/hooks/useInteraction";
 
 export function InteractPrompt(): React.JSX.Element | null {
   const cameraMode = useCameraMode();
-  const focused = useInteractionSelector((state) => state.focused);
-  const holding = useInteractionSelector((state) => state.holding);
+  const { focused, holding } = useInteraction();
 
   if (cameraMode !== "player") return null;
   if (!focused || holding || focused.kind !== "trigger") return null;

@@ -21,15 +21,16 @@ import {
   GRAB_THROW_BOOST_STEP,
 } from "@/data/grabConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
+import type { ColliderShape, Vector3Tuple } from "@/types/3d";
 
 interface GrabbableObjectProps {
-  position: [number, number, number];
+  position: Vector3Tuple;
   children: React.ReactNode;
-  colliders?: "cuboid" | "ball" | "hull";
+  colliders?: ColliderShape;
   label?: string;
 }
 
-// Shared mutable params — one debug folder controls all instances.
+// Shared params let one debug folder drive every instance.
 const params = {
   stiffness: GRAB_STIFFNESS_DEFAULT,
   throwBoost: GRAB_THROW_BOOST_DEFAULT,

@@ -9,21 +9,22 @@ import {
   TRIGGER_DEFAULT_SPAWN_OFFSET,
 } from "@/data/triggerConfig";
 import { AudioManager } from "@/stateManager/AudioManager";
+import type { ColliderShape, Vector3Tuple } from "@/types/3d";
 
 interface SpawnedModel {
   id: number;
-  position: [number, number, number];
+  position: Vector3Tuple;
 }
 
 interface TriggerObjectProps {
-  position: [number, number, number];
+  position: Vector3Tuple;
   children: React.ReactNode;
-  colliders?: "cuboid" | "ball" | "hull";
+  colliders?: ColliderShape;
   label?: string;
   soundPath?: string;
   soundVolume?: number;
   spawnModel?: string;
-  spawnOffset?: [number, number, number];
+  spawnOffset?: Vector3Tuple;
 }
 
 let _spawnCounter = 0;
@@ -33,7 +34,7 @@ function SpawnedModelInstance({
   position,
 }: {
   path: string;
-  position: [number, number, number];
+  position: Vector3Tuple;
 }): React.JSX.Element {
   const { scene } = useGLTF(path);
   return <primitive object={scene.clone()} position={position} />;
@@ -64,7 +65,7 @@ export function TriggerObject({
             }
 
             if (spawnModel) {
-              const spawnPos: [number, number, number] = [
+              const spawnPos: Vector3Tuple = [
                 position[0] + spawnOffset[0],
                 position[1] + spawnOffset[1],
                 position[2] + spawnOffset[2],

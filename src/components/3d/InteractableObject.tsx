@@ -10,17 +10,15 @@ import {
 } from "@/data/debugConfig";
 import { Debug } from "@/utils/debug/Debug";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
-import {
-  InteractionManager,
-  type InteractableHandle,
-  type InteractableKind,
-} from "@/stateManager/InteractionManager";
+import { InteractionManager } from "@/stateManager/InteractionManager";
 import { INTERACTION_RADIUS } from "@/data/interactionConfig";
+import type { Vector3Tuple } from "@/types/3d";
+import type { InteractableHandle, InteractableKind } from "@/types/interaction";
 
 interface InteractableObjectProps {
   kind: InteractableKind;
   label: string;
-  position: [number, number, number];
+  position: Vector3Tuple;
   bodyRef?: RefObject<RapierRigidBody | null>;
   onPress: () => void;
   onRelease?: () => void;
