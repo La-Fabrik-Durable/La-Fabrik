@@ -60,7 +60,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
 
-  // Capsule: start = feet, end = eyes
   const capsule = useRef(
     new Capsule(
       new THREE.Vector3(0, PLAYER_CAPSULE_RADIUS, 0),
@@ -69,7 +68,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
     ),
   );
 
-  // Sync capsule to camera spawn position on mount
   useEffect(() => {
     const spawnY = camera.position.y;
     capsule.current.start.set(
@@ -78,8 +76,7 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
       PLAYER_SPAWN_Z,
     );
     capsule.current.end.set(PLAYER_SPAWN_X, spawnY, PLAYER_SPAWN_Z);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [camera]);
 
   useEffect(() => {
     const interaction = InteractionManager.getInstance();
@@ -168,7 +165,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
   useFrame((_, delta) => {
     const dt = Math.min(delta, PLAYER_MAX_DELTA);
 
-    // Compute wish direction from camera yaw (XZ only)
     camera.getWorldDirection(_forward);
     _forward.setY(0);
     if (_forward.lengthSq() > 0) {
@@ -183,7 +179,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
     if (keys.current.right) _wishDir.add(_right);
     if (_wishDir.lengthSq() > 0) _wishDir.normalize();
 
-    // Accelerate horizontally
     const accel = onFloor.current
       ? PLAYER_WALK_SPEED
       : PLAYER_WALK_SPEED * PLAYER_AIR_CONTROL_FACTOR;
@@ -196,7 +191,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
     velocity.current.x *= damping;
     velocity.current.z *= damping;
 
-    // Gravity + jump
     if (onFloor.current) {
       velocity.current.y = Math.max(0, velocity.current.y);
       if (wantsJump.current) {
@@ -208,11 +202,9 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
     }
     wantsJump.current = false;
 
-    // Move capsule
     _translateVec.copy(velocity.current).multiplyScalar(dt);
     capsule.current.translate(_translateVec);
 
-    // Resolve collisions against octree
     if (octree) {
       const result = octree.capsuleIntersect(capsule.current);
       onFloor.current = false;
@@ -221,21 +213,18 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
         onFloor.current = result.normal.y > 0;
 
         if (!onFloor.current) {
-          // Cancel velocity component going into the wall
           const vn = result.normal.dot(velocity.current);
           velocity.current.addScaledVector(result.normal, -vn);
         } else {
           velocity.current.y = Math.max(0, velocity.current.y);
         }
 
-        // Push capsule out of geometry
         capsule.current.translate(
           result.normal.clone().multiplyScalar(result.depth),
         );
       }
     }
 
-    // Sync camera to capsule top (eye position)
     camera.position.copy(capsule.current.end);
   });
 

@@ -3,6 +3,10 @@ export class AudioManager {
   private readonly _audioPools = new Map<string, HTMLAudioElement[]>();
 
   private static readonly MAX_POOL_SIZE_PER_SOUND = 6;
+  private static readonly IGNORED_PLAYBACK_ERRORS = new Set([
+    "AbortError",
+    "NotAllowedError",
+  ]);
 
   static getInstance(): AudioManager {
     if (!AudioManager._instance) {
@@ -19,9 +23,15 @@ export class AudioManager {
     audio.volume = Math.max(0, Math.min(1, volume));
     audio.currentTime = 0;
 
-    void audio.play().catch(() => {
-      audio.pause();
-      audio.currentTime = 0;
+    void audio.play().catch((error: unknown) => {
+      if (
+        error instanceof DOMException &&
+        AudioManager.IGNORED_PLAYBACK_ERRORS.has(error.name)
+      ) {
+        return;
+      }
+
+      console.error(`Failed to play sound: ${path}`, error);
     });
   }
 

@@ -1,7 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import * as THREE from "three";
-import { Octree } from "three/addons/math/Octree.js";
 import { GrabbableObject } from "@/components/3d/GrabbableObject";
 import { TriggerObject } from "@/components/3d/TriggerObject";
 import {
@@ -21,27 +20,19 @@ import {
   TEST_SCENE_TRIGGER_SEGMENTS,
   TEST_SCENE_TRIGGER_SOUND_PATH,
 } from "@/data/testSceneConfig";
+import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
+import type { OctreeReadyHandler } from "@/types/3d";
 
 interface TestSceneProps {
-  onOctreeReady: (octree: Octree) => void;
+  onOctreeReady: OctreeReadyHandler;
 }
 
 export function TestScene({
   onOctreeReady,
 }: TestSceneProps): React.JSX.Element {
   const floorRef = useRef<THREE.Group>(null);
-  const octreeBuilt = useRef(false);
 
-  useEffect(() => {
-    if (octreeBuilt.current || !floorRef.current) return;
-    octreeBuilt.current = true;
-
-    floorRef.current.updateMatrixWorld(true);
-
-    const octree = new Octree();
-    octree.fromGraphNode(floorRef.current);
-    onOctreeReady(octree);
-  }, [onOctreeReady]);
+  useOctreeGraphNode(floorRef, onOctreeReady);
 
   return (
     <>

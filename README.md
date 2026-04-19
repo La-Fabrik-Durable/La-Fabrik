@@ -126,8 +126,8 @@ npm install
 npm run dev
 ```
 
-- `http://localhost:5173` for the app
-- `http://localhost:5173?debug` to enable debug tooling
+- app: `http://localhost:5173`
+- debug mode: `http://localhost:5173?debug`
 
 ## 📜 License
 

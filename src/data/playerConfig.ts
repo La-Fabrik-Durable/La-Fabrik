@@ -11,6 +11,5 @@ export const PLAYER_XZ_DAMPING_FACTOR = 8;
 
 export const PLAYER_SPAWN_X = 0;
 export const PLAYER_SPAWN_Z = 0;
-export const PLAYER_SPAWN_Y_DEFAULT = 100;
 export const PLAYER_SPAWN_Y_GAME = 100;
 export const PLAYER_SPAWN_Y_PHYSICS = 3;
