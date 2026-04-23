@@ -2,22 +2,58 @@
   {
     "name": "test_cube",
     "type": "Mesh",
-    "position": [0, 5, 0],
-    "rotation": [0, 0, 0],
-    "scale": [2, 2, 2]
+    "position": [
+      0,
+      5,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      2,
+      2,
+      2
+    ]
   },
   {
     "name": "test_sphere",
     "type": "Mesh",
-    "position": [10, 5, 0],
-    "rotation": [0, 0, 0],
-    "scale": [3, 3, 3]
+    "position": [
+      -35.67436887305092,
+      -12.343540259022419,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      3,
+      3,
+      3
+    ]
   },
   {
     "name": "test_cylinder",
     "type": "Mesh",
-    "position": [-10, 5, 0],
-    "rotation": [0, 0, 0],
-    "scale": [1, 4, 1]
+    "position": [
+      -10,
+      5,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      1,
+      4,
+      1
+    ]
   }
 ]
