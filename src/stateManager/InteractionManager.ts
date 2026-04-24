@@ -9,6 +9,10 @@ export class InteractionManager {
   private _focused: InteractableHandle | null = null;
   private _holding = false;
   private _holdingHandle: InteractableHandle | null = null;
+  private _snapshot: InteractionSnapshot = {
+    focused: null,
+    holding: false,
+  };
   private readonly _listeners = new Set<() => void>();
 
   static getInstance(): InteractionManager {
@@ -22,10 +26,7 @@ export class InteractionManager {
   private constructor() {}
 
   getState(): InteractionSnapshot {
-    return {
-      focused: this._focused,
-      holding: this._holding,
-    };
+    return this._snapshot;
   }
 
   setFocused(handle: InteractableHandle | null): void {
@@ -67,11 +68,19 @@ export class InteractionManager {
     this._focused = null;
     this._holding = false;
     this._holdingHandle = null;
+    this._snapshot = {
+      focused: null,
+      holding: false,
+    };
     this._listeners.clear();
     InteractionManager._instance = null;
   }
 
   private _emit(): void {
+    this._snapshot = {
+      focused: this._focused,
+      holding: this._holding,
+    };
     this._listeners.forEach((cb) => cb());
   }
 }

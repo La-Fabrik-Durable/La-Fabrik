@@ -1,3 +1,5 @@
+import { logger } from "@/utils/logger";
+
 export class AudioManager {
   private static _instance: AudioManager | null = null;
   private readonly _audioPools = new Map<string, HTMLAudioElement[]>();
@@ -31,7 +33,10 @@ export class AudioManager {
         return;
       }
 
-      console.error(`Failed to play sound: ${path}`, error);
+      logger.error("AudioManager", "Failed to play sound", {
+        path,
+        error,
+      });
     });
   }
 
