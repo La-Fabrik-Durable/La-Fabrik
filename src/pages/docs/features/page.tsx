@@ -8,7 +8,7 @@ export function DocsFeaturesPage(): React.JSX.Element {
       content={features}
       frContent={featuresFr}
       meta="04"
-      title="Fonctionnalites"
+      title="Fonctionnalités"
     />
   );
 }

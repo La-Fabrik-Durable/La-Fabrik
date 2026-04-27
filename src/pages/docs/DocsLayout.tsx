@@ -13,7 +13,7 @@ export function DocsLayout(): React.JSX.Element {
             <Link
               className="docs-home-link"
               to="/"
-              aria-label="Retour a l'accueil"
+              aria-label="Retour à l'accueil"
             >
               <Home size={18} strokeWidth={2.25} aria-hidden="true" />
             </Link>

@@ -26,7 +26,7 @@ export const docSections: DocSection[] = [
   },
   {
     path: "/docs/features",
-    title: "Fonctionnalites",
+    title: "Fonctionnalités",
     subtitle: "Implemented scope",
     meta: "04",
   },
