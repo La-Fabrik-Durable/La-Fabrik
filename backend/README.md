@@ -7,10 +7,11 @@ The browser captures webcam frames, downsizes them, sends JPEG frames to this ba
 ## Setup
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
-python3 backend/download_model.py
+python3.11 -m venv backend/.venv
+source backend/.venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r backend/requirements.txt
+python backend/download_model.py
 ```
 
 ## Run
@@ -26,8 +27,8 @@ npm run dev
 Terminal 2:
 
 ```bash
-source .venv/bin/activate
-python3 -m backend.main
+source backend/.venv/bin/activate
+python -m backend.main
 ```
 
 The WebSocket endpoint is:
