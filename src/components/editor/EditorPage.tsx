@@ -252,8 +252,6 @@ export function EditorPage(): React.JSX.Element {
         newMapNodes[nodeIndex] = updatedNode;
         return { ...prev, mapNodes: newMapNodes };
       });
-      setUndoCount((prev) => prev + 1);
-      console.log("Node transformed:", nodeIndex);
     },
     [sceneData],
   );

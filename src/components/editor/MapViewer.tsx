@@ -40,7 +40,6 @@ export default function MapViewer({
 
   const handleTransformMouseUp = () => {
     isTransforming.current = false;
-    onTransformEnd?.();
 
     if (selectedNodeIndex !== null) {
       const obj = objectsMapRef.current.get(selectedNodeIndex);
@@ -53,9 +52,12 @@ export default function MapViewer({
           rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
           scale: [obj.scale.x, obj.scale.y, obj.scale.z],
         };
+        // Call onNodeTransform BEFORE onTransformEnd so history captures final state
         onNodeTransform?.(selectedNodeIndex, updatedNode);
       }
     }
+
+    onTransformEnd?.();
   };
 
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>(
@@ -91,11 +93,7 @@ export default function MapViewer({
       <group
         onClick={(e: unknown) => {
           (e as { stopPropagation?: () => void }).stopPropagation?.();
-          if (
-            !(window as unknown as { isTransforming?: boolean }).isTransforming
-          ) {
-            onSelectNode(null);
-          }
+          onSelectNode(null);
         }}
       >
         {sceneData.mapNodes.map((node, index) => {
@@ -230,11 +228,7 @@ function ModelNodeWithRef({
       object={instance}
       onClick={(e: unknown) => {
         (e as { stopPropagation?: () => void }).stopPropagation?.();
-        if (
-          !(window as unknown as { isTransforming?: boolean }).isTransforming
-        ) {
-          onSelectNode(index);
-        }
+        onSelectNode(index);
       }}
       onPointerEnter={(e: unknown) => {
         (e as { stopPropagation?: () => void }).stopPropagation?.();
@@ -292,11 +286,7 @@ function FallbackNodeWithRef({
       scale={node.scale}
       onClick={(e: unknown) => {
         (e as { stopPropagation?: () => void }).stopPropagation?.();
-        if (
-          !(window as unknown as { isTransforming?: boolean }).isTransforming
-        ) {
-          onSelectNode(index);
-        }
+        onSelectNode(index);
       }}
       onPointerEnter={(e: unknown) => {
         (e as { stopPropagation?: () => void }).stopPropagation?.();
