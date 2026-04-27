@@ -6,13 +6,13 @@ import { PlayerCamera } from "@/world/player/PlayerCamera";
 import { PlayerController } from "@/world/player/PlayerController";
 
 interface PlayerComponentProps {
-  octree?: Octree | null;
+  octree: Octree | null;
   spawnY: number;
 }
 
 export function PlayerComponent({
-  octree = null,
   spawnY,
+  octree,
 }: PlayerComponentProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
 

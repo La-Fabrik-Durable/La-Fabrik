@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import type { Octree } from "three/addons/math/Octree.js";
 import {
   PLAYER_SPAWN_Y_GAME,
@@ -18,7 +18,6 @@ export function World(): React.JSX.Element {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const [octree, setOctree] = useState<Octree | null>(null);
-  const onOctreeReady = useCallback((o: Octree) => setOctree(o), []);
 
   return (
     <>
@@ -28,9 +27,9 @@ export function World(): React.JSX.Element {
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (
-        <Map onOctreeReady={onOctreeReady} />
+        <Map onOctreeReady={setOctree} />
       ) : (
-        <TestScene onOctreeReady={onOctreeReady} />
+        <TestScene onOctreeReady={setOctree} />
       )}
 
       {cameraMode !== "debug" ? (

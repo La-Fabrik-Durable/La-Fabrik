@@ -123,11 +123,6 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
         case MOVE_RIGHT_KEY:
           keys.current.right = false;
           break;
-        case INTERACT_KEY:
-          if (interaction.getState().focused?.kind === "trigger") {
-            interaction.releaseInteract();
-          }
-          break;
         default:
           return;
       }

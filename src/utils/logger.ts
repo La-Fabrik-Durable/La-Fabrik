@@ -4,6 +4,7 @@ import type {
   LogLevel,
   LoggerConfig,
 } from "@/types/logger";
+import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 10,
@@ -102,9 +103,7 @@ function resolveMinLevel(): LogLevel {
     return "info";
   }
 
-  const debugEnabled = new URLSearchParams(window.location.search).has("debug");
-
-  return debugEnabled ? "debug" : "info";
+  return isDebugEnabled() ? "debug" : "info";
 }
 
 export const logger = new Logger({

@@ -1,4 +1,5 @@
 import type {
+  GrabInteractableHandle,
   InteractableHandle,
   InteractionSnapshot,
 } from "@/types/interaction";
@@ -8,7 +9,7 @@ export class InteractionManager {
 
   private _focused: InteractableHandle | null = null;
   private _holding = false;
-  private _holdingHandle: InteractableHandle | null = null;
+  private _holdingHandle: GrabInteractableHandle | null = null;
   private _snapshot: InteractionSnapshot = {
     focused: null,
     holding: false,
@@ -40,8 +41,14 @@ export class InteractionManager {
   pressInteract(): void {
     if (!this._focused) return;
 
-    this._holding = this._focused.kind === "grab";
-    if (this._holding) this._holdingHandle = this._focused;
+    if (this._focused.kind === "grab") {
+      this._holding = true;
+      this._holdingHandle = this._focused;
+    } else {
+      this._holding = false;
+      this._holdingHandle = null;
+    }
+
     this._focused.onPress();
     this._emit();
   }
