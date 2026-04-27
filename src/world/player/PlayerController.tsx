@@ -20,12 +20,11 @@ import {
   PLAYER_GRAVITY,
   PLAYER_JUMP_SPEED,
   PLAYER_MAX_DELTA,
-  PLAYER_SPAWN_X,
-  PLAYER_SPAWN_Z,
   PLAYER_WALK_SPEED,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/playerConfig";
 import { InteractionManager } from "@/stateManager/InteractionManager";
+import type { Vector3Tuple } from "@/types/3d";
 
 type Keys = {
   forward: boolean;
@@ -45,6 +44,7 @@ const DEFAULT_KEYS: Keys = {
 
 interface PlayerControllerProps {
   octree: Octree | null;
+  spawnPosition: Vector3Tuple;
 }
 
 const _forward = new THREE.Vector3();
@@ -52,8 +52,12 @@ const _right = new THREE.Vector3();
 const _wishDir = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
+const _collisionCorrection = new THREE.Vector3();
 
-export function PlayerController({ octree }: PlayerControllerProps): null {
+export function PlayerController({
+  octree,
+  spawnPosition,
+}: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
@@ -69,14 +73,17 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
   );
 
   useEffect(() => {
-    const spawnY = camera.position.y;
     capsule.current.start.set(
-      PLAYER_SPAWN_X,
-      spawnY - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
-      PLAYER_SPAWN_Z,
+      spawnPosition[0],
+      spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
+      spawnPosition[2],
     );
-    capsule.current.end.set(PLAYER_SPAWN_X, spawnY, PLAYER_SPAWN_Z);
-  }, [camera]);
+    capsule.current.end.set(...spawnPosition);
+    velocity.current.set(0, 0, 0);
+    onFloor.current = false;
+    wantsJump.current = false;
+    camera.position.copy(capsule.current.end);
+  }, [camera, spawnPosition]);
 
   useEffect(() => {
     const interaction = InteractionManager.getInstance();
@@ -215,7 +222,7 @@ export function PlayerController({ octree }: PlayerControllerProps): null {
         }
 
         capsule.current.translate(
-          result.normal.clone().multiplyScalar(result.depth),
+          _collisionCorrection.copy(result.normal).multiplyScalar(result.depth),
         );
       }
     }
