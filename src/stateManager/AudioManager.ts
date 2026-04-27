@@ -35,7 +35,7 @@ export class AudioManager {
 
       logger.error("AudioManager", "Failed to play sound", {
         path,
-        error,
+        error: AudioManager._toLogValue(error),
       });
     });
   }
@@ -66,11 +66,20 @@ export class AudioManager {
         return pooledAudio;
       }
 
-      return existingPool[0]!;
+      const recycledAudio = existingPool[0];
+      if (recycledAudio) return recycledAudio;
     }
 
     const initialAudio = new Audio(path);
     this._audioPools.set(path, [initialAudio]);
     return initialAudio;
+  }
+
+  private static _toLogValue(error: unknown): Error | DOMException | string {
+    if (error instanceof Error || error instanceof DOMException) {
+      return error;
+    }
+
+    return String(error);
   }
 }

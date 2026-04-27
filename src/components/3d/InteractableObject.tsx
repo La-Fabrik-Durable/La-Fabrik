@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
+import type GUI from "lil-gui";
 import type { RefObject } from "react";
 import {
   INTERACTION_DEBUG_SPHERE_COLOR,
@@ -13,54 +14,83 @@ import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { InteractionManager } from "@/stateManager/InteractionManager";
 import { INTERACTION_RADIUS } from "@/data/interactionConfig";
 import type { Vector3Tuple } from "@/types/3d";
-import type { InteractableHandle, InteractableKind } from "@/types/interaction";
+import type {
+  GrabInteractableHandle,
+  InteractableHandle,
+  TriggerInteractableHandle,
+} from "@/types/interaction";
 
-interface InteractableObjectProps {
-  kind: InteractableKind;
+interface InteractableObjectBaseProps {
   label: string;
   position: Vector3Tuple;
   bodyRef?: RefObject<RapierRigidBody | null>;
   onPress: () => void;
-  onRelease?: () => void;
   children: React.ReactNode;
 }
+
+interface TriggerInteractableObjectProps extends InteractableObjectBaseProps {
+  kind: "trigger";
+}
+
+interface GrabInteractableObjectProps extends InteractableObjectBaseProps {
+  kind: "grab";
+  onRelease: () => void;
+}
+
+type InteractableObjectProps =
+  | TriggerInteractableObjectProps
+  | GrabInteractableObjectProps;
 
 const _cameraPos = new THREE.Vector3();
 const _cameraDir = new THREE.Vector3();
 const _objectPos = new THREE.Vector3();
 const _raycaster = new THREE.Raycaster();
 
-export function InteractableObject({
-  kind,
-  label,
-  position,
-  bodyRef,
-  onPress,
-  onRelease = () => {},
-  children,
-}: InteractableObjectProps): React.JSX.Element {
+export function InteractableObject(
+  props: InteractableObjectProps,
+): React.JSX.Element {
+  const { kind, label, position, bodyRef, onPress, children } = props;
   const camera = useThree((state) => state.camera);
   const groupRef = useRef<THREE.Group>(null);
   const debugSphereRef = useRef<THREE.Mesh>(null);
 
-  const handle = useRef<InteractableHandle>({
-    kind,
-    label,
-    onPress,
-    onRelease,
-  });
+  const handle = useRef<InteractableHandle>(
+    props.kind === "grab"
+      ? { kind: props.kind, label, onPress, onRelease: props.onRelease }
+      : { kind: props.kind, label, onPress },
+  );
 
   useEffect(() => {
-    handle.current.onPress = onPress;
-    handle.current.onRelease = onRelease;
-  });
+    if (props.kind === "grab") {
+      const current = handle.current as GrabInteractableHandle;
+      current.label = label;
+      current.onPress = onPress;
+      current.onRelease = props.onRelease;
+      return;
+    }
 
-  useDebugFolder("Interaction", (folder) => {
+    return undefined;
+  }, [label, onPress, props]);
+
+  useEffect(() => {
+    if (kind === "grab") {
+      return undefined;
+    }
+
+    const current = handle.current as TriggerInteractableHandle;
+    current.label = label;
+    current.onPress = onPress;
+    return undefined;
+  }, [kind, label, onPress]);
+
+  const setupInteractionDebugFolder = useCallback((folder: GUI) => {
     folder
       .add({ radius: INTERACTION_RADIUS }, "radius")
       .name("Interaction radius")
       .disable();
-  });
+  }, []);
+
+  useDebugFolder("Interaction", setupInteractionDebugFolder);
 
   useFrame(() => {
     const group = groupRef.current;

@@ -1,5 +1,6 @@
 import GUI from "lil-gui";
 import type { CameraMode, SceneMode } from "@/types/debug";
+import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 
 export class Debug {
   private static instance: Debug | null = null;
@@ -28,7 +29,7 @@ export class Debug {
   }
 
   private constructor() {
-    this.active = new URLSearchParams(window.location.search).has("debug");
+    this.active = isDebugEnabled();
     this.gui = this.active ? new GUI({ title: "La-Fabrik Debug" }) : null;
 
     if (this.gui) {
