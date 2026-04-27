@@ -14,11 +14,7 @@ import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { InteractionManager } from "@/stateManager/InteractionManager";
 import { INTERACTION_RADIUS } from "@/data/interactionConfig";
 import type { Vector3Tuple } from "@/types/3d";
-import type {
-  GrabInteractableHandle,
-  InteractableHandle,
-  TriggerInteractableHandle,
-} from "@/types/interaction";
+import type { InteractableHandle, InteractableKind } from "@/types/interaction";
 
 interface InteractableObjectBaseProps {
   label: string;
@@ -41,6 +37,13 @@ type InteractableObjectProps =
   | TriggerInteractableObjectProps
   | GrabInteractableObjectProps;
 
+type MutableInteractableHandle = {
+  kind: InteractableKind;
+  label: string;
+  onPress: () => void;
+  onRelease?: () => void;
+};
+
 const _cameraPos = new THREE.Vector3();
 const _cameraDir = new THREE.Vector3();
 const _objectPos = new THREE.Vector3();
@@ -50,6 +53,7 @@ export function InteractableObject(
   props: InteractableObjectProps,
 ): React.JSX.Element {
   const { kind, label, position, bodyRef, onPress, children } = props;
+  const onRelease = props.kind === "grab" ? props.onRelease : undefined;
   const camera = useThree((state) => state.camera);
   const groupRef = useRef<THREE.Group>(null);
   const debugSphereRef = useRef<THREE.Mesh>(null);
@@ -61,27 +65,19 @@ export function InteractableObject(
   );
 
   useEffect(() => {
-    if (props.kind === "grab") {
-      const current = handle.current as GrabInteractableHandle;
-      current.label = label;
-      current.onPress = onPress;
-      current.onRelease = props.onRelease;
+    const current = handle.current as MutableInteractableHandle;
+    current.kind = kind;
+    current.label = label;
+    current.onPress = onPress;
+
+    if (kind === "grab" && onRelease) {
+      current.onRelease = onRelease;
       return;
     }
 
+    delete current.onRelease;
     return undefined;
-  }, [label, onPress, props]);
-
-  useEffect(() => {
-    if (kind === "grab") {
-      return undefined;
-    }
-
-    const current = handle.current as TriggerInteractableHandle;
-    current.label = label;
-    current.onPress = onPress;
-    return undefined;
-  }, [kind, label, onPress]);
+  }, [kind, label, onPress, onRelease]);
 
   const setupInteractionDebugFolder = useCallback((folder: GUI) => {
     folder

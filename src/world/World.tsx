@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { Octree } from "three/addons/math/Octree.js";
 import {
-  PLAYER_SPAWN_Y_GAME,
-  PLAYER_SPAWN_Y_PHYSICS,
+  PLAYER_SPAWN_POSITION_GAME,
+  PLAYER_SPAWN_POSITION_PHYSICS,
 } from "@/data/playerConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
@@ -18,6 +18,10 @@ export function World(): React.JSX.Element {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const [octree, setOctree] = useState<Octree | null>(null);
+  const playerSpawnPosition =
+    sceneMode === "game"
+      ? PLAYER_SPAWN_POSITION_GAME
+      : PLAYER_SPAWN_POSITION_PHYSICS;
 
   return (
     <>
@@ -35,9 +39,7 @@ export function World(): React.JSX.Element {
       {cameraMode !== "debug" ? (
         <PlayerComponent
           octree={octree}
-          spawnY={
-            sceneMode === "game" ? PLAYER_SPAWN_Y_GAME : PLAYER_SPAWN_Y_PHYSICS
-          }
+          spawnPosition={playerSpawnPosition}
         />
       ) : null}
     </>
