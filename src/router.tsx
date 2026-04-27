@@ -5,11 +5,13 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { HomePage } from "@/pages/HomePage";
-import { DocsArchitecturePage } from "@/pages/docs/architecture/page";
-import { DocsLayout } from "@/pages/docs/DocsLayout";
-import { DocsFeaturesPage } from "@/pages/docs/features/page";
-import { DocsReadmePage } from "@/pages/docs/page";
-import { DocsTargetArchitecturePage } from "@/pages/docs/target-architecture/page";
+import {
+  DocsArchitectureRoute,
+  DocsFeaturesRoute,
+  DocsLayoutRoute,
+  DocsReadmeRoute,
+  DocsTargetArchitectureRoute,
+} from "@/pages/docs/DocsRouteComponents";
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -24,31 +26,31 @@ const indexRoute = createRoute({
 const docsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/docs",
-  component: DocsLayout,
+  component: DocsLayoutRoute,
 });
 
 const docsIndexRoute = createRoute({
   getParentRoute: () => docsRoute,
   path: "/",
-  component: DocsReadmePage,
+  component: DocsReadmeRoute,
 });
 
 const docsArchitectureRoute = createRoute({
   getParentRoute: () => docsRoute,
   path: "/architecture",
-  component: DocsArchitecturePage,
+  component: DocsArchitectureRoute,
 });
 
 const docsTargetArchitectureRoute = createRoute({
   getParentRoute: () => docsRoute,
   path: "/target-architecture",
-  component: DocsTargetArchitecturePage,
+  component: DocsTargetArchitectureRoute,
 });
 
 const docsFeaturesRoute = createRoute({
   getParentRoute: () => docsRoute,
   path: "/features",
-  component: DocsFeaturesPage,
+  component: DocsFeaturesRoute,
 });
 
 const routeTree = rootRoute.addChildren([
