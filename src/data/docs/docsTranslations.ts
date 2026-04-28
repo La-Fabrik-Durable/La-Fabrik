@@ -61,7 +61,7 @@ la-fabrik/
     │   ├── 3d/                             # Éléments 3D réutilisables
     │   └── ui/                             # Overlays HTML hors Canvas
     │
-    ├── stateManager/                       # Logique, état et orchestration
+    ├── managers/                           # Logique, état et orchestration
     ├── hooks/                              # Hooks React autour des managers
     ├── data/                               # Configuration statique
     ├── shaders/                            # Shaders GLSL
@@ -99,21 +99,21 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
   - le rig joueur quand le mode caméra actif est \`player\`
 - \`src/world/Map.tsx\` charge le modèle principal de la carte et construit l'octree de collision.
 - \`src/world/debug/TestScene.tsx\` fournit une scène orientée debug pour les interactions et la physique.
-- \`src/world/player/PlayerComponent.tsx\` monte la caméra et le contrôleur.
+- \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
 - \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
 
 ## Modèle d'interaction
 
-- \`src/stateManager/InteractionManager.ts\` est la source d'état actuelle des interactions.
-- \`src/components/3d/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
-- \`src/components/3d/TriggerObject.tsx\` implémente les interactions de type trigger.
-- \`src/components/3d/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
+- \`src/managers/InteractionManager.ts\` est la source d'état actuelle des interactions.
+- \`src/components/three/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
+- \`src/components/three/TriggerObject.tsx\` implémente les interactions de type trigger.
+- \`src/components/three/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
 - \`src/hooks/useInteraction.ts\` expose un snapshot d'interaction à l'UI React.
 - \`src/components/ui/InteractPrompt.tsx\` affiche le prompt \`E\` pour les interactions trigger.
 
 ## Audio
 
-- \`src/stateManager/AudioManager.ts\` fournit actuellement une lecture de sons one-shot avec pool.
+- \`src/managers/AudioManager.ts\` fournit actuellement une lecture de sons one-shot avec pool.
 - Les interactions trigger peuvent lancer directement un son via \`AudioManager\`.
 
 ## Système debug
