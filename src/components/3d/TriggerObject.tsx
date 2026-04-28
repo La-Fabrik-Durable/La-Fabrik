@@ -7,7 +7,7 @@ import {
   TRIGGER_DEFAULT_LABEL,
   TRIGGER_DEFAULT_SOUND_VOLUME,
   TRIGGER_DEFAULT_SPAWN_OFFSET,
-} from "@/data/triggerConfig";
+} from "@/data/interaction/triggerConfig";
 import { AudioManager } from "@/stateManager/AudioManager";
 import type { ColliderShape, Vector3Tuple } from "@/types/3d";
 

@@ -19,7 +19,7 @@ import {
   TEST_SCENE_TRIGGER_ROUGHNESS,
   TEST_SCENE_TRIGGER_SEGMENTS,
   TEST_SCENE_TRIGGER_SOUND_PATH,
-} from "@/data/testSceneConfig";
+} from "@/data/debug/testSceneConfig";
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/3d";
 

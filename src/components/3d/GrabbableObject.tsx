@@ -19,7 +19,7 @@ import {
   GRAB_THROW_BOOST_MAX,
   GRAB_THROW_BOOST_MIN,
   GRAB_THROW_BOOST_STEP,
-} from "@/data/grabConfig";
+} from "@/data/interaction/grabConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import type { ColliderShape, Vector3Tuple } from "@/types/3d";
 
