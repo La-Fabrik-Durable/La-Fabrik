@@ -18,8 +18,8 @@ export function DocsLanguageProvider({
   }
 
   return (
-    <DocsLanguageContext value={{ language, toggleLanguage }}>
+    <DocsLanguageContext.Provider value={{ language, toggleLanguage }}>
       {children}
-    </DocsLanguageContext>
+    </DocsLanguageContext.Provider>
   );
 }

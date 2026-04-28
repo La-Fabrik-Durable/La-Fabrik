@@ -40,11 +40,11 @@ const docsRoute = createRoute({
 
 const docsChildRoutes = [
   { path: "/", component: DocsReadmeRoute },
-  { path: "/architecture", component: DocsArchitectureRoute },
-  { path: "/target-architecture", component: DocsTargetArchitectureRoute },
-  { path: "/technical-editor", component: DocsTechnicalEditorRoute },
-  { path: "/features", component: DocsFeaturesRoute },
-  { path: "/editor", component: DocsEditorRoute },
+  { path: "architecture", component: DocsArchitectureRoute },
+  { path: "target-architecture", component: DocsTargetArchitectureRoute },
+  { path: "technical-editor", component: DocsTechnicalEditorRoute },
+  { path: "features", component: DocsFeaturesRoute },
+  { path: "editor", component: DocsEditorRoute },
 ].map(({ path, component }) =>
   createRoute({
     getParentRoute: () => docsRoute,
