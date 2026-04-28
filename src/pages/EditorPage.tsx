@@ -1,17 +1,13 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
-import EditorViewer from "./EditorViewer";
-import EditorControls from "./EditorControls";
-import type { TransformMode, MapNode } from "./types";
-import type { SceneData } from "./types";
-import "./EditorPage.css";
-
-interface ObjectTransform {
-  uuid: string;
-  position: { x: number; y: number; z: number };
-  rotation: { x: number; y: number; z: number };
-  scale: { x: number; y: number; z: number };
-}
+import EditorViewer from "@/components/editor/EditorViewer";
+import EditorControls from "@/components/editor/EditorControls";
+import type {
+  TransformMode,
+  MapNode,
+  SceneData,
+  ObjectTransform,
+} from "@/types/editor";
 
 class HistoryManager {
   private history: ObjectTransform[][] = [];
@@ -60,19 +56,6 @@ class HistoryManager {
   getRedoCount(): number {
     return this.history.length - 1 - this.currentIndex;
   }
-
-  clear() {
-    this.history = [];
-    this.currentIndex = -1;
-  }
-
-  canUndo(): boolean {
-    return this.currentIndex > 0;
-  }
-
-  canRedo(): boolean {
-    return this.currentIndex < this.history.length - 1;
-  }
 }
 
 export function EditorPage(): React.JSX.Element {
@@ -80,7 +63,6 @@ export function EditorPage(): React.JSX.Element {
   const [isMapLoading, setIsMapLoading] = useState<boolean>(true);
   const [sceneData, setSceneData] = useState<SceneData | null>(null);
 
-  // État partagé entre Canvas (3D) et EditorControls (HTML)
   const [selectedNodeIndex, setSelectedNodeIndex] = useState<number | null>(
     null,
   );
@@ -91,10 +73,8 @@ export function EditorPage(): React.JSX.Element {
   const [redoCount, setRedoCount] = useState(0);
   const [isPlayerMode, setIsPlayerMode] = useState(false);
 
-  const historyManagerRef = useCallback(() => new HistoryManager(50), []);
-  const historyManager = useRef<HistoryManager>(historyManagerRef());
+  const historyManager = useRef<HistoryManager>(new HistoryManager(50));
 
-  // Callbacks partagés
   const handleSelectNode = useCallback((index: number | null) => {
     setSelectedNodeIndex(index);
   }, []);
@@ -195,7 +175,6 @@ export function EditorPage(): React.JSX.Element {
   }, [sceneData]);
 
   const handleResetCamera = useCallback(() => {
-    // Logique pour reset camera
     console.log("Reset camera");
   }, []);
 
@@ -203,9 +182,10 @@ export function EditorPage(): React.JSX.Element {
     setIsPlayerMode((prev) => !prev);
   }, []);
 
-  const handleTransformStart = useCallback(() => {
-    if (!sceneData) return;
-    const snapshot = sceneData.mapNodes.map((node, index) => ({
+  const createSnapshot = useCallback((): ObjectTransform[] => {
+    if (!sceneData) return [];
+
+    return sceneData.mapNodes.map((node, index) => ({
       uuid: `node-${index}`,
       position: {
         x: node.position[0],
@@ -219,29 +199,19 @@ export function EditorPage(): React.JSX.Element {
       },
       scale: { x: node.scale[0], y: node.scale[1], z: node.scale[2] },
     }));
-    historyManager.current.saveSnapshot(snapshot);
   }, [sceneData]);
+
+  const handleTransformStart = useCallback(() => {
+    if (!sceneData) return;
+    historyManager.current.saveSnapshot(createSnapshot());
+  }, [createSnapshot, sceneData]);
 
   const handleTransformEnd = useCallback(() => {
     if (!sceneData) return;
-    const snapshot = sceneData.mapNodes.map((node, index) => ({
-      uuid: `node-${index}`,
-      position: {
-        x: node.position[0],
-        y: node.position[1],
-        z: node.position[2],
-      },
-      rotation: {
-        x: node.rotation[0],
-        y: node.rotation[1],
-        z: node.rotation[2],
-      },
-      scale: { x: node.scale[0], y: node.scale[1], z: node.scale[2] },
-    }));
-    historyManager.current.saveSnapshot(snapshot);
+    historyManager.current.saveSnapshot(createSnapshot());
     setUndoCount(historyManager.current.getUndoCount());
     setRedoCount(historyManager.current.getRedoCount());
-  }, [sceneData]);
+  }, [createSnapshot, sceneData]);
 
   const handleNodeTransform = useCallback(
     (nodeIndex: number, updatedNode: MapNode) => {
@@ -445,7 +415,6 @@ export function EditorPage(): React.JSX.Element {
         />
       </Canvas>
 
-      {/* EditorControls rendu en dehors du Canvas (HTML overlay) */}
       {sceneData && (
         <EditorControls
           transformMode={transformMode}

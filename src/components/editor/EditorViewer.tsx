@@ -3,8 +3,7 @@ import { OrbitControls } from "@react-three/drei";
 import EditorCamera from "./EditorCamera";
 import FlyController from "./FlyController";
 import MapViewer from "./MapViewer";
-import type { MapNode, TransformMode } from "./types";
-import type { SceneData } from "./types";
+import type { MapNode, TransformMode, SceneData } from "@/types/editor";
 
 interface EditorViewerProps {
   sceneData: SceneData;

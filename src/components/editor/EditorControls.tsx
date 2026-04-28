@@ -1,4 +1,4 @@
-import type { TransformMode } from "./types";
+import type { TransformMode } from "@/types/editor";
 
 interface EditorControlsProps {
   transformMode: TransformMode;

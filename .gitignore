@@ -38,3 +38,6 @@ Thumbs.db
 # 3D Assets Cache (drei, GLTFJSX)
 .drei/
 .glitchdrei-cache/
+
+.backend/
+backend/
