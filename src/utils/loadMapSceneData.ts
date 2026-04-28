@@ -1,4 +1,5 @@
 import type { MapNode, SceneData } from "@/types/editor";
+import { parseMapNodes } from "@/utils/mapNodeValidation";
 
 const MAP_JSON_PATH = "/map.json";
 const MODEL_FILE_NAME = "model.gltf";
@@ -11,7 +12,7 @@ export async function loadMapSceneData(): Promise<SceneData | null> {
     return null;
   }
 
-  const mapNodes: MapNode[] = await response.json();
+  const mapNodes = parseMapNodes(await response.json());
   return createSceneData(mapNodes);
 }
 
