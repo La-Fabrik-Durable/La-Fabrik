@@ -3,14 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/3d";
-
-interface MapNode {
-  name: string;
-  type: string;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  scale: [number, number, number];
-}
+import type { MapNode } from "@/types/editor";
 
 const MAP_JSON_PATH = "/map.json";
 
@@ -88,32 +81,23 @@ function ModelInstance({ node }: { node: MapNode }): React.JSX.Element {
   const modelPath = `/models/${node.name}/model.gltf`;
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelPath);
+  const { position, rotation, scale } = node;
 
   useEffect(() => {
     if (groupRef.current) {
-      groupRef.current.position.set(...node.position);
-      groupRef.current.rotation.set(...node.rotation);
-      groupRef.current.scale.set(...node.scale);
+      groupRef.current.position.set(...position);
+      groupRef.current.rotation.set(...rotation);
+      groupRef.current.scale.set(...scale);
     }
-  }, [
-    node.position[0],
-    node.position[1],
-    node.position[2],
-    node.rotation[0],
-    node.rotation[1],
-    node.rotation[2],
-    node.scale[0],
-    node.scale[1],
-    node.scale[2],
-  ]);
+  }, [position, rotation, scale]);
 
   return (
     <primitive
       ref={groupRef}
       object={scene}
-      position={node.position}
-      rotation={node.rotation}
-      scale={node.scale}
+      position={position}
+      rotation={rotation}
+      scale={scale}
     />
   );
 }

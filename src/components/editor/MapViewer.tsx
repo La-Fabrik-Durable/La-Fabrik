@@ -3,7 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import { Grid, TransformControls } from "@react-three/drei";
 import * as THREE from "three";
 
-import type { SceneData, MapNode, TransformMode } from "./types";
+import type { SceneData, MapNode, TransformMode } from "@/types/editor";
 
 interface MapViewerProps {
   sceneData: SceneData;
@@ -171,7 +171,14 @@ function ModelNodeWithRef({
     return () => {
       currentMap.delete(currentIndex);
     };
-  }, [index]);
+  }, [
+    index,
+    node.name,
+    node.position,
+    node.rotation,
+    node.scale,
+    objectsMapRef,
+  ]);
 
   useEffect(() => {
     if (groupRef.current) {
@@ -258,7 +265,14 @@ function FallbackNodeWithRef({
     return () => {
       currentMap.delete(currentIndex);
     };
-  }, [index]);
+  }, [
+    index,
+    node.name,
+    node.position,
+    node.rotation,
+    node.scale,
+    objectsMapRef,
+  ]);
 
   useEffect(() => {
     if (meshRef.current) {
