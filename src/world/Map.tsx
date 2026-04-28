@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { MAP_DEBUG_BOX_HELPER_COLOR } from "@/data/debugConfig";
+import { MAP_DEBUG_BOX_HELPER_COLOR } from "@/data/debug/debugConfig";
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/3d";
 import { Debug } from "@/utils/debug/Debug";

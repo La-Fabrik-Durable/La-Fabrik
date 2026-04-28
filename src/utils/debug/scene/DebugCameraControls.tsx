@@ -3,11 +3,11 @@ import {
   DEBUG_CAMERA_DAMPING_FACTOR,
   DEBUG_CAMERA_MAX_DISTANCE,
   DEBUG_CAMERA_MIN_DISTANCE,
-} from "@/data/debugConfig";
+} from "@/data/debug/debugConfig";
 import {
   PLAYER_EYE_HEIGHT,
   PLAYER_SPAWN_POSITION_GAME,
-} from "@/data/playerConfig";
+} from "@/data/player/playerConfig";
 
 const DEBUG_CAMERA_TARGET = [
   PLAYER_SPAWN_POSITION_GAME[0],

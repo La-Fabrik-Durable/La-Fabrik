@@ -3,7 +3,7 @@ import type { Octree } from "three/addons/math/Octree.js";
 import {
   PLAYER_SPAWN_POSITION_GAME,
   PLAYER_SPAWN_POSITION_PHYSICS,
-} from "@/data/playerConfig";
+} from "@/data/player/playerConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";

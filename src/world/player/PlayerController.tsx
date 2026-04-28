@@ -11,7 +11,7 @@ import {
   MOVE_LEFT_KEY,
   MOVE_RIGHT_KEY,
   PRIMARY_INTERACT_MOUSE_BUTTON,
-} from "@/data/keybindings";
+} from "@/data/input/keybindings";
 import {
   PLAYER_ACCELERATION_MULTIPLIER,
   PLAYER_AIR_CONTROL_FACTOR,
@@ -22,7 +22,7 @@ import {
   PLAYER_MAX_DELTA,
   PLAYER_WALK_SPEED,
   PLAYER_XZ_DAMPING_FACTOR,
-} from "@/data/playerConfig";
+} from "@/data/player/playerConfig";
 import { InteractionManager } from "@/stateManager/InteractionManager";
 import type { Vector3Tuple } from "@/types/3d";
 
