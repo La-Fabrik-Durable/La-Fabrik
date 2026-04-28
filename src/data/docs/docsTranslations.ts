@@ -91,13 +91,14 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 
 ## Structure runtime
 
-- \`src/App.tsx\` monte le \`Canvas\`, le \`World\` 3D, l'overlay de performance debug et les overlays HTML.
+- \`src/App.tsx\` monte le \`RouterProvider\`, qui pilote l'affichage des vues de l'application.
+- \`src/pages/page.tsx\` monte le \`Canvas\`, le \`World\` 3D, l'overlay de performance debug et les overlays HTML.
 - \`src/world/World.tsx\` compose la scène active avec :
   - l'environnement et l'éclairage
   - les helpers debug et le mode caméra debug
   - soit la carte principale, soit la scène de test physique debug
   - le rig joueur quand le mode caméra actif est \`player\`
-- \`src/world/Map.tsx\` charge le modèle principal de la carte et construit l'octree de collision.
+- \`src/world/GameMap.tsx\` charge les modèles de carte disponibles et construit l'octree de collision.
 - \`src/world/debug/TestScene.tsx\` fournit une scène orientée debug pour les interactions et la physique.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
 - \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
@@ -121,9 +122,9 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - Le mode debug est activé avec \`?debug\`.
 - \`src/utils/debug/Debug.ts\` possède l'instance \`lil-gui\` et les contrôles debug.
 - \`src/hooks/debug/useCameraMode.ts\` et \`src/hooks/debug/useSceneMode.ts\` s'abonnent à l'état debug.
-- \`src/utils/debug/DebugPerf.tsx\` monte \`r3f-perf\` en lazy uniquement en mode debug.
-- \`src/utils/debug/scene/DebugHelpers.tsx\` monte les helpers debug.
-- \`src/utils/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
+- \`src/components/debug/DebugPerf.tsx\` monte \`r3f-perf\` en lazy uniquement en mode debug.
+- \`src/components/debug/scene/DebugHelpers.tsx\` monte les helpers debug.
+- \`src/components/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
 
 ## Limites actuelles
 
