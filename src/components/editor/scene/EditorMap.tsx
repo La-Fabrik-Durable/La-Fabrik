@@ -29,6 +29,12 @@ interface EditorNodeCommonProps {
   onHoverNode: (index: number | null) => void;
 }
 
+interface EditorNodePointerHandlers {
+  onClick: (event: ThreeEvent<MouseEvent>) => void;
+  onPointerEnter: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerLeave: (event: ThreeEvent<PointerEvent>) => void;
+}
+
 function applyNodeTransform(object: THREE.Object3D, node: MapNode): void {
   object.position.set(...node.position);
   object.rotation.set(...node.rotation);
@@ -86,6 +92,36 @@ function cloneHighlightedMaterial(
     clone.color.set(color);
   }
   return clone;
+}
+
+function getNodeHighlightColor(
+  isSelected: boolean,
+  isHovered: boolean,
+): string | null {
+  if (isSelected) return "#ffffff";
+  if (isHovered) return "#b8b8b8";
+  return null;
+}
+
+function createEditorNodePointerHandlers(
+  index: number,
+  onSelectNode: (index: number | null) => void,
+  onHoverNode: (index: number | null) => void,
+): EditorNodePointerHandlers {
+  return {
+    onClick: (event) => {
+      event.stopPropagation();
+      onSelectNode(index);
+    },
+    onPointerEnter: (event) => {
+      event.stopPropagation();
+      onHoverNode(index);
+    },
+    onPointerLeave: (event) => {
+      event.stopPropagation();
+      onHoverNode(null);
+    },
+  };
 }
 
 export function EditorMap({
@@ -224,15 +260,16 @@ function EditorModelNode({
   const { scene } = useGLTF(modelUrl);
 
   const sceneInstance = useMemo(() => scene.clone(true), [scene]);
+  const pointerHandlers = createEditorNodePointerHandlers(
+    index,
+    onSelectNode,
+    onHoverNode,
+  );
   useRegisteredEditorNode(groupRef, index, node, objectsMapRef);
 
   useEffect(() => {
     if (!groupRef.current) return;
-    const highlightColor = isSelected
-      ? "#ffffff"
-      : isHovered
-        ? "#b8b8b8"
-        : null;
+    const highlightColor = getNodeHighlightColor(isSelected, isHovered);
 
     groupRef.current.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) {
@@ -288,18 +325,7 @@ function EditorModelNode({
       position={node.position}
       rotation={node.rotation}
       scale={node.scale}
-      onClick={(e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        onSelectNode(index);
-      }}
-      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
-        e.stopPropagation();
-        onHoverNode(index);
-      }}
-      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
-        e.stopPropagation();
-        onHoverNode(null);
-      }}
+      {...pointerHandlers}
     />
   );
 }
@@ -314,9 +340,14 @@ function EditorFallbackNode({
   onHoverNode,
 }: EditorNodeCommonProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const pointerHandlers = createEditorNodePointerHandlers(
+    index,
+    onSelectNode,
+    onHoverNode,
+  );
   useRegisteredEditorNode(meshRef, index, node, objectsMapRef);
 
-  const color = isSelected ? "#ffffff" : isHovered ? "#b8b8b8" : "#6f6f6f";
+  const color = getNodeHighlightColor(isSelected, isHovered) ?? "#6f6f6f";
 
   return (
     <mesh
@@ -324,18 +355,7 @@ function EditorFallbackNode({
       position={node.position}
       rotation={node.rotation}
       scale={node.scale}
-      onClick={(e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        onSelectNode(index);
-      }}
-      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
-        e.stopPropagation();
-        onHoverNode(index);
-      }}
-      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
-        e.stopPropagation();
-        onHoverNode(null);
-      }}
+      {...pointerHandlers}
     >
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color={color} />

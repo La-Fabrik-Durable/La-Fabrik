@@ -54,6 +54,25 @@ const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
 const _collisionCorrection = new THREE.Vector3();
 
+function setMovementKey(keys: Keys, key: string, pressed: boolean): boolean {
+  switch (key.toLowerCase()) {
+    case MOVE_FORWARD_KEY:
+      keys.forward = pressed;
+      return true;
+    case MOVE_BACKWARD_KEY:
+      keys.backward = pressed;
+      return true;
+    case MOVE_LEFT_KEY:
+      keys.left = pressed;
+      return true;
+    case MOVE_RIGHT_KEY:
+      keys.right = pressed;
+      return true;
+    default:
+      return false;
+  }
+}
+
 export function PlayerController({
   octree,
   spawnPosition,
@@ -89,51 +108,29 @@ export function PlayerController({
     const interaction = InteractionManager.getInstance();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      switch (event.key.toLowerCase()) {
-        case MOVE_FORWARD_KEY:
-          keys.current.forward = true;
-          break;
-        case MOVE_BACKWARD_KEY:
-          keys.current.backward = true;
-          break;
-        case MOVE_LEFT_KEY:
-          keys.current.left = true;
-          break;
-        case MOVE_RIGHT_KEY:
-          keys.current.right = true;
-          break;
-        case JUMP_KEY:
-          wantsJump.current = true;
-          break;
-        case INTERACT_KEY:
-          if (interaction.getState().focused?.kind === "trigger") {
-            interaction.pressInteract();
-          }
-          break;
-        default:
-          return;
+      if (setMovementKey(keys.current, event.key, true)) {
+        event.preventDefault();
+        return;
       }
-      event.preventDefault();
+
+      if (event.key === JUMP_KEY) {
+        wantsJump.current = true;
+        event.preventDefault();
+        return;
+      }
+
+      if (event.key.toLowerCase() === INTERACT_KEY) {
+        if (interaction.getState().focused?.kind === "trigger") {
+          interaction.pressInteract();
+        }
+        event.preventDefault();
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent): void => {
-      switch (event.key.toLowerCase()) {
-        case MOVE_FORWARD_KEY:
-          keys.current.forward = false;
-          break;
-        case MOVE_BACKWARD_KEY:
-          keys.current.backward = false;
-          break;
-        case MOVE_LEFT_KEY:
-          keys.current.left = false;
-          break;
-        case MOVE_RIGHT_KEY:
-          keys.current.right = false;
-          break;
-        default:
-          return;
+      if (setMovementKey(keys.current, event.key, false)) {
+        event.preventDefault();
       }
-      event.preventDefault();
     };
 
     const handleMouseDown = (event: MouseEvent): void => {
