@@ -23,8 +23,8 @@ import {
   PLAYER_WALK_SPEED,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
-import { InteractionManager } from "@/stateManager/InteractionManager";
-import type { Vector3Tuple } from "@/types/3d";
+import { InteractionManager } from "@/managers/InteractionManager";
+import type { Vector3Tuple } from "@/types/three";
 
 type Keys = {
   forward: boolean;

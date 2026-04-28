@@ -11,7 +11,7 @@ import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";
-import { PlayerComponent } from "@/world/player/PlayerComponent";
+import { Player } from "@/world/player/Player";
 import { TestScene } from "@/world/debug/TestScene";
 
 export function World(): React.JSX.Element {
@@ -37,7 +37,7 @@ export function World(): React.JSX.Element {
       )}
 
       {cameraMode !== "debug" ? (
-        <PlayerComponent octree={octree} spawnPosition={playerSpawnPosition} />
+        <Player octree={octree} spawnPosition={playerSpawnPosition} />
       ) : null}
     </>
   );

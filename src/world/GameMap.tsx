@@ -3,7 +3,7 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
 import { loadMapSceneData } from "@/utils/loadMapSceneData";
-import type { OctreeReadyHandler } from "@/types/3d";
+import type { OctreeReadyHandler } from "@/types/three";
 import type { MapNode } from "@/types/editor";
 
 interface GameMapProps {
