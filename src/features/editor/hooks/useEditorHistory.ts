@@ -11,8 +11,11 @@ interface ObjectTransform {
 class HistoryManager {
   private history: ObjectTransform[][] = [];
   private currentIndex = -1;
+  private maxSize: number;
 
-  constructor(private maxSize = 50) {}
+  constructor(maxSize = 50) {
+    this.maxSize = maxSize;
+  }
 
   saveSnapshot(objects: ObjectTransform[]): void {
     if (this.currentIndex < this.history.length - 1) {

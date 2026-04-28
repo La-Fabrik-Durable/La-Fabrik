@@ -30,9 +30,7 @@ export async function createSceneDataFromFiles(
 }
 
 function getProjectRelativePath(file: File): string {
-  const relativePath =
-    (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
-    file.name;
+  const relativePath = file.webkitRelativePath || file.name;
 
   if (!relativePath.includes("/")) {
     return `/${relativePath}`;

@@ -4,11 +4,13 @@ import {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  type ElementRef,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import type { OrbitControls as OrbitControlsType } from "three-stdlib";
 import * as THREE from "three";
+
+type OrbitControlsRef = ElementRef<typeof OrbitControls>;
 
 interface FlyControllerProps {
   speed?: number;
@@ -17,8 +19,8 @@ interface FlyControllerProps {
   disabled?: boolean;
 }
 
-export interface FlyControllerRef {
-  controls: OrbitControlsType | null;
+interface FlyControllerRef {
+  controls: OrbitControlsRef | null;
 }
 
 export const FlyController = forwardRef<FlyControllerRef, FlyControllerProps>(
@@ -29,7 +31,7 @@ export const FlyController = forwardRef<FlyControllerRef, FlyControllerProps>(
     const { camera: rawCamera } = useThree();
     const cameraRef = useRef(rawCamera);
     const keys = useRef<{ [key: string]: boolean }>({});
-    const controlsRef = useRef<OrbitControlsType | null>(null);
+    const controlsRef = useRef<OrbitControlsRef | null>(null);
     const lastPosition = useRef(new THREE.Vector3());
 
     useImperativeHandle(ref, () => ({
@@ -54,13 +56,12 @@ export const FlyController = forwardRef<FlyControllerRef, FlyControllerProps>(
     }, [handleKeyDown, handleKeyUp]);
 
     useFrame((_, delta) => {
-      // En mode disabled: ZQSD désactivé, on garde que OrbitControls
+      // Disabled mode keeps OrbitControls active without keyboard movement.
       if (disabled) {
         return;
       }
 
-      // ZQSD (AZERTY): Z=forward, S=backward, Q=left, D=right
-      // Support aussi QWERTY et flèches
+      // Supports AZERTY, QWERTY, and arrow-key movement.
       const isForward =
         keys.current["KeyW"] || keys.current["KeyZ"] || keys.current["ArrowUp"];
       const isBackward = keys.current["KeyS"] || keys.current["ArrowDown"];
@@ -89,7 +90,7 @@ export const FlyController = forwardRef<FlyControllerRef, FlyControllerProps>(
         cameraRef.current.position.add(direction);
       }
 
-      // Space = monter, Shift = descendre
+      // Space moves up; Shift moves down.
       if (keys.current["Space"]) {
         cameraRef.current.position.y += verticalSpeed * delta;
       }

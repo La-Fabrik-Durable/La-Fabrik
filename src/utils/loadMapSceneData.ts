@@ -14,7 +14,7 @@ export async function loadMapSceneData(): Promise<SceneData | null> {
   return createSceneData(mapNodes);
 }
 
-export async function createSceneData(mapNodes: MapNode[]): Promise<SceneData> {
+async function createSceneData(mapNodes: MapNode[]): Promise<SceneData> {
   const models = await loadMapModelUrls(mapNodes);
   return { mapNodes, models };
 }
@@ -28,16 +28,12 @@ async function loadMapModelUrls(
   for (const modelName of uniqueModelNames) {
     const modelUrl = `/models/${modelName}/${MODEL_FILE_NAME}`;
 
-    try {
-      const modelResponse = await fetch(modelUrl);
-      if (!modelResponse.ok) continue;
+    const modelResponse = await fetch(modelUrl);
+    if (!modelResponse.ok) continue;
 
-      const text = await modelResponse.text();
-      if (isGltfContent(text)) {
-        models.set(modelName, modelUrl);
-      }
-    } catch {
-      /* Missing models are expected while editing incomplete maps. */
+    const text = await modelResponse.text();
+    if (isGltfContent(text)) {
+      models.set(modelName, modelUrl);
     }
   }
 
