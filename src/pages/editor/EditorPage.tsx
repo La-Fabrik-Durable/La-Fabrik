@@ -173,6 +173,7 @@ export function EditorPage(): React.JSX.Element {
           transformMode={transformMode}
           onTransformModeChange={handleTransformModeChange}
           selectedNodeIndex={selectedNodeIndex}
+          mapNodes={sceneData.mapNodes}
           nodesCount={sceneData.mapNodes.length}
           selectedNodeName={
             selectedNodeIndex !== null && sceneData.mapNodes[selectedNodeIndex]

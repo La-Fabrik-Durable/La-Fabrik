@@ -1,5 +1,6 @@
 import {
   Box,
+  Braces,
   Download,
   Expand,
   Keyboard,
@@ -11,12 +12,13 @@ import {
   Save,
   Undo2,
 } from "lucide-react";
-import type { TransformMode } from "@/types/editor";
+import type { MapNode, TransformMode } from "@/types/editor";
 
 interface EditorControlsProps {
   transformMode: TransformMode;
   onTransformModeChange: (mode: TransformMode) => void;
   selectedNodeIndex: number | null;
+  mapNodes: MapNode[];
   nodesCount: number;
   selectedNodeName: string | null;
   undoCount: number;
@@ -33,6 +35,7 @@ export function EditorControls({
   transformMode,
   onTransformModeChange,
   selectedNodeIndex,
+  mapNodes,
   nodesCount,
   selectedNodeName,
   undoCount,
@@ -46,6 +49,7 @@ export function EditorControls({
 }: EditorControlsProps): React.JSX.Element {
   const cameraPosition = [0, 50, 100];
   const viewModeLabel = isPlayerMode ? "View locked" : "Lock view";
+  const jsonPreview = getJsonPreview(mapNodes, selectedNodeIndex);
 
   return (
     <>
@@ -230,7 +234,100 @@ export function EditorControls({
             </div>
           </dl>
         </section>
+
+        <section className="editor-json-section" aria-labelledby="json-heading">
+          <div className="editor-section-heading">
+            <h3 id="json-heading">JSON</h3>
+            <span>{jsonPreview.label}</span>
+          </div>
+
+          <pre className="editor-json-view" aria-label={jsonPreview.label}>
+            {jsonPreview.lines.map((line) => (
+              <code
+                key={line.number}
+                className={line.isSelected ? "is-selected" : undefined}
+              >
+                <span>{line.number}</span>
+                {line.content || " "}
+              </code>
+            ))}
+          </pre>
+
+          <div className="editor-json-hint">
+            <Braces size={14} aria-hidden="true" />
+            {selectedNodeIndex === null
+              ? "Raw map JSON"
+              : `Selected node ${selectedNodeIndex + 1} raw lines`}
+          </div>
+        </section>
       </aside>
     </>
   );
+}
+
+interface JsonPreviewLine {
+  number: number;
+  content: string;
+  isSelected: boolean;
+}
+
+interface JsonPreview {
+  label: string;
+  lines: JsonPreviewLine[];
+}
+
+function getJsonPreview(
+  mapNodes: MapNode[],
+  selectedNodeIndex: number | null,
+): JsonPreview {
+  const { lines, ranges } = formatMapNodesWithRanges(mapNodes);
+
+  if (selectedNodeIndex === null || !ranges[selectedNodeIndex]) {
+    return {
+      label: `${lines.length} raw lines`,
+      lines: lines.map((content, index) => ({
+        number: index + 1,
+        content,
+        isSelected: false,
+      })),
+    };
+  }
+
+  const range = ranges[selectedNodeIndex];
+  const selectedLines = lines.slice(range.start - 1, range.end);
+
+  return {
+    label: `Lines ${range.start}-${range.end}`,
+    lines: selectedLines.map((content, index) => ({
+      number: range.start + index,
+      content,
+      isSelected: true,
+    })),
+  };
+}
+
+function formatMapNodesWithRanges(mapNodes: MapNode[]): {
+  lines: string[];
+  ranges: Array<{ start: number; end: number }>;
+} {
+  const lines = ["["];
+  const ranges: Array<{ start: number; end: number }> = [];
+
+  mapNodes.forEach((node, index) => {
+    const objectLines = JSON.stringify(node, null, 2)
+      .split("\n")
+      .map((line) => `  ${line}`);
+
+    if (index < mapNodes.length - 1) {
+      objectLines[objectLines.length - 1] += ",";
+    }
+
+    const start = lines.length + 1;
+    lines.push(...objectLines);
+    ranges.push({ start, end: lines.length });
+  });
+
+  lines.push("]");
+
+  return { lines, ranges };
 }
