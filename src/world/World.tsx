@@ -6,8 +6,8 @@ import {
 } from "@/data/player/playerConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
-import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";
-import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
+import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControls";
+import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";

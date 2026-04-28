@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Crosshair } from "@/components/ui/Crosshair";
 import { InteractPrompt } from "@/components/ui/InteractPrompt";
-import { DebugPerf } from "@/utils/debug/DebugPerf";
+import { DebugPerf } from "@/components/debug/DebugPerf";
 import { World } from "@/world/World";
 
 export function HomePage(): React.JSX.Element {
