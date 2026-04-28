@@ -1,9 +1,11 @@
+import type { Vector3Tuple } from "@/types/3d";
+
 export interface MapNode {
   name: string;
   type: string;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  scale: [number, number, number];
+  position: Vector3Tuple;
+  rotation: Vector3Tuple;
+  scale: Vector3Tuple;
 }
 
 export interface SceneData {

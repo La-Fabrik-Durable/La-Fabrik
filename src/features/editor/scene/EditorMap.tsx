@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { Grid, TransformControls, useGLTF } from "@react-three/drei";
+import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { SceneData, MapNode, TransformMode } from "@/types/editor";
@@ -14,6 +15,53 @@ interface EditorMapProps {
   onTransformStart: () => void;
   onTransformEnd: () => void;
   onNodeTransform: (nodeIndex: number, transform: MapNode) => void;
+}
+
+type EditorNodeObjectRef = React.RefObject<Map<number, THREE.Object3D>>;
+
+interface EditorNodeCommonProps {
+  index: number;
+  node: MapNode;
+  isSelected: boolean;
+  isHovered: boolean;
+  objectsMapRef: EditorNodeObjectRef;
+  onSelectNode: (index: number | null) => void;
+  onHoverNode: (index: number | null) => void;
+}
+
+function applyNodeTransform(object: THREE.Object3D, node: MapNode): void {
+  object.position.set(...node.position);
+  object.rotation.set(...node.rotation);
+  object.scale.set(...node.scale);
+}
+
+function useRegisteredEditorNode(
+  objectRef: React.RefObject<THREE.Object3D | null>,
+  index: number,
+  node: MapNode,
+  objectsMapRef: EditorNodeObjectRef,
+): void {
+  useEffect(() => {
+    const object = objectRef.current;
+    if (object) {
+      applyNodeTransform(object, node);
+      object.userData = { nodeIndex: index, nodeName: node.name };
+      objectsMapRef.current.set(index, object);
+    }
+
+    const currentMap = objectsMapRef.current;
+    const currentIndex = index;
+    return () => {
+      currentMap.delete(currentIndex);
+    };
+  }, [index, node, objectRef, objectsMapRef]);
+
+  useEffect(() => {
+    const object = objectRef.current;
+    if (object) {
+      applyNodeTransform(object, node);
+    }
+  }, [node, objectRef]);
 }
 
 export function EditorMap({
@@ -82,8 +130,8 @@ export function EditorMap({
       <axesHelper args={[10]} />
 
       <group
-        onClick={(e: unknown) => {
-          (e as { stopPropagation?: () => void }).stopPropagation?.();
+        onClick={(e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
           onSelectNode(null);
         }}
       >
@@ -142,68 +190,30 @@ function EditorModelNode({
   objectsMapRef,
   onSelectNode,
   onHoverNode,
-}: {
-  index: number;
-  node: MapNode;
+}: EditorNodeCommonProps & {
   modelUrl: string;
-  isSelected: boolean;
-  isHovered: boolean;
-  objectsMapRef: React.RefObject<Map<number, THREE.Object3D>>;
-  onSelectNode: (index: number | null) => void;
-  onHoverNode: (index: number | null) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelUrl);
 
   const sceneInstance = useMemo(() => scene.clone(true), [scene]);
-
-  useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...node.position);
-      groupRef.current.rotation.set(...node.rotation);
-      groupRef.current.scale.set(...node.scale);
-      groupRef.current.userData = { nodeIndex: index, nodeName: node.name };
-      objectsMapRef.current.set(index, groupRef.current);
-    }
-    const currentMap = objectsMapRef.current;
-    const currentIndex = index;
-    return () => {
-      currentMap.delete(currentIndex);
-    };
-  }, [
-    index,
-    node.name,
-    node.position,
-    node.rotation,
-    node.scale,
-    objectsMapRef,
-  ]);
-
-  useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...node.position);
-      groupRef.current.rotation.set(...node.rotation);
-      groupRef.current.scale.set(...node.scale);
-    }
-  }, [node.position, node.rotation, node.scale]);
+  useRegisteredEditorNode(groupRef, index, node, objectsMapRef);
 
   useEffect(() => {
     if (!groupRef.current) return;
 
     groupRef.current.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        if (
-          mesh.material &&
-          mesh.material instanceof THREE.MeshStandardMaterial
-        ) {
-          if (isSelected) {
-            mesh.material = mesh.material.clone();
-            (mesh.material as THREE.MeshStandardMaterial).color.set("#ffffff");
-          } else if (isHovered) {
-            mesh.material = mesh.material.clone();
-            (mesh.material as THREE.MeshStandardMaterial).color.set("#b8b8b8");
-          }
+      if (!(child instanceof THREE.Mesh)) {
+        return;
+      }
+
+      if (child.material instanceof THREE.MeshStandardMaterial) {
+        if (isSelected) {
+          child.material = child.material.clone();
+          child.material.color.set("#ffffff");
+        } else if (isHovered) {
+          child.material = child.material.clone();
+          child.material.color.set("#b8b8b8");
         }
       }
     });
@@ -216,16 +226,16 @@ function EditorModelNode({
       position={node.position}
       rotation={node.rotation}
       scale={node.scale}
-      onClick={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
         onSelectNode(index);
       }}
-      onPointerEnter={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
         onHoverNode(index);
       }}
-      onPointerLeave={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
         onHoverNode(null);
       }}
     />
@@ -240,46 +250,9 @@ function EditorFallbackNode({
   objectsMapRef,
   onSelectNode,
   onHoverNode,
-}: {
-  index: number;
-  node: MapNode;
-  isSelected: boolean;
-  isHovered: boolean;
-  objectsMapRef: React.RefObject<Map<number, THREE.Object3D>>;
-  onSelectNode: (index: number | null) => void;
-  onHoverNode: (index: number | null) => void;
-}) {
+}: EditorNodeCommonProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-
-  useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.position.set(...node.position);
-      meshRef.current.rotation.set(...node.rotation);
-      meshRef.current.scale.set(...node.scale);
-      meshRef.current.userData = { nodeIndex: index, nodeName: node.name };
-      objectsMapRef.current.set(index, meshRef.current);
-    }
-    const currentMap = objectsMapRef.current;
-    const currentIndex = index;
-    return () => {
-      currentMap.delete(currentIndex);
-    };
-  }, [
-    index,
-    node.name,
-    node.position,
-    node.rotation,
-    node.scale,
-    objectsMapRef,
-  ]);
-
-  useEffect(() => {
-    if (meshRef.current) {
-      meshRef.current.position.set(...node.position);
-      meshRef.current.rotation.set(...node.rotation);
-      meshRef.current.scale.set(...node.scale);
-    }
-  }, [node.position, node.rotation, node.scale]);
+  useRegisteredEditorNode(meshRef, index, node, objectsMapRef);
 
   const color = isSelected ? "#ffffff" : isHovered ? "#b8b8b8" : "#6f6f6f";
 
@@ -289,16 +262,16 @@ function EditorFallbackNode({
       position={node.position}
       rotation={node.rotation}
       scale={node.scale}
-      onClick={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
         onSelectNode(index);
       }}
-      onPointerEnter={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
         onHoverNode(index);
       }}
-      onPointerLeave={(e: unknown) => {
-        (e as { stopPropagation?: () => void }).stopPropagation?.();
+      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
         onHoverNode(null);
       }}
     >
