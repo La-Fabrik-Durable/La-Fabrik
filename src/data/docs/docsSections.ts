@@ -1,11 +1,11 @@
-export interface DocSection {
+interface DocSection {
   path: string;
   title: string;
   subtitle: string;
   meta: string;
 }
 
-export interface DocGroup {
+interface DocGroup {
   label: string;
   sections: DocSection[];
 }

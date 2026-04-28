@@ -72,12 +72,12 @@ This is useful for checking numeric transform values before saving or exporting.
 
 `Save to server` is available only during local development. It writes the edited map back to `public/map.json` through the Vite dev-server endpoint.
 
-The button is hidden in production builds because production persistence is not implemented yet.
+The button is hidden in production builds because production persistence is not implemented.
 
 ## Current Limitations
 
 - The editor only modifies existing nodes.
-- It does not create or delete objects yet.
+- It does not create or delete objects.
 - It does not edit model files or textures.
 - It does not provide production persistence.
 - Fallback cubes indicate missing models; they are editor placeholders, not exported assets.

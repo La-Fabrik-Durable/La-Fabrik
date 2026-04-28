@@ -2,7 +2,7 @@ import { createContext } from "react";
 
 export type DocsLanguage = "en" | "fr";
 
-export interface DocsLanguageContextValue {
+interface DocsLanguageContextValue {
   language: DocsLanguage;
   toggleLanguage: () => void;
 }

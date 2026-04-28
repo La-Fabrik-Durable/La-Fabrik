@@ -4,7 +4,13 @@ import { EditorControls } from "@/components/editor/EditorControls";
 import { EditorScene } from "@/components/editor/scene/EditorScene";
 import { useEditorHistory } from "@/hooks/editor/useEditorHistory";
 import { useEditorSceneData } from "@/hooks/editor/useEditorSceneData";
-import type { MapNode, TransformMode } from "@/types/editor";
+import type { MapNode, SceneData, TransformMode } from "@/types/editor";
+
+const SAVE_ERROR_MESSAGE = "Erreur lors de l'enregistrement";
+
+function serializeMapNodes(sceneData: SceneData): string {
+  return JSON.stringify(sceneData.mapNodes, null, 2);
+}
 
 export function EditorPage(): React.JSX.Element {
   const {
@@ -46,7 +52,7 @@ export function EditorPage(): React.JSX.Element {
 
   const handleSaveToServer = useCallback(async () => {
     if (!sceneData) return;
-    const json = JSON.stringify(sceneData.mapNodes, null, 2);
+    const json = serializeMapNodes(sceneData);
 
     try {
       const response = await fetch("/api/save-map", {
@@ -58,17 +64,17 @@ export function EditorPage(): React.JSX.Element {
       if (response.ok) {
         alert("Map enregistrée avec succès!");
       } else {
-        alert("Erreur lors de l'enregistrement");
+        alert(SAVE_ERROR_MESSAGE);
       }
     } catch (err) {
       console.error("Error saving map:", err);
-      alert("Erreur lors de l'enregistrement");
+      alert(SAVE_ERROR_MESSAGE);
     }
   }, [sceneData]);
 
   const handleExportJson = useCallback(() => {
     if (!sceneData) return;
-    const json = JSON.stringify(sceneData.mapNodes, null, 2);
+    const json = serializeMapNodes(sceneData);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

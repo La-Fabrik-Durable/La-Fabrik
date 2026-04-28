@@ -8,12 +8,13 @@ import {
   PLAYER_EYE_HEIGHT,
   PLAYER_SPAWN_POSITION_GAME,
 } from "@/data/player/playerConfig";
+import type { Vector3Tuple } from "@/types/3d";
 
-const DEBUG_CAMERA_TARGET = [
+const DEBUG_CAMERA_TARGET: Vector3Tuple = [
   PLAYER_SPAWN_POSITION_GAME[0],
   PLAYER_EYE_HEIGHT,
   PLAYER_SPAWN_POSITION_GAME[2],
-] as const;
+];
 
 export function DebugCameraControls(): React.JSX.Element {
   return (

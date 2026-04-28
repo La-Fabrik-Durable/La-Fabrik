@@ -2,6 +2,7 @@ import type { MapNode, SceneData } from "@/types/editor";
 
 const MAP_JSON_PATH = "/map.json";
 const MODEL_FILE_NAME = "model.gltf";
+type ModelEntry = [modelName: string, modelUrl: string];
 
 export async function loadMapSceneData(): Promise<SceneData | null> {
   const response = await fetch(MAP_JSON_PATH);
@@ -29,7 +30,8 @@ async function loadMapModelUrls(
 
       try {
         const response = await fetch(modelUrl, { method: "HEAD" });
-        return response.ok ? ([modelName, modelUrl] as const) : null;
+        const modelEntry: ModelEntry = [modelName, modelUrl];
+        return response.ok ? modelEntry : null;
       } catch {
         return null;
       }

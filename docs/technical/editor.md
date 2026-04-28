@@ -20,18 +20,19 @@ src/
 ├── pages/
 │   └── editor/
 │       └── EditorPage.tsx
-├── features/
+├── components/
 │   └── editor/
-│       ├── components/
-│       │   └── EditorControls.tsx
-│       ├── controls/
-│       │   └── FlyController.tsx
-│       ├── hooks/
-│       │   ├── useEditorHistory.ts
-│       │   └── useEditorSceneData.ts
-│       ├── scene/
-│       │   ├── EditorMap.tsx
-│       │   └── EditorScene.tsx
+│       ├── EditorControls.tsx
+│       └── scene/
+│           ├── EditorMap.tsx
+│           └── EditorScene.tsx
+├── controls/
+│   └── editor/
+│       └── FlyController.tsx
+├── hooks/
+│   └── editor/
+│       ├── useEditorHistory.ts
+│       └── useEditorSceneData.ts
 ├── types/
 │   └── editor.ts
 └── utils/
@@ -44,17 +45,17 @@ src/
 
 `src/pages/editor/EditorPage.tsx` is the route-level composition component. It owns route-specific state such as selected object, hovered object, transform mode, and player-mode toggle.
 
-`src/features/editor/hooks/useEditorSceneData.ts` loads the default map data and handles folder uploads.
+`src/hooks/editor/useEditorSceneData.ts` loads the default map data and handles folder uploads.
 
-`src/features/editor/hooks/useEditorHistory.ts` owns editor undo and redo history.
+`src/hooks/editor/useEditorHistory.ts` owns editor undo and redo history.
 
-`src/features/editor/scene/EditorScene.tsx` composes the editor canvas scene, camera controls, lights, keyboard shortcuts, and `EditorMap`.
+`src/components/editor/scene/EditorScene.tsx` composes the editor canvas scene, camera controls, lights, keyboard shortcuts, and `EditorMap`.
 
-`src/features/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls.
+`src/components/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls.
 
-`src/features/editor/components/EditorControls.tsx` renders the HTML control panel outside the canvas.
+`src/components/editor/EditorControls.tsx` renders the HTML control panel outside the canvas.
 
-`src/features/editor/controls/FlyController.tsx` provides editor movement controls for player-style navigation.
+`src/controls/editor/FlyController.tsx` provides editor movement controls for player-style navigation.
 
 `src/utils/loadMapSceneData.ts` is shared by the game map and editor. It loads `/map.json` and resolves available `public/models/{name}/model.gltf` files.
 
@@ -138,6 +139,6 @@ Editor styles are in `src/index.css` under the `/* Editor page */` section. Clas
 ## Known Limitations
 
 - Uploaded model object URLs are not currently revoked after replacement or unmount.
-- Large `map.json` files may need virtualization, culling, or LOD support later.
-- There is no snap-to-grid, duplication, material editing, or object creation workflow yet.
+- Large `map.json` files are not virtualized, culled, or LOD-managed.
+- There is no snap-to-grid, duplication, material editing, or object creation workflow.
 - Save to Server is a Vite dev-server helper, not a production backend API.

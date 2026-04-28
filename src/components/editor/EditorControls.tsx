@@ -31,6 +31,20 @@ interface EditorControlsProps {
   isPlayerMode?: boolean;
 }
 
+const TRANSFORM_OPTIONS = [
+  { mode: "translate", label: "Translate", shortcut: "T", Icon: Move3D },
+  { mode: "rotate", label: "Rotate", shortcut: "R", Icon: RotateCw },
+  { mode: "scale", label: "Scale", shortcut: "S", Icon: Expand },
+] as const;
+
+const EDITOR_SHORTCUTS = [
+  ["Click", "Select object"],
+  ["T / R / S", "Transform mode"],
+  ["Ctrl Z / Y", "Undo / redo"],
+  ["Esc", "Deselect"],
+  ["WASD", "Move when locked"],
+] as const;
+
 export function EditorControls({
   transformMode,
   onTransformModeChange,
@@ -69,33 +83,18 @@ export function EditorControls({
           </div>
 
           <div className="editor-transform-buttons">
-            <button
-              className={`editor-transform-button ${transformMode === "translate" ? "active" : ""}`}
-              onClick={() => onTransformModeChange("translate")}
-              aria-pressed={transformMode === "translate"}
-            >
-              <Move3D size={16} aria-hidden="true" />
-              <span>Translate</span>
-              <kbd>T</kbd>
-            </button>
-            <button
-              className={`editor-transform-button ${transformMode === "rotate" ? "active" : ""}`}
-              onClick={() => onTransformModeChange("rotate")}
-              aria-pressed={transformMode === "rotate"}
-            >
-              <RotateCw size={16} aria-hidden="true" />
-              <span>Rotate</span>
-              <kbd>R</kbd>
-            </button>
-            <button
-              className={`editor-transform-button ${transformMode === "scale" ? "active" : ""}`}
-              onClick={() => onTransformModeChange("scale")}
-              aria-pressed={transformMode === "scale"}
-            >
-              <Expand size={16} aria-hidden="true" />
-              <span>Scale</span>
-              <kbd>S</kbd>
-            </button>
+            {TRANSFORM_OPTIONS.map(({ mode, label, shortcut, Icon }) => (
+              <button
+                key={mode}
+                className={`editor-transform-button ${transformMode === mode ? "active" : ""}`}
+                onClick={() => onTransformModeChange(mode)}
+                aria-pressed={transformMode === mode}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>{label}</span>
+                <kbd>{shortcut}</kbd>
+              </button>
+            ))}
           </div>
 
           <div className="editor-history-buttons">
@@ -203,26 +202,12 @@ export function EditorControls({
           </div>
 
           <dl className="editor-shortcuts-list">
-            <div>
-              <dt>Click</dt>
-              <dd>Select object</dd>
-            </div>
-            <div>
-              <dt>T / R / S</dt>
-              <dd>Transform mode</dd>
-            </div>
-            <div>
-              <dt>Ctrl Z / Y</dt>
-              <dd>Undo / redo</dd>
-            </div>
-            <div>
-              <dt>Esc</dt>
-              <dd>Deselect</dd>
-            </div>
-            <div>
-              <dt>WASD</dt>
-              <dd>Move when locked</dd>
-            </div>
+            {EDITOR_SHORTCUTS.map(([keys, description]) => (
+              <div key={keys}>
+                <dt>{keys}</dt>
+                <dd>{description}</dd>
+              </div>
+            ))}
           </dl>
         </section>
 
