@@ -13,21 +13,23 @@ const STATUS_LABELS: Record<HandTrackingStatus, string> = {
 };
 
 export function HandTrackingOverlay(): React.JSX.Element | null {
-  const { hands, status, serverStatus, error } = useHandTrackingSnapshot();
+  const { hands, status, usageStatus, serverStatus, error } =
+    useHandTrackingSnapshot();
 
   if (status === "idle") {
     return null;
   }
 
-  const pinching = hands.some((hand) => hand.isPinch);
+  const fist = hands.some((hand) => hand.isFist);
 
   return (
     <aside className="hand-tracking-overlay" aria-label="Hand tracking status">
       <strong>Hand tracking</strong>
       <span>Status: {STATUS_LABELS[status]}</span>
+      <span>Usage: {usageStatus}</span>
       {serverStatus ? <span>Server: {serverStatus}</span> : null}
       <span>Hands: {hands.length}</span>
-      <span>Pinch: {pinching ? "yes" : "no"}</span>
+      <span>Fist: {fist ? "yes" : "no"}</span>
       {error ? (
         <span className="hand-tracking-overlay__error">{error}</span>
       ) : null}

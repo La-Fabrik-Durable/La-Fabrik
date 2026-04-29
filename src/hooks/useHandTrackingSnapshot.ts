@@ -4,6 +4,7 @@ import type { HandTrackingSnapshot } from "@/types/handTracking";
 export const HAND_TRACKING_IDLE_SNAPSHOT: HandTrackingSnapshot = {
   hands: [],
   status: "idle",
+  usageStatus: "inactive",
   serverStatus: null,
   error: null,
 };

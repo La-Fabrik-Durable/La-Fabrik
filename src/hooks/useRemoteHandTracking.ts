@@ -22,6 +22,7 @@ interface UseRemoteHandTrackingOptions {
 const INITIAL_SNAPSHOT: HandTrackingSnapshot = {
   hands: [],
   status: "idle",
+  usageStatus: "inactive",
   serverStatus: null,
   error: null,
 };
@@ -144,6 +145,7 @@ export function useRemoteHandTracking({
       setSnapshot({
         hands: [],
         status: "requesting_camera",
+        usageStatus: "available",
         serverStatus: null,
         error: null,
       });
@@ -193,6 +195,7 @@ export function useRemoteHandTracking({
           setSnapshot((current) => ({
             ...current,
             status: "connected",
+            usageStatus: "available",
             error: null,
           }));
         };
@@ -204,6 +207,9 @@ export function useRemoteHandTracking({
             setSnapshot((current) => ({
               ...current,
               hands: data.hands,
+              usageStatus: data.hands.some((hand) => hand.isFist)
+                ? "active"
+                : "available",
               serverStatus: null,
               error: null,
             }));
@@ -222,6 +228,7 @@ export function useRemoteHandTracking({
             ...current,
             hands: [],
             status: "error",
+            usageStatus: "inactive",
             error: data.message,
           }));
         };
@@ -254,6 +261,7 @@ export function useRemoteHandTracking({
         setSnapshot({
           hands: [],
           status: "error",
+          usageStatus: "inactive",
           serverStatus: null,
           error:
             error instanceof Error ? error.message : "Hand tracking failed",

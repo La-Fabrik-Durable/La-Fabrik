@@ -10,10 +10,11 @@ export interface HandTrackingHand {
   z: number;
   landmarks: HandTrackingLandmark[];
   handedness: string;
-  isPinch: boolean;
-  pinchDistance: number;
+  isFist: boolean;
   score: number;
 }
+
+export type HandTrackingUsageStatus = "inactive" | "available" | "active";
 
 export type HandTrackingStatus =
   | "idle"
@@ -28,6 +29,7 @@ export type HandTrackingStatus =
 export interface HandTrackingSnapshot {
   hands: HandTrackingHand[];
   status: HandTrackingStatus;
+  usageStatus: HandTrackingUsageStatus;
   serverStatus: string | null;
   error: string | null;
 }
