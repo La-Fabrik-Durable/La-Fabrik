@@ -92,14 +92,14 @@ export function GrabbableObject({
   useFrame(() => {
     if (!rbRef.current) return;
 
-    const pinchingHand = handControlled
-      ? hands.find((hand) => hand.isPinch)
+    const fistHand = handControlled
+      ? hands.find((hand) => hand.isFist)
       : undefined;
 
-    if (!isHolding.current && !pinchingHand) return;
+    if (!isHolding.current && !fistHand) return;
 
-    if (pinchingHand) {
-      _handNdc.set((1 - pinchingHand.x) * 2 - 1, -pinchingHand.y * 2 + 1, 0.5);
+    if (fistHand) {
+      _handNdc.set((1 - fistHand.x) * 2 - 1, -fistHand.y * 2 + 1, 0.5);
       _handNdc.unproject(camera);
       _handDirection.subVectors(_handNdc, camera.position).normalize();
       _holdTarget

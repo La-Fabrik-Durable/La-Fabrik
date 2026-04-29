@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
+import { useInteraction } from "@/hooks/useInteraction";
 import {
   HAND_TRACKING_IDLE_SNAPSHOT,
   HandTrackingContext,
@@ -13,7 +14,10 @@ export function HandTrackingProvider({
   children: ReactNode;
 }): React.JSX.Element {
   const sceneMode = useSceneMode();
-  const enabled = isDebugEnabled() && sceneMode === "physics";
+  const { focused, holding } = useInteraction();
+  const isInInteractionZone = focused !== null || holding;
+  const enabled =
+    isDebugEnabled() && sceneMode === "physics" && isInInteractionZone;
   const snapshot = useRemoteHandTracking({ enabled });
 
   return (

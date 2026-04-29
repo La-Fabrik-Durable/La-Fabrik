@@ -2,7 +2,7 @@
 
 Remote-compatible Python backend for La-Fabrik hand tracking.
 
-The browser captures webcam frames, downsizes them, sends JPEG frames to this backend over WebSocket, and receives hand landmarks plus pinch state.
+The browser captures webcam frames, downsizes them, sends JPEG frames to this backend over WebSocket, and receives hand landmarks plus closed-fist state.
 
 ## Setup
 
@@ -76,8 +76,7 @@ Server responds with detected hands:
         }
       ],
       "handedness": "Right",
-      "isPinch": true,
-      "pinchDistance": 0.05,
+      "isFist": true,
       "score": 0.92
     }
   ]

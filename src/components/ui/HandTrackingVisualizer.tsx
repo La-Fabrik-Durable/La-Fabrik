@@ -37,7 +37,7 @@ export function HandTrackingVisualizer(): React.JSX.Element | null {
         const landmarks = hand.landmarks ?? [];
         if (landmarks.length === 0) return null;
 
-        const color = hand.isPinch ? "#facc15" : "#38bdf8";
+        const color = hand.isFist ? "#facc15" : "#38bdf8";
 
         return (
           <g key={`${hand.handedness}-${handIndex}`}>

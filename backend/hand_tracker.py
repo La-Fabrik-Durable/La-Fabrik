@@ -21,8 +21,7 @@ class HandData:
     z: float
     landmarks: list[dict[str, float]]
     handedness: str
-    is_pinch: bool
-    pinch_distance: float
+    is_fist: bool
     score: float
 
     def to_payload(self) -> dict[str, float | str | bool | list[dict[str, float]]]:
@@ -32,8 +31,7 @@ class HandData:
             "z": self.z,
             "landmarks": self.landmarks,
             "handedness": self.handedness,
-            "isPinch": self.is_pinch,
-            "pinchDistance": self.pinch_distance,
+            "isFist": self.is_fist,
             "score": self.score,
         }
 
@@ -79,8 +77,7 @@ class HandTracker:
             result.handedness,
         ):
             index_tip = landmarks[8]
-            thumb_tip = landmarks[4]
-            pinch_distance = self._calculate_distance(index_tip, thumb_tip)
+            is_fist = self._is_fist(landmarks)
             handedness = handedness_categories[0]
 
             hands.append(
@@ -93,20 +90,50 @@ class HandTracker:
                         for point in landmarks
                     ],
                     handedness=handedness.category_name,
-                    is_pinch=pinch_distance < 0.07,
-                    pinch_distance=pinch_distance,
+                    is_fist=is_fist,
                     score=handedness.score,
                 ),
             )
 
         return hands
 
+    def _is_fist(self, landmarks: list[Any]) -> bool:
+        palm_center = self._average_points(
+            [landmarks[0], landmarks[5], landmarks[9], landmarks[13], landmarks[17]],
+        )
+        palm_size = self._calculate_distance(landmarks[0], landmarks[9])
+        if palm_size <= 0:
+            return False
+
+        folded_finger_count = sum(
+            self._calculate_distance(landmarks[index], palm_center) / palm_size < 1.05
+            for index in (8, 12, 16, 20)
+        )
+
+        return folded_finger_count >= 4
+
+    def _average_points(self, points: list[Any]) -> dict[str, float]:
+        return {
+            "x": sum(point.x for point in points) / len(points),
+            "y": sum(point.y for point in points) / len(points),
+            "z": sum(point.z for point in points) / len(points),
+        }
+
     def _calculate_distance(self, point_a: Any, point_b: Any) -> float:
         return math.sqrt(
-            (point_a.x - point_b.x) ** 2
-            + (point_a.y - point_b.y) ** 2
-            + (point_a.z - point_b.z) ** 2,
+            (self._get_coordinate(point_a, "x") - self._get_coordinate(point_b, "x"))
+            ** 2
+            + (self._get_coordinate(point_a, "y") - self._get_coordinate(point_b, "y"))
+            ** 2
+            + (self._get_coordinate(point_a, "z") - self._get_coordinate(point_b, "z"))
+            ** 2,
         )
+
+    def _get_coordinate(self, point: Any, axis: str) -> float:
+        if isinstance(point, dict):
+            return point[axis]
+
+        return getattr(point, axis)
 
 
 def now_ms() -> int:
