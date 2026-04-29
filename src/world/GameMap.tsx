@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import type { ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
@@ -9,6 +10,41 @@ import type { MapNode } from "@/types/editor";
 interface LoadedMapNode {
   node: MapNode;
   modelUrl: string;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ModelErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error): void {
+    console.warn("Failed to load model", error);
+  }
+
+  render(): ReactNode {
+    if (this.state.hasError) {
+      return this.props.fallback ?? null;
+    }
+
+    return this.props.children;
+  }
 }
 
 interface GameMapProps {
@@ -59,12 +95,10 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
   return (
     <group ref={groupRef}>
       {!isLoading &&
-        mapNodes.map((node, index) => (
-          <ModelInstance
-            key={index}
-            node={node.node}
-            modelUrl={node.modelUrl}
-          />
+        mapNodes.map((mapNode, index) => (
+          <ModelErrorBoundary key={index}>
+            <ModelInstance node={mapNode.node} modelUrl={mapNode.modelUrl} />
+          </ModelErrorBoundary>
         ))}
     </group>
   );
