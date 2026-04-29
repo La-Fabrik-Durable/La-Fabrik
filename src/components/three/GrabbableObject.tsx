@@ -64,6 +64,7 @@ export function GrabbableObject({
   const rbRef = useRef<RapierRigidBody>(null);
   const isHolding = useRef(false);
   const isHandHolding = useRef(false);
+  const handHoldDistance = useRef<number | null>(null);
 
   useDebugFolder("GrabbableObject", (folder) => {
     folder
@@ -123,17 +124,23 @@ export function GrabbableObject({
           : [];
 
         isHandHolding.current = isObjectInRange && hits.length > 0;
+        handHoldDistance.current = isHandHolding.current
+          ? hits[0].distance
+          : null;
       }
     } else {
       isHandHolding.current = false;
+      handHoldDistance.current = null;
     }
 
     if (!isHolding.current && !isHandHolding.current) return;
 
     if (fistHand && isHandHolding.current) {
+      const holdDistance = handHoldDistance.current ?? params.holdDistance;
+
       _holdTarget
         .copy(_cameraPos)
-        .addScaledVector(_handDirection, params.holdDistance);
+        .addScaledVector(_handDirection, holdDistance);
     } else {
       camera.getWorldDirection(_holdTarget);
       _holdTarget.multiplyScalar(params.holdDistance).add(camera.position);

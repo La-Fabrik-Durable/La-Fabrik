@@ -76,15 +76,17 @@ class HandTracker:
             result.hand_landmarks,
             result.handedness,
         ):
-            index_tip = landmarks[8]
+            palm_center = self._average_points(
+                [landmarks[0], landmarks[5], landmarks[9], landmarks[13], landmarks[17]],
+            )
             is_fist = self._is_fist(landmarks)
             handedness = handedness_categories[0]
 
             hands.append(
                 HandData(
-                    x=index_tip.x,
-                    y=index_tip.y,
-                    z=index_tip.z,
+                    x=palm_center["x"],
+                    y=palm_center["y"],
+                    z=palm_center["z"],
                     landmarks=[
                         {"x": point.x, "y": point.y, "z": point.z}
                         for point in landmarks
