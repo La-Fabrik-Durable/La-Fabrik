@@ -68,6 +68,13 @@ Server responds with detected hands:
       "x": 0.5,
       "y": 0.3,
       "z": 0.1,
+      "landmarks": [
+        {
+          "x": 0.48,
+          "y": 0.32,
+          "z": 0.02
+        }
+      ],
       "handedness": "Right",
       "isPinch": true,
       "pinchDistance": 0.05,
