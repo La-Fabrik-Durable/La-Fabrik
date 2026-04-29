@@ -1,7 +1,14 @@
+export interface HandTrackingLandmark {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface HandTrackingHand {
   x: number;
   y: number;
   z: number;
+  landmarks: HandTrackingLandmark[];
   handedness: string;
   isPinch: boolean;
   pinchDistance: number;

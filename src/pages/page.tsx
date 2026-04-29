@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Crosshair } from "@/components/ui/Crosshair";
 import { HandTrackingOverlay } from "@/components/ui/HandTrackingOverlay";
 import { HandTrackingProvider } from "@/components/ui/HandTrackingProvider";
+import { HandTrackingVisualizer } from "@/components/ui/HandTrackingVisualizer";
 import { InteractPrompt } from "@/components/ui/InteractPrompt";
 import { DebugPerf } from "@/components/debug/DebugPerf";
 import { World } from "@/world/World";
@@ -18,6 +19,7 @@ export function HomePage(): React.JSX.Element {
       </Canvas>
       <Crosshair />
       <InteractPrompt />
+      <HandTrackingVisualizer />
       <HandTrackingOverlay />
     </HandTrackingProvider>
   );

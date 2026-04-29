@@ -418,6 +418,16 @@ canvas {
   color: #fca5a5;
 }
 
+.hand-tracking-visualizer {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.55));
+}
+
 /* Editor page */
 .editor-container {
   position: fixed;

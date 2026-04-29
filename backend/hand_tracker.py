@@ -19,16 +19,18 @@ class HandData:
     x: float
     y: float
     z: float
+    landmarks: list[dict[str, float]]
     handedness: str
     is_pinch: bool
     pinch_distance: float
     score: float
 
-    def to_payload(self) -> dict[str, float | str | bool]:
+    def to_payload(self) -> dict[str, float | str | bool | list[dict[str, float]]]:
         return {
             "x": self.x,
             "y": self.y,
             "z": self.z,
+            "landmarks": self.landmarks,
             "handedness": self.handedness,
             "isPinch": self.is_pinch,
             "pinchDistance": self.pinch_distance,
@@ -86,6 +88,10 @@ class HandTracker:
                     x=index_tip.x,
                     y=index_tip.y,
                     z=index_tip.z,
+                    landmarks=[
+                        {"x": point.x, "y": point.y, "z": point.z}
+                        for point in landmarks
+                    ],
                     handedness=handedness.category_name,
                     is_pinch=pinch_distance < 0.07,
                     pinch_distance=pinch_distance,
