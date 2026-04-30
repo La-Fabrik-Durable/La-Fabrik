@@ -48,25 +48,24 @@ la-fabrik/
 │   └── sounds/
 │
 └── src/
-    ├── world/                              # Single persistent 3D world
-    │   ├── World.tsx                       # Main scene composition
-    │   ├── Map.tsx                         # Base map, always mounted
+    ├── world/                              # Persistent 3D world composition
+    │   ├── World.tsx                       # Active scene composition
+    │   ├── GameMap.tsx                     # Map loading and octree collision
     │   ├── Lighting.tsx                    # Ambient, directional, point lights
-    │   ├── Environment.tsx                 # HDRI, fog, sky
-    │   ├── PostFX.tsx                      # Bloom, SSAO, chromatic aberration
-    │   ├── zones/                          # Spatial zones — LOD per zone
-    │   │   ├── WorkshopZone.tsx
-    │   │   ├── PowerGridZone.tsx
-    │   │   ├── FarmZone.tsx
-    │   │   ├── SchoolZone.tsx
-    │   │   └── ResidentialZone.tsx
+    │   ├── Environment.tsx                 # Scene background / sky model
+    │   ├── GameMusic.tsx                   # Game scene music lifecycle
+    │   ├── debug/                          # Debug-only test scene
+    │   │   └── TestMap.tsx
     │   └── player/
     │       ├── FPSController.tsx           # PointerLockControls + Rapier movement
     │       └── Crosshair.tsx
     │
     ├── components/
-    │   ├── 3d/                             # Shared reusable 3D elements
-    │   │   └── InteractiveObject.tsx       # Raycasting + outline wrapper
+    │   ├── three/                          # Shared R3F components by domain
+    │   │   ├── gameplay/repairGame/        # Core repair gameplay prototype
+    │   │   ├── interaction/                # Trigger, grab, focus wrappers
+    │   │   ├── models/                     # GLTF model components
+    │   │   └── world/                      # Environment-specific 3D objects
     │   └── ui/                             # HTML overlays — outside Canvas
     │       ├── NarrativeOverlay.tsx        # Floating dialogues
     │       ├── MissionHUD.tsx              # Current objective
@@ -74,11 +73,9 @@ la-fabrik/
     │       ├── CinematicBars.tsx           # GSAP black bars
     │       └── LoadingScreen.tsx           # Asset progress
     │
-    ├── stateManager/                       # All logic, state, orchestration
-    │   ├── GameManager.ts                  # Single source of truth: phase, zone, mission
-    │   ├── CinematicManager.ts             # GSAP timelines, camera lock/unlock
-    │   ├── AudioManager.ts                 # Music, SFX, spatial audio
-    │   └── ZoneManager.ts                  # Zone detection, LOD triggers
+    ├── managers/                           # Current singleton-style services
+    │   ├── AudioManager.ts                 # Music and SFX playback
+    │   └── InteractionManager.ts           # Focus, nearby, grab state
     │
     ├── hooks/                              # React hooks — thin wrappers on managers
     │   ├── useGameState.ts                 # Subscribes to GameManager
@@ -89,9 +86,10 @@ la-fabrik/
     │   └── useLOD.ts
     │
     ├── data/
-    │   ├── zones.ts                        # { id, position, radius, missionId }
-    │   ├── dialogues.ts                    # Narrative scripts, PNJ states
-    │   └── missions.ts                     # Mission definitions, steps
+    │   ├── interaction/                    # Interaction tuning
+    │   ├── player/                         # Player tuning
+    │   ├── repairGame/                     # Repair gameplay static config
+    │   └── world/                          # Environment and lighting config
     │
     ├── shaders/
     │   └── hologram/

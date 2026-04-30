@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import type { Vector3Tuple } from "@/types/three";
 
@@ -24,6 +25,7 @@ export function SimpleModel({
   children,
 }: SimpleModelProps): React.JSX.Element {
   const { scene } = useGLTF(modelPath);
+  const model = useMemo(() => scene.clone(true), [scene]);
 
   const parsedScale =
     typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
@@ -32,7 +34,7 @@ export function SimpleModel({
     <group position={position} rotation={rotation} scale={parsedScale}>
       {children ?? (
         <primitive
-          object={scene.clone()}
+          object={model}
           castShadow={castShadow}
           receiveShadow={receiveShadow}
         />

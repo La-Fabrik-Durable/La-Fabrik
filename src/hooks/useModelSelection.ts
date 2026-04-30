@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ModelCatalogItem } from "@/data/mainFeature/modelCatalog";
+import type { ModelCatalogItem } from "@/data/repairGame/repairGameModelCatalog";
 
 interface UseModelSelectionResult {
   isOpen: boolean;

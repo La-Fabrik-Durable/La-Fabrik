@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { RigidBody } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
-import { InteractableObject } from "@/components/three/InteractableObject";
+import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import {
   GRAB_DEFAULT_COLLIDERS,
   GRAB_DEFAULT_LABEL,
@@ -39,7 +39,7 @@ interface GrabbableObjectProps {
 }
 
 // Shared params let one debug folder drive every instance.
-const params = {
+const grabDebugParams = {
   stiffness: GRAB_STIFFNESS_DEFAULT,
   throwBoost: GRAB_THROW_BOOST_DEFAULT,
   holdDistance: GRAB_HOLD_DISTANCE_DEFAULT,
@@ -137,7 +137,7 @@ export function GrabbableObject({
   useDebugFolder("GrabbableObject", (folder) => {
     folder
       .add(
-        params,
+        grabDebugParams,
         "stiffness",
         GRAB_STIFFNESS_MIN,
         GRAB_STIFFNESS_MAX,
@@ -146,7 +146,7 @@ export function GrabbableObject({
       .name("Hold stiffness");
     folder
       .add(
-        params,
+        grabDebugParams,
         "throwBoost",
         GRAB_THROW_BOOST_MIN,
         GRAB_THROW_BOOST_MAX,
@@ -155,7 +155,7 @@ export function GrabbableObject({
       .name("Throw boost");
     folder
       .add(
-        params,
+        grabDebugParams,
         "holdDistance",
         GRAB_HOLD_DISTANCE_MIN,
         GRAB_HOLD_DISTANCE_MAX,
@@ -211,7 +211,8 @@ export function GrabbableObject({
           ? 0
           : (fistHand.z - handHoldStartZ.current) * HAND_DEPTH_SENSITIVITY;
       const holdDistance = THREE.MathUtils.clamp(
-        (handHoldDistance.current ?? params.holdDistance) + depthOffset,
+        (handHoldDistance.current ?? grabDebugParams.holdDistance) +
+          depthOffset,
         GRAB_HOLD_DISTANCE_MIN,
         GRAB_HOLD_DISTANCE_MAX,
       );
@@ -221,12 +222,14 @@ export function GrabbableObject({
         .addScaledVector(_handDirection, holdDistance);
     } else {
       camera.getWorldDirection(_holdTarget);
-      _holdTarget.multiplyScalar(params.holdDistance).add(camera.position);
+      _holdTarget
+        .multiplyScalar(grabDebugParams.holdDistance)
+        .add(camera.position);
     }
 
     _velocity
       .subVectors(_holdTarget, _currentPos)
-      .multiplyScalar(params.stiffness);
+      .multiplyScalar(grabDebugParams.stiffness);
 
     rbRef.current.setLinvel(
       { x: _velocity.x, y: _velocity.y, z: _velocity.z },
@@ -255,15 +258,15 @@ export function GrabbableObject({
             isHolding.current = false;
             if (
               !rbRef.current ||
-              params.throwBoost === GRAB_THROW_BOOST_DEFAULT
+              grabDebugParams.throwBoost === GRAB_THROW_BOOST_DEFAULT
             )
               return;
             const v = rbRef.current.linvel();
             rbRef.current.setLinvel(
               {
-                x: v.x * params.throwBoost,
-                y: v.y * params.throwBoost,
-                z: v.z * params.throwBoost,
+                x: v.x * grabDebugParams.throwBoost,
+                y: v.y * grabDebugParams.throwBoost,
+                z: v.z * grabDebugParams.throwBoost,
               },
               true,
             );

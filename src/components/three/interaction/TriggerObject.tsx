@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { RigidBody } from "@react-three/rapier";
-import { InteractableObject } from "@/components/three/InteractableObject";
+import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import {
   TRIGGER_DEFAULT_COLLIDERS,
   TRIGGER_DEFAULT_LABEL,
@@ -28,7 +28,7 @@ interface TriggerObjectProps {
   onTrigger?: () => void;
 }
 
-let _spawnCounter = 0;
+let spawnCounter = 0;
 
 function SpawnedModelInstance({
   path,
@@ -38,7 +38,9 @@ function SpawnedModelInstance({
   position: Vector3Tuple;
 }): React.JSX.Element {
   const { scene } = useGLTF(path);
-  return <primitive object={scene.clone()} position={position} />;
+  const model = useMemo(() => scene.clone(true), [scene]);
+
+  return <primitive object={model} position={position} />;
 }
 
 export function TriggerObject({
@@ -76,7 +78,7 @@ export function TriggerObject({
               ];
               setSpawned((prev) => [
                 ...prev,
-                { id: ++_spawnCounter, position: spawnPos },
+                { id: ++spawnCounter, position: spawnPos },
               ]);
             }
           }}

@@ -106,9 +106,9 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 ## Modèle d'interaction
 
 - \`src/managers/InteractionManager.ts\` est la source d'état actuelle des interactions.
-- \`src/components/three/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
-- \`src/components/three/TriggerObject.tsx\` implémente les interactions de type trigger.
-- \`src/components/three/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
+- \`src/components/three/interaction/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
+- \`src/components/three/interaction/TriggerObject.tsx\` implémente les interactions de type trigger.
+- \`src/components/three/interaction/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
 - \`src/hooks/useInteraction.ts\` expose un snapshot d'interaction à l'UI React.
 - \`src/components/ui/InteractPrompt.tsx\` affiche le prompt \`E\` pour les interactions trigger.
 
