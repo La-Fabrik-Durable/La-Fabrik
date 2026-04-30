@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import gsap from "gsap";
 import * as THREE from "three";
 import type { Vector3Tuple } from "@/types/three";
 
@@ -13,8 +13,9 @@ interface RepairCaseModelProps {
 }
 
 const CASE_LID_NODE_NAME = "partiesup";
-const CASE_OPEN_ANGLE = THREE.MathUtils.degToRad(115);
-const CASE_OPEN_SPEED = 7;
+const CASE_OPEN_ROTATION_OFFSET_Z = 0;
+const CASE_CLOSED_ROTATION_OFFSET_Z = THREE.MathUtils.degToRad(-115);
+const CASE_ANIMATION_DURATION = 1.2;
 
 export function RepairCaseModel({
   modelPath,
@@ -26,29 +27,39 @@ export function RepairCaseModel({
   const { scene } = useGLTF(modelPath);
   const model = useMemo(() => scene.clone(true), [scene]);
   const lidRef = useRef<THREE.Object3D | null>(null);
-  const closedRotationX = useRef(0);
+  const initialOpen = useRef(open);
+  const openedRotationZ = useRef(0);
   const parsedScale =
     typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
 
   useEffect(() => {
     const lid = model.getObjectByName(CASE_LID_NODE_NAME);
     lidRef.current = lid ?? null;
-    closedRotationX.current = lid?.rotation.x ?? 0;
+    openedRotationZ.current = lid?.rotation.z ?? 0;
+
+    if (lid && !initialOpen.current) {
+      lid.rotation.z = openedRotationZ.current + CASE_CLOSED_ROTATION_OFFSET_Z;
+    }
   }, [model]);
 
-  useFrame((_, delta) => {
+  useEffect(() => {
     const lid = lidRef.current;
     if (!lid) return;
 
     const targetRotation =
-      closedRotationX.current - (open ? CASE_OPEN_ANGLE : 0);
-    lid.rotation.x = THREE.MathUtils.damp(
-      lid.rotation.x,
-      targetRotation,
-      CASE_OPEN_SPEED,
-      delta,
-    );
-  });
+      openedRotationZ.current +
+      (open ? CASE_OPEN_ROTATION_OFFSET_Z : CASE_CLOSED_ROTATION_OFFSET_Z);
+    gsap.to(lid.rotation, {
+      z: targetRotation,
+      duration: CASE_ANIMATION_DURATION,
+      ease: "power2.inOut",
+      overwrite: true,
+    });
+
+    return () => {
+      gsap.killTweensOf(lid.rotation);
+    };
+  }, [open]);
 
   return (
     <group position={position} rotation={rotation} scale={parsedScale}>

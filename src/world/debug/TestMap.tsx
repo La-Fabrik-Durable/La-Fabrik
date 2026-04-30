@@ -24,13 +24,11 @@ import {
 import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/three";
 
-interface TestSceneProps {
+interface TestMapProps {
   onOctreeReady: OctreeReadyHandler;
 }
 
-export function TestScene({
-  onOctreeReady,
-}: TestSceneProps): React.JSX.Element {
+export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
   const floorRef = useRef<THREE.Group>(null);
 
   useOctreeGraphNode(floorRef, onOctreeReady);

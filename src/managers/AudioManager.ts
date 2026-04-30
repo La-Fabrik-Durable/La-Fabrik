@@ -1,5 +1,9 @@
 import { logger } from "@/utils/logger";
 
+interface PlaySoundOptions {
+  playbackRate?: number;
+}
+
 export class AudioManager {
   private static _instance: AudioManager | null = null;
   private readonly _audioPools = new Map<string, HTMLAudioElement[]>();
@@ -20,9 +24,10 @@ export class AudioManager {
 
   private constructor() {}
 
-  playSound(path: string, volume = 1): void {
+  playSound(path: string, volume = 1, options: PlaySoundOptions = {}): void {
     const audio = this._acquireAudio(path);
     audio.volume = Math.max(0, Math.min(1, volume));
+    audio.playbackRate = options.playbackRate ?? 1;
     audio.currentTime = 0;
 
     void audio.play().catch((error: unknown) => {

@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Text } from "@react-three/drei";
-import { TriggerObject } from "@/components/three/TriggerObject";
+import { MainFeatureObject } from "@/components/three/MainFeatureObject";
 import { ModelSelectorPlaceholder } from "@/components/three/ModelSelectorPlaceholder";
-import { RepairCaseModel } from "@/components/three/RepairCaseModel";
 
 const ZONE_ORIGIN = [10, 0.4, -8] as const;
-const CASE_MODEL_PATH = "/models/packderelance/model.gltf";
 const ZONE_RADIUS = 4.2;
 
 export function MainFeatureZone(): React.JSX.Element {
@@ -44,19 +42,11 @@ export function MainFeatureZone(): React.JSX.Element {
         Pack de Relance Feature
       </Text>
 
-      <TriggerObject
+      <MainFeatureObject
         position={[ZONE_ORIGIN[0], ZONE_ORIGIN[1], ZONE_ORIGIN[2]]}
-        colliders="cuboid"
-        label={caseOpen ? "Fermer la mallette" : "Ouvrir la mallette"}
-        onTrigger={() => setCaseOpen((value) => !value)}
-      >
-        <RepairCaseModel
-          modelPath={CASE_MODEL_PATH}
-          open={caseOpen}
-          position={[0, -0.45, 0]}
-          scale={0.35}
-        />
-      </TriggerObject>
+        open={caseOpen}
+        onToggle={() => setCaseOpen((value) => !value)}
+      />
 
       <ModelSelectorPlaceholder
         label="Module A"
