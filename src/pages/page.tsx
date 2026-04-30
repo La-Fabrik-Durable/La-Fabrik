@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Crosshair } from "@/components/ui/Crosshair";
-import { InteractPrompt } from "@/components/ui/InteractPrompt";
 import { DebugPerf } from "@/components/debug/DebugPerf";
+import { GameUI } from "@/components/ui/GameUI";
 import { World } from "@/world/World";
 
 export function HomePage(): React.JSX.Element {
@@ -14,8 +13,7 @@ export function HomePage(): React.JSX.Element {
           <DebugPerf />
         </Suspense>
       </Canvas>
-      <Crosshair />
-      <InteractPrompt />
+      <GameUI />
     </>
   );
 }
