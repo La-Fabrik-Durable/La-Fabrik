@@ -56,44 +56,40 @@ la-fabrik/
     │   ├── debug/                          # Debug-only test scene
     │   │   └── TestMap.tsx
     │   └── player/
-    │       ├── FPSController.tsx           # PointerLockControls + Rapier movement
-    │       └── Crosshair.tsx
+    │       ├── Player.tsx                  # Player rig composition
+    │       ├── PlayerCamera.tsx            # Player camera mount
+    │       └── PlayerController.tsx        # Pointer lock movement and inputs
     │
     ├── components/
     │   ├── three/                          # Shared R3F components by domain
-    │   │   ├── gameplay/repairGame/        # Core repair gameplay prototype
+    │   │   ├── gameplay/                   # Core repair gameplay prototype
     │   │   ├── interaction/                # Trigger, grab, focus wrappers
     │   │   ├── models/                     # GLTF model components
     │   │   └── world/                      # Environment-specific 3D objects
     │   └── ui/                             # HTML overlays — outside Canvas
-    │       ├── NarrativeOverlay.tsx        # Floating dialogues
-    │       ├── MissionHUD.tsx              # Current objective
-    │       ├── MapHUD.tsx                  # Minimap
-    │       ├── CinematicBars.tsx           # GSAP black bars
-    │       └── LoadingScreen.tsx           # Asset progress
+    │       ├── Crosshair.tsx
+    │       ├── HandTrackingOverlay.tsx
+    │       ├── HandTrackingVisualizer.tsx
+    │       └── InteractPrompt.tsx
     │
     ├── managers/                           # Current singleton-style services
     │   ├── AudioManager.ts                 # Music and SFX playback
     │   └── InteractionManager.ts           # Focus, nearby, grab state
     │
-    ├── hooks/                              # React hooks — thin wrappers on managers
-    │   ├── useGameState.ts                 # Subscribes to GameManager
-    │   ├── useZoneDetection.ts
-    │   ├── useInteraction.ts
-    │   ├── useCinematic.ts
-    │   ├── useAudio.ts
-    │   └── useLOD.ts
+    ├── hooks/                              # React hooks by domain
+    │   ├── debug/                          # Debug state and GUI folders
+    │   ├── docs/                           # Docs language context access
+    │   ├── editor/                         # Editor loading and history
+    │   ├── gameplay/                       # Repair gameplay helpers
+    │   ├── handTracking/                   # Webcam/WebSocket hand tracking
+    │   ├── interaction/                    # Interaction manager subscriptions
+    │   └── three/                          # Three.js/R3F helpers
     │
     ├── data/
     │   ├── interaction/                    # Interaction tuning
     │   ├── player/                         # Player tuning
-    │   ├── repairGame/                     # Repair gameplay static config
+    │   ├── gameplay/                       # Repair gameplay static config
     │   └── world/                          # Environment and lighting config
-    │
-    ├── shaders/
-    │   └── hologram/
-    │       ├── vertex.glsl
-    │       └── fragment.glsl
     │
     ├── utils/
     │   ├── core/                           # Logger and generic utilities
@@ -101,13 +97,6 @@ la-fabrik/
     │   ├── editor/                         # Editor-only parsing utilities
     │   ├── map/                            # Map loading and validation
     │   └── three/                          # Three.js helpers
-    ├── hooks/
-    │   └── debug/
-    │       ├── useCameraMode.ts
-    │       ├── useDebugFolder.ts
-    │       ├── useDebugStore.ts
-    │       └── useSceneMode.ts
-    │
     ├── App.tsx                             # Canvas bootstrap
     └── main.tsx
 ```
