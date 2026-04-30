@@ -1,5 +1,5 @@
-export const HAND_TRACKING_LOCAL_WS_URL = "ws://localhost:8000/ws";
-export const HAND_TRACKING_PROD_WS_URL = "wss://handtracking.la-fabrik.fr/ws";
+const HAND_TRACKING_LOCAL_WS_URL = "ws://localhost:8000/ws";
+const HAND_TRACKING_PROD_WS_URL = "wss://handtracking.la-fabrik.fr/ws";
 
 export const HAND_TRACKING_FRAME_WIDTH = 320;
 export const HAND_TRACKING_FRAME_HEIGHT = 240;

@@ -1,6 +1,6 @@
 # Main Feature
 
-This document explains the main interactive feature currently being prototyped in La-Fabrik: grabbing and moving 3D objects with hand tracking.
+This document explains La-Fabrik's debug hand-tracking feature: grabbing and moving 3D objects with a webcam.
 
 ## What It Does
 
@@ -18,7 +18,7 @@ The intended user flow is:
 
 ## Why It Matters
 
-This prototype tests whether La-Fabrik interactions can feel more physical and embodied than a classic mouse or keyboard interaction.
+This feature tests whether La-Fabrik interactions can feel more physical and embodied than a classic mouse or keyboard interaction.
 
 For the final experience, this can support low-tech repair gestures, object manipulation, and more expressive interaction sequences.
 
@@ -32,7 +32,7 @@ Moving the hand left, right, up, or down moves the object in that direction. Mov
 
 ## Debug Requirements
 
-Hand tracking currently requires:
+Hand tracking requires:
 
 - Chrome or another browser that allows `getUserMedia()` reliably
 - the local Python backend running
@@ -73,15 +73,7 @@ The wireframe turns yellow when the detected hand is a fist.
 
 ## Current Limitations
 
-- The feature is still a prototype.
 - It is enabled only in the debug physics scene.
-- The SVG hand wireframe is temporary.
+- The SVG hand wireframe is a debug visualization, not final gameplay UI.
 - Depth movement depends on relative webcam tracking and may need tuning.
-- The system has not yet been integrated into final mission gameplay.
-
-## Expected Next Improvements
-
-- Smooth the hand position and depth signal.
-- Add a better 3D hand representation.
-- Add calibration controls for grab radius and depth sensitivity.
-- Connect hand gestures to final repair or transformation tasks.
+- The system is not integrated into mission gameplay.

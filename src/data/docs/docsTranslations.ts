@@ -24,7 +24,6 @@ Construit avec React, Three.js et Vite. Fonctionne dans le navigateur, sans inst
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) |
 | [@react-three/drei](https://pmndrs.github.io/drei)                                        |
 | [@react-three/rapier](https://rapier.rs/docs/)                                            |
-| [@react-three/postprocessing](https://github.com/pmndrs/postprocessing)                   |
 | [GSAP](https://gsap.com/docs/v3/Installation/)                                            |
 
 ### Performance et effets
@@ -48,17 +47,17 @@ la-fabrik/
 │   └── sounds/
 │
 └── src/
-    ├── world/                              # Monde 3D persistant
-    │   ├── World.tsx                       # Composition principale de la scène
-    │   ├── Map.tsx                         # Carte de base, toujours montée
+    ├── world/                              # Composition du monde 3D persistant
+    │   ├── World.tsx                       # Composition de la scène active
+    │   ├── GameMap.tsx                     # Chargement de carte et collision octree
     │   ├── Lighting.tsx                    # Lumières ambiante, directionnelle et ponctuelles
-    │   ├── Environment.tsx                 # HDRI, brouillard, ciel
-    │   ├── PostFX.tsx                      # Bloom, SSAO, aberration chromatique
-    │   ├── zones/                          # Zones spatiales, LOD par zone
+    │   ├── Environment.tsx                 # Arrière-plan et modèle de ciel
+    │   ├── GameMusic.tsx                   # Cycle de vie de la musique de jeu
+    │   ├── debug/                          # Scène de test debug
     │   └── player/                         # Contrôleur joueur et caméra
     │
     ├── components/
-    │   ├── 3d/                             # Éléments 3D réutilisables
+    │   ├── three/                          # Composants R3F par domaine
     │   └── ui/                             # Overlays HTML hors Canvas
     │
     ├── managers/                           # Logique, état et orchestration
@@ -142,7 +141,7 @@ Ce document décrit l'architecture visée à moyen terme pour le projet.
 ## Relation avec le code actuel
 
 - \`docs/technical/architecture.md\` reste la source de vérité de ce qui existe maintenant.
-- Ce document est volontairement aspirational.
+- Ce document décrit une direction d'architecture, pas un comportement implémenté.
 - Si ce document contredit l'implémentation actuelle, l'implémentation actuelle gagne.
 
 ## Objectifs

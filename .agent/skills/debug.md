@@ -89,6 +89,6 @@ Usage in Canvas:
 
 - All debug UI goes through `Debug.getInstance()` — never inline `if (isDev)` checks
 - r3f-perf is always lazy-imported, never a hard dependency in scene components
-- Debug folders should be organized by domain (Lighting, PostFX, Player, Zone)
+- Debug folders should be organized by domain (Lighting, Player, Zone, Interaction)
 - Debug panel must not affect production builds — it simply doesn't mount when `?debug` is absent
 - Clean up debug folders in `destroy()` when relevant

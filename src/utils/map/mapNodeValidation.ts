@@ -1,4 +1,8 @@
-import type { MapNode } from "@/types/editor/editor";
+import type { MapNode } from "../../types/editor/editor";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 function isVector3Tuple(value: unknown): value is [number, number, number] {
   return (
@@ -8,18 +12,17 @@ function isVector3Tuple(value: unknown): value is [number, number, number] {
   );
 }
 
-export function isMapNode(value: unknown): value is MapNode {
-  if (typeof value !== "object" || value === null) {
+function isMapNode(value: unknown): value is MapNode {
+  if (!isRecord(value)) {
     return false;
   }
 
-  const node = value as Record<string, unknown>;
   return (
-    typeof node.name === "string" &&
-    typeof node.type === "string" &&
-    isVector3Tuple(node.position) &&
-    isVector3Tuple(node.rotation) &&
-    isVector3Tuple(node.scale)
+    typeof value.name === "string" &&
+    typeof value.type === "string" &&
+    isVector3Tuple(value.position) &&
+    isVector3Tuple(value.rotation) &&
+    isVector3Tuple(value.scale)
   );
 }
 

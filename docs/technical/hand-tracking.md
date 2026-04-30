@@ -6,7 +6,7 @@ This document describes the hand tracking system that exists in the current code
 
 Hand tracking is a debug-stage interaction system used to test direct 3D object manipulation with a webcam. It allows a user to close their fist to grab a nearby object and move it in 3D space without relying on the center crosshair.
 
-The feature is currently scoped to the debug physics scene and is not yet a production gameplay input system.
+The feature is scoped to the debug physics scene rather than production gameplay input.
 
 ## Runtime Flow
 
@@ -27,7 +27,7 @@ The current activation conditions are:
 - scene mode is `physics`
 - the player is near an interaction, is holding an object, or is hand-holding an object
 
-This prevents the previous issue where hand tracking depended on crosshair focus. The system now remains active while the player is inside an interaction zone, even if the camera is not aimed directly at the object.
+This keeps hand tracking active while the player is inside an interaction zone, even if the camera is not aimed directly at the object.
 
 ## Backend
 
@@ -113,8 +113,8 @@ The hand tracking overlay is an HTML overlay outside the canvas. The hand wirefr
 
 ## Known Limitations
 
-- The feature is debug-only and currently focused on the physics test scene.
+- The feature is debug-only and focused on the physics test scene.
 - MediaPipe depth is relative and can be noisy.
 - The virtual hit zone is an approximation based on multiple raycasts, not a real 3D collider.
 - There is no smoothing layer for hand position or depth yet.
-- The hand visualization is a temporary SVG wireframe.
+- The hand visualization is an SVG landmark wireframe.

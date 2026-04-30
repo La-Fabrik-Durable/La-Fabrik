@@ -1,141 +1,101 @@
 import { Suspense, lazy } from "react";
 
-const LazyDocsLayout = lazy(() =>
-  import("@/components/docs/DocsLayout").then((module) => ({
-    default: module.DocsLayout,
-  })),
-);
+function lazyNamed<T extends Record<string, React.ComponentType>>(
+  loader: () => Promise<T>,
+  exportName: keyof T,
+): React.LazyExoticComponent<T[keyof T]> {
+  return lazy(() =>
+    loader().then((module) => ({ default: module[exportName] })),
+  );
+}
 
-const LazyDocsReadmePage = lazy(() =>
-  import("@/pages/docs/page").then((module) => ({
-    default: module.DocsReadmePage,
-  })),
-);
+function withDocsSuspense(
+  Component: React.LazyExoticComponent<React.ComponentType>,
+): React.JSX.Element {
+  return (
+    <Suspense fallback={null}>
+      <Component />
+    </Suspense>
+  );
+}
 
-const LazyDocsArchitecturePage = lazy(() =>
-  import("@/pages/docs/architecture/page").then((module) => ({
-    default: module.DocsArchitecturePage,
-  })),
+const LazyDocsLayout = lazyNamed(
+  () => import("@/components/docs/DocsLayout"),
+  "DocsLayout",
 );
-
-const LazyDocsTargetArchitecturePage = lazy(() =>
-  import("@/pages/docs/target-architecture/page").then((module) => ({
-    default: module.DocsTargetArchitecturePage,
-  })),
+const LazyDocsReadmePage = lazyNamed(
+  () => import("@/pages/docs/page"),
+  "DocsReadmePage",
 );
-
-const LazyDocsTechnicalEditorPage = lazy(() =>
-  import("@/pages/docs/technical-editor/page").then((module) => ({
-    default: module.DocsTechnicalEditorPage,
-  })),
+const LazyDocsArchitecturePage = lazyNamed(
+  () => import("@/pages/docs/architecture/page"),
+  "DocsArchitecturePage",
 );
-
-const LazyDocsHandTrackingPage = lazy(() =>
-  import("@/pages/docs/hand-tracking/page").then((module) => ({
-    default: module.DocsHandTrackingPage,
-  })),
+const LazyDocsTargetArchitecturePage = lazyNamed(
+  () => import("@/pages/docs/target-architecture/page"),
+  "DocsTargetArchitecturePage",
 );
-
-const LazyDocsFeaturesPage = lazy(() =>
-  import("@/pages/docs/features/page").then((module) => ({
-    default: module.DocsFeaturesPage,
-  })),
+const LazyDocsTechnicalEditorPage = lazyNamed(
+  () => import("@/pages/docs/technical-editor/page"),
+  "DocsTechnicalEditorPage",
 );
-
-const LazyDocsMainFeaturePage = lazy(() =>
-  import("@/pages/docs/main-feature/page").then((module) => ({
-    default: module.DocsMainFeaturePage,
-  })),
+const LazyDocsHandTrackingPage = lazyNamed(
+  () => import("@/pages/docs/hand-tracking/page"),
+  "DocsHandTrackingPage",
 );
-
-const LazyDocsEditorPage = lazy(() =>
-  import("@/pages/docs/editor/page").then((module) => ({
-    default: module.DocsEditorPage,
-  })),
+const LazyDocsFeaturesPage = lazyNamed(
+  () => import("@/pages/docs/features/page"),
+  "DocsFeaturesPage",
 );
-
-const LazyDocsAnimationPage = lazy(() =>
-  import("@/pages/docs/animation/page").then((module) => ({
-    default: module.DocsAnimationPage,
-  })),
+const LazyDocsMainFeaturePage = lazyNamed(
+  () => import("@/pages/docs/main-feature/page"),
+  "DocsMainFeaturePage",
+);
+const LazyDocsEditorPage = lazyNamed(
+  () => import("@/pages/docs/editor/page"),
+  "DocsEditorPage",
+);
+const LazyDocsAnimationPage = lazyNamed(
+  () => import("@/pages/docs/animation/page"),
+  "DocsAnimationPage",
 );
 
 export function DocsLayoutRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsLayout />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsLayout);
 }
 
 export function DocsReadmeRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsReadmePage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsReadmePage);
 }
 
 export function DocsArchitectureRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsArchitecturePage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsArchitecturePage);
 }
 
 export function DocsTargetArchitectureRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsTargetArchitecturePage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsTargetArchitecturePage);
 }
 
 export function DocsTechnicalEditorRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsTechnicalEditorPage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsTechnicalEditorPage);
 }
 
 export function DocsHandTrackingRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsHandTrackingPage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsHandTrackingPage);
 }
 
 export function DocsFeaturesRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsFeaturesPage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsFeaturesPage);
 }
 
 export function DocsMainFeatureRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsMainFeaturePage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsMainFeaturePage);
 }
 
 export function DocsEditorRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsEditorPage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsEditorPage);
 }
 
 export function DocsAnimationRoute(): React.JSX.Element {
-  return (
-    <Suspense fallback={null}>
-      <LazyDocsAnimationPage />
-    </Suspense>
-  );
+  return withDocsSuspense(LazyDocsAnimationPage);
 }

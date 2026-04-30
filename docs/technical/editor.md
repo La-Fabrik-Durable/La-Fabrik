@@ -138,7 +138,7 @@ Editor styles are in `src/index.css` under the `/* Editor page */` section. Clas
 
 ## Known Limitations
 
-- Uploaded model object URLs are not currently revoked after replacement or unmount.
+- Uploaded model object URLs are not revoked after replacement or unmount.
 - Large `map.json` files are not virtualized, culled, or LOD-managed.
 - There is no snap-to-grid, duplication, material editing, or object creation workflow.
 - Save to Server is a Vite dev-server helper, not a production backend API.

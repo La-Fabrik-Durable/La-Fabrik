@@ -49,7 +49,10 @@ export class ExplodedModel {
   }
 
   private createParts(model: THREE.Object3D): ExplodedPart[] {
-    const root = model.children.length === 1 ? model.children[0] : model;
+    const root =
+      model.children.length === 1 && model.children[0]
+        ? model.children[0]
+        : model;
     const directChildren = root.children.filter((child) => hasMesh(child));
     const sourceObjects =
       directChildren.length > 1 ? directChildren : getMeshes(root);
