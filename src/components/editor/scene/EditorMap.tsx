@@ -1,8 +1,9 @@
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Grid, TransformControls, useGLTF } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { useClonedObject } from "@/hooks/three/useClonedObject";
 import type { SceneData, MapNode, TransformMode } from "@/types/editor/editor";
 
 interface EditorMapProps {
@@ -138,7 +139,7 @@ export function EditorMap({
   const objectsMapRef = useRef<Map<number, THREE.Object3D>>(new Map());
 
   const handleTransformMouseDown = () => {
-    onTransformStart?.();
+    onTransformStart();
   };
 
   const handleTransformMouseUp = () => {
@@ -153,10 +154,10 @@ export function EditorMap({
           rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
           scale: [obj.scale.x, obj.scale.y, obj.scale.z],
         };
-        onNodeTransform?.(selectedNodeIndex, updatedNode);
+        onNodeTransform(selectedNodeIndex, updatedNode);
       }
     }
-    onTransformEnd?.();
+    onTransformEnd();
   };
 
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>(
@@ -258,8 +259,7 @@ function EditorModelNode({
     new Map<THREE.Mesh, THREE.Material | THREE.Material[]>(),
   );
   const { scene } = useGLTF(modelUrl);
-
-  const sceneInstance = useMemo(() => scene.clone(true), [scene]);
+  const sceneInstance = useClonedObject(scene);
   const pointerHandlers = createEditorNodePointerHandlers(
     index,
     onSelectNode,

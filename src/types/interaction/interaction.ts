@@ -1,5 +1,3 @@
-export type InteractableKind = "grab" | "trigger";
-
 interface TriggerInteractableHandle {
   kind: "trigger";
   label: string;

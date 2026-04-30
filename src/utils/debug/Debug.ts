@@ -9,6 +9,10 @@ interface StoredDebugControls {
   sceneMode: SceneMode;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function isCameraMode(value: unknown): value is CameraMode {
   return value === "player" || value === "debug";
 }
@@ -22,7 +26,8 @@ function getStoredDebugControls(): Partial<StoredDebugControls> {
     const rawValue = window.localStorage.getItem(DEBUG_CONTROLS_STORAGE_KEY);
     if (!rawValue) return {};
 
-    const parsedValue = JSON.parse(rawValue) as Partial<StoredDebugControls>;
+    const parsedValue: unknown = JSON.parse(rawValue);
+    if (!isRecord(parsedValue)) return {};
 
     return {
       ...(isCameraMode(parsedValue.cameraMode)

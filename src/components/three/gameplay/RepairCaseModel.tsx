@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -15,14 +15,13 @@ import {
   REPAIR_CASE_ROTATION_AMPLITUDE_DEGREES,
   REPAIR_CASE_ROTATION_RESET_SPEED,
 } from "@/data/gameplay/repairCaseConfig";
-import type { Vector3Tuple } from "@/types/three/three";
+import { useClonedObject } from "@/hooks/three/useClonedObject";
+import type { ModelTransformProps } from "@/types/three/three";
+import { toVector3Scale } from "@/utils/three/scale";
 
-interface RepairCaseModelProps {
+interface RepairCaseModelProps extends ModelTransformProps {
   modelPath: string;
   open: boolean;
-  position?: Vector3Tuple;
-  rotation?: Vector3Tuple;
-  scale?: number | Vector3Tuple;
 }
 
 const CASE_CLOSED_ROTATION_OFFSET_Z = THREE.MathUtils.degToRad(
@@ -44,7 +43,7 @@ export function RepairCaseModel({
 }: RepairCaseModelProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const { scene } = useGLTF(modelPath);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useClonedObject(scene);
   const groupRef = useRef<THREE.Group>(null);
   const lidRef = useRef<THREE.Object3D | null>(null);
   const worldPosition = useRef(new THREE.Vector3());
@@ -53,8 +52,7 @@ export function RepairCaseModel({
   const phase = useRef({ x: 0, y: 0, z: 0 });
   const initialOpen = useRef(open);
   const openedRotationZ = useRef(0);
-  const parsedScale =
-    typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
+  const parsedScale = toVector3Scale(scale);
 
   useEffect(() => {
     phase.current = {

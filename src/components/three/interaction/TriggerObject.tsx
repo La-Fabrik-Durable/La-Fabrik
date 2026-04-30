@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { RigidBody } from "@react-three/rapier";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
+import { useClonedObject } from "@/hooks/three/useClonedObject";
 import {
   TRIGGER_DEFAULT_COLLIDERS,
   TRIGGER_DEFAULT_LABEL,
@@ -38,7 +39,7 @@ function SpawnedModelInstance({
   position: Vector3Tuple;
 }): React.JSX.Element {
   const { scene } = useGLTF(path);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useClonedObject(scene);
 
   return <primitive object={model} position={position} />;
 }

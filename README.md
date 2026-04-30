@@ -24,7 +24,6 @@ Built with React, Three.js, and Vite. Runs in the browser, no installation requi
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) |
 | [@react-three/drei](https://pmndrs.github.io/drei)                                        |
 | [@react-three/rapier](https://rapier.rs/docs/)                                            |
-| [@react-three/postprocessing](https://github.com/pmndrs/postprocessing)                   |
 | [GSAP](https://gsap.com/docs/v3/Installation/)                                            |
 
 ### Performance & Effects
@@ -97,16 +96,11 @@ la-fabrik/
     │       └── fragment.glsl
     │
     ├── utils/
-    │   ├── EventEmitter.ts                 # Simple typed pub/sub utility
-    │   ├── Sizes.ts                        # Viewport size tracking
-    │   ├── Time.ts                         # Animation frame timing utility
-    │   └── debug/                          # Dev-only tools and scene inspection
-    │       ├── Debug.ts                    # Global lil-gui manager
-    │       ├── DebugPerf.tsx               # r3f-perf overlay mounted in Canvas
-    │       ├── isDebugEnabled.ts           # Debug query-string helper
-    │       └── scene/
-    │           ├── DebugHelpers.tsx        # Grid + axes helpers shown in debug mode
-    │           └── DebugCameraControls.tsx # Free debug camera for map inspection
+    │   ├── core/                           # Logger and generic utilities
+    │   ├── debug/                          # Dev-only tools and scene inspection
+    │   ├── editor/                         # Editor-only parsing utilities
+    │   ├── map/                            # Map loading and validation
+    │   └── three/                          # Three.js helpers
     ├── hooks/
     │   └── debug/
     │       ├── useCameraMode.ts

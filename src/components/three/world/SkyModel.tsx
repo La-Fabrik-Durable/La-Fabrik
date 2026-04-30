@@ -1,7 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
+import { useClonedObject } from "@/hooks/three/useClonedObject";
 
 interface SkyModelProps {
   modelPath: string;
@@ -13,7 +14,7 @@ export function SkyModel({ modelPath }: SkyModelProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useGLTF(modelPath);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useClonedObject(scene);
 
   useFrame(() => {
     groupRef.current?.position.copy(camera.position);

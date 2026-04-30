@@ -14,7 +14,7 @@ export interface HandTrackingHand {
   score: number;
 }
 
-export type HandTrackingUsageStatus = "inactive" | "available" | "active";
+type HandTrackingUsageStatus = "inactive" | "available" | "active";
 
 export type HandTrackingStatus =
   | "idle"
@@ -42,19 +42,19 @@ export interface HandTrackingFrameMessage {
   image: string;
 }
 
-export interface HandTrackingHandsMessage {
+interface HandTrackingHandsMessage {
   type: "hands";
   timestamp: number;
   hands: HandTrackingHand[];
 }
 
-export interface HandTrackingStatusMessage {
+interface HandTrackingStatusMessage {
   type: "status";
   timestamp: number;
   status: string;
 }
 
-export interface HandTrackingErrorMessage {
+interface HandTrackingErrorMessage {
   type: "error";
   timestamp: number;
   hands: HandTrackingHand[];

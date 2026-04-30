@@ -44,7 +44,7 @@ This document describes the code that exists today in the repository.
 
 ## 3D Component Domains
 
-- `src/components/three/models/` contains reusable model loaders such as `SimpleModel`, `AnimatedModel`, and `ExplodableModel`.
+- `src/components/three/models/` contains reusable model helpers such as `ExplodableModel`.
 - `src/components/three/interaction/` contains reusable interaction wrappers such as `InteractableObject`, `TriggerObject`, and `GrabbableObject`.
 - `src/components/three/gameplay/repairGame/` contains the current core repair gameplay prototype: the repair case, repair game zone, and module slots.
 - `src/components/three/world/` contains reusable world/environment objects such as `SkyModel`.

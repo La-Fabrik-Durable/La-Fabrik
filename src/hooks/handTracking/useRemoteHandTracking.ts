@@ -10,6 +10,7 @@ import {
 } from "@/data/handTrackingConfig";
 import type {
   HandTrackingFrameMessage,
+  HandTrackingHand,
   HandTrackingServerMessage,
   HandTrackingSnapshot,
 } from "@/types/handTracking/handTracking";
@@ -29,6 +30,58 @@ const INITIAL_SNAPSHOT: HandTrackingSnapshot = {
 
 function getBase64Payload(dataUrl: string): string {
   return dataUrl.slice(dataUrl.indexOf(",") + 1);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isHandTrackingLandmark(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y) &&
+    isFiniteNumber(value.z)
+  );
+}
+
+function isHandTrackingHand(value: unknown): value is HandTrackingHand {
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y) &&
+    isFiniteNumber(value.z) &&
+    Array.isArray(value.landmarks) &&
+    value.landmarks.every(isHandTrackingLandmark) &&
+    typeof value.handedness === "string" &&
+    typeof value.isFist === "boolean" &&
+    isFiniteNumber(value.score)
+  );
+}
+
+function isHandTrackingServerMessage(
+  value: unknown,
+): value is HandTrackingServerMessage {
+  if (!isRecord(value) || !isFiniteNumber(value.timestamp)) return false;
+
+  if (value.type === "hands") {
+    return Array.isArray(value.hands) && value.hands.every(isHandTrackingHand);
+  }
+
+  if (value.type === "status") {
+    return typeof value.status === "string";
+  }
+
+  return (
+    value.type === "error" &&
+    Array.isArray(value.hands) &&
+    value.hands.every(isHandTrackingHand) &&
+    typeof value.message === "string"
+  );
 }
 
 function getCameraStreamWithTimeout(
@@ -104,6 +157,16 @@ export function useRemoteHandTracking({
     const markResponseReceived = (): void => {
       waitingForResponseRef.current = false;
       clearResponseTimeout();
+    };
+
+    const markInvalidResponse = (): void => {
+      setSnapshot((current) => ({
+        ...current,
+        hands: [],
+        status: "error",
+        usageStatus: "inactive",
+        error: "Invalid hand tracking response",
+      }));
     };
 
     const sendFrame = (): void => {
@@ -201,7 +264,23 @@ export function useRemoteHandTracking({
         };
         ws.onmessage = (event) => {
           markResponseReceived();
-          const data = JSON.parse(event.data) as HandTrackingServerMessage;
+          if (typeof event.data !== "string") {
+            markInvalidResponse();
+            return;
+          }
+
+          let data: unknown;
+          try {
+            data = JSON.parse(event.data);
+          } catch {
+            markInvalidResponse();
+            return;
+          }
+
+          if (!isHandTrackingServerMessage(data)) {
+            markInvalidResponse();
+            return;
+          }
 
           if (data.type === "hands") {
             setSnapshot((current) => ({

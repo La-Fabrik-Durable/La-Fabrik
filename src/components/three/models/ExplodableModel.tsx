@@ -2,12 +2,14 @@ import type { ReactNode } from "react";
 import { Component, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { ExplodedModel } from "@/utils/three/ExplodedModel";
-import type { Vector3Tuple } from "@/types/three/three";
+import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
+import { toVector3Scale } from "@/utils/three/scale";
 
 interface ModelErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ReactNode;
+  position?: Vector3Tuple | undefined;
 }
 
 interface ModelErrorBoundaryState {
@@ -32,17 +34,17 @@ class ModelErrorBoundary extends Component<
   }
 
   render(): ReactNode {
-    if (this.state.hasError) return this.props.fallback ?? null;
+    if (this.state.hasError) {
+      return <MissingModelFallback position={this.props.position} />;
+    }
+
     return this.props.children;
   }
 }
 
-interface ExplodableModelInnerProps {
+interface ExplodableModelInnerProps extends ModelTransformProps {
   modelPath: string;
   split: boolean;
-  position?: Vector3Tuple;
-  rotation?: Vector3Tuple;
-  scale?: number | Vector3Tuple;
   splitDistance?: number;
 }
 
@@ -50,10 +52,7 @@ export function ExplodableModel(
   props: ExplodableModelInnerProps,
 ): React.JSX.Element {
   return (
-    <ModelErrorBoundary
-      key={props.modelPath}
-      fallback={<MissingModelFallback position={props.position ?? [0, 0, 0]} />}
-    >
+    <ModelErrorBoundary key={props.modelPath} position={props.position}>
       <ExplodableModelInner {...props} />
     </ModelErrorBoundary>
   );
@@ -68,13 +67,12 @@ function ExplodableModelInner({
   splitDistance = 1.2,
 }: ExplodableModelInnerProps): React.JSX.Element {
   const { scene } = useGLTF(modelPath);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useClonedObject(scene);
   const explodedModel = useMemo(
     () => new ExplodedModel(model, { distance: splitDistance }),
     [model, splitDistance],
   );
-  const parsedScale =
-    typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
+  const parsedScale = toVector3Scale(scale);
 
   useEffect(() => {
     explodedModel.setSplit(split);
@@ -94,7 +92,7 @@ function ExplodableModelInner({
 function MissingModelFallback({
   position = [0, 0, 0],
 }: {
-  position?: Vector3Tuple;
+  position?: Vector3Tuple | undefined;
 }): React.JSX.Element {
   return (
     <mesh position={position}>

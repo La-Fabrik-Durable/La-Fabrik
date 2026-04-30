@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
-import { RepairGameZone } from "@/components/three/gameplay/repairGame/RepairGameZone";
+import { RepairGameZone } from "@/components/three/gameplay/RepairGameZone";
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
 import { TriggerObject } from "@/components/three/interaction/TriggerObject";
 import {

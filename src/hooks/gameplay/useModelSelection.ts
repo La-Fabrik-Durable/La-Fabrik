@@ -15,6 +15,13 @@ export function useModelSelection(
 ): UseModelSelectionResult {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const firstModel = models[0];
+
+  if (!firstModel) {
+    throw new Error("useModelSelection requires at least one model");
+  }
+
+  const selectedModel = models[selectedIndex] ?? firstModel;
 
   const close = useCallback(() => setIsOpen(false), []);
   const open = useCallback(() => setIsOpen(true), []);
@@ -42,7 +49,7 @@ export function useModelSelection(
       }
 
       if (key === "e" || key === "enter") {
-        onSelect(models[selectedIndex]);
+        onSelect(selectedModel);
         close();
         event.preventDefault();
         event.stopPropagation();
@@ -60,12 +67,12 @@ export function useModelSelection(
     return () => {
       window.removeEventListener("keydown", handleKeyDown, { capture: true });
     };
-  }, [close, isOpen, models, onSelect, selectedIndex]);
+  }, [close, isOpen, models, onSelect, selectedModel]);
 
   return {
     isOpen,
     selectedIndex,
-    selectedModel: models[selectedIndex],
+    selectedModel,
     open,
     close,
   };
