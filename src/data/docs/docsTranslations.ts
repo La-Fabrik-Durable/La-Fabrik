@@ -239,6 +239,30 @@ src/managers/stores/useGameStore.ts
 
 Le store est placé dans \`src/managers/stores/\` parce qu'il appartient à la couche d'orchestration gameplay, pas à un composant visuel précis.
 
+## Managers vs Store
+
+Les managers sont responsables des objets runtime locaux et des comportements impératifs.
+
+Exemples :
+
+- \`AudioManager\` possède les éléments audio et les pools de sons.
+- \`InteractionManager\` possède les handles d'interaction transitoires et la logique orientée input.
+
+Un manager peut lire ou mettre à jour le store Zustand quand son comportement local doit impacter la progression globale du jeu.
+
+Le store Zustand est responsable de l'état global durable :
+
+- main state courant
+- sous-état de mission
+- flags de progression
+- références de dialogue/audio
+- transitions de state
+
+Règle simple :
+
+- manager = objets runtime, effets de bord et logique impérative locale
+- store = état gameplay global auquel l'UI ou le world peuvent s'abonner
+
 ## Forme actuelle
 
 Le store expose :
@@ -254,7 +278,7 @@ Le store expose :
 Les étapes de mission utilisent actuellement cette séquence :
 
 \`\`\`ts
-"locked" | "waiting" | "inspect" | "scanning" | "repairing" | "done"
+"locked" | "waiting" | "inspected" | "fragmented" | "scanning" | "repairing" | "done"
 \`\`\`
 
 ## Lire le state dans un composant

@@ -30,6 +30,30 @@ src/managers/stores/useGameStore.ts
 
 The store is placed under `src/managers/stores/` because it belongs to the gameplay orchestration layer, not to a specific visual component.
 
+## Managers vs Store
+
+Managers are responsible for local runtime objects and imperative behavior.
+
+Examples:
+
+- `AudioManager` owns audio elements and sound pools.
+- `InteractionManager` owns transient interaction handles and input-oriented behavior.
+
+Managers can read from or write to the Zustand store when their local behavior needs to affect global gameplay progression.
+
+The Zustand store is responsible for durable global state:
+
+- current main state
+- mission sub state
+- progression flags
+- dialogue/audio references
+- state transitions
+
+Rule of thumb:
+
+- manager = runtime objects, side effects, and local imperative logic
+- store = global gameplay state that UI or world components can subscribe to
+
 ## Current Shape
 
 The store exposes:
@@ -45,7 +69,13 @@ The store exposes:
 The mission steps currently use this sequence:
 
 ```ts
-"locked" | "waiting" | "inspect" | "scanning" | "repairing" | "done";
+"locked" |
+  "waiting" |
+  "inspected" |
+  "fragmented" |
+  "scanning" |
+  "repairing" |
+  "done";
 ```
 
 ## Reading State In Components
