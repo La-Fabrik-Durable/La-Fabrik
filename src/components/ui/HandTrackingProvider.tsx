@@ -6,7 +6,6 @@ import {
   HandTrackingContext,
 } from "@/hooks/useHandTrackingSnapshot";
 import { useRemoteHandTracking } from "@/hooks/useRemoteHandTracking";
-import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 
 export function HandTrackingProvider({
   children,
@@ -15,10 +14,7 @@ export function HandTrackingProvider({
 }): React.JSX.Element {
   const sceneMode = useSceneMode();
   const { nearby, holding, handHolding } = useInteraction();
-  const enabled =
-    isDebugEnabled() &&
-    sceneMode === "physics" &&
-    (nearby || holding || handHolding);
+  const enabled = sceneMode === "physics" && (nearby || holding || handHolding);
   const snapshot = useRemoteHandTracking({ enabled });
 
   return (

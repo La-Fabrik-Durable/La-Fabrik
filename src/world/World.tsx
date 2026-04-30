@@ -12,7 +12,7 @@ import { Environment } from "@/world/Environment";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";
 import { Player } from "@/world/player/Player";
-import { TestScene } from "@/world/debug/TestScene";
+import { TestMap } from "@/world/debug/TestMap";
 
 export function World(): React.JSX.Element {
   const cameraMode = useCameraMode();
@@ -33,7 +33,7 @@ export function World(): React.JSX.Element {
       {sceneMode === "game" ? (
         <GameMap onOctreeReady={setOctree} />
       ) : (
-        <TestScene onOctreeReady={setOctree} />
+        <TestMap onOctreeReady={setOctree} />
       )}
 
       {cameraMode !== "debug" ? (

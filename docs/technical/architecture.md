@@ -14,7 +14,7 @@ This document describes the code that exists today in the repository.
   - either the map scene or the debug physics test scene
   - the player rig when the active camera mode is `player`
 - `src/world/GameMap.tsx` loads map nodes from `public/map.json`, resolves available models, and builds the collision octree.
-- `src/world/debug/TestScene.tsx` provides a debug-oriented interaction and physics scene.
+- `src/world/debug/TestMap.tsx` provides a debug-oriented interaction and physics map.
 - `src/world/player/PlayerComponent.tsx` mounts the camera and controller.
 - `src/world/player/PlayerController.tsx` owns pointer lock movement, jump handling, and interaction input.
 
@@ -64,7 +64,7 @@ This document describes the code that exists today in the repository.
 ## Current Limitations
 
 - The repository is a prototype, not the full intended game runtime.
-- `src/world/debug/TestScene.tsx` is part of the active scene composition.
+- `src/world/debug/TestMap.tsx` is part of the active scene composition.
 - There is no central gameplay orchestrator such as `GameManager`.
 - Missions, zones, cinematics, and dialogue systems are not implemented.
 - The player uses octree collision and simple movement rules, not a complete gameplay physics stack.

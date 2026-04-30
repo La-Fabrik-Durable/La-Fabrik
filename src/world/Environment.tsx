@@ -1,9 +1,9 @@
-import { Environment as DreiEnvironment } from "@react-three/drei";
 import {
-  GAME_SCENE_SKYBOX_PATH,
+  GAME_SCENE_SKY_MODEL_PATH,
   PHYSICS_SCENE_BACKGROUND_COLOR,
 } from "@/data/world/environmentConfig";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
+import { SkyModel } from "@/components/three/SkyModel";
 
 export function Environment(): React.JSX.Element {
   const sceneMode = useSceneMode();
@@ -14,5 +14,5 @@ export function Environment(): React.JSX.Element {
     );
   }
 
-  return <DreiEnvironment background files={GAME_SCENE_SKYBOX_PATH} />;
+  return <SkyModel modelPath={GAME_SCENE_SKY_MODEL_PATH} />;
 }

@@ -6,6 +6,7 @@ export type { SimpleModelConfig } from "./SimpleModel";
 
 export { ExplodableModel } from "./ExplodableModel";
 export { MainFeatureZone } from "./MainFeatureZone";
+export { MainFeatureObject } from "./MainFeatureObject";
 export { ModelSelectorPlaceholder } from "./ModelSelectorPlaceholder";
 export { RepairCaseModel } from "./RepairCaseModel";
 

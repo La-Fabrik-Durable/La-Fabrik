@@ -99,7 +99,7 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
   - soit la carte principale, soit la scène de test physique debug
   - le rig joueur quand le mode caméra actif est \`player\`
 - \`src/world/GameMap.tsx\` charge les modèles de carte disponibles et construit l'octree de collision.
-- \`src/world/debug/TestScene.tsx\` fournit une scène orientée debug pour les interactions et la physique.
+- \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
 - \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
 
@@ -129,7 +129,7 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 ## Limites actuelles
 
 - Le dépôt est encore un prototype, pas le runtime complet du jeu.
-- \`src/world/debug/TestScene.tsx\` fait encore partie de la composition active.
+- \`src/world/debug/TestMap.tsx\` fait encore partie de la composition active.
 - Il n'existe pas encore d'orchestrateur gameplay central comme \`GameManager\`.
 - Les systèmes de missions, zones, cinématiques et dialogues ne sont pas implémentés.
 - Le joueur utilise une collision octree et des règles simples, pas une pile physique gameplay complète.
