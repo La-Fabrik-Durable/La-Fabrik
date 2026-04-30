@@ -36,7 +36,9 @@ export class SomeManager {
 | `CinematicManager`   | target-state only                    | Future GSAP timeline orchestrator.                                            |
 | `ZoneManager`        | target-state only                    | Future zone entry/exit detection and LOD triggers.                            |
 
-## GameManager is the orchestrator
+## Target-State GameManager
+
+`GameManager` does not exist in the current implementation. The following pattern is target-state guidance only and should not be applied until the manager exists in code.
 
 ```ts
 export class GameManager {
@@ -52,7 +54,7 @@ export class GameManager {
 }
 ```
 
-Components and hooks access other managers **through GameManager only**:
+When a `GameManager` exists, components and hooks should access other managers through it:
 
 ```ts
 // Correct
@@ -62,7 +64,7 @@ GameManager.getInstance().cinematic.play("intro");
 CinematicManager.getInstance().play("intro");
 ```
 
-## Subscribe pattern (GameManager only)
+## Target-State Subscribe Pattern
 
 ```ts
 private listeners = new Set<() => void>()
@@ -77,9 +79,9 @@ private emit(): void {
 }
 ```
 
-Every `set*()` method calls `this.emit()` to notify subscribers.
+In that target-state manager, every `set*()` method calls `this.emit()` to notify subscribers.
 
-## React bridge hook
+## Target-State React Bridge Hook
 
 ```ts
 // hooks/useGameState.ts
@@ -97,8 +99,8 @@ export function useGameState() {
 
 ## Rules
 
-- Max 4 managers total
-- Only `GameManager` holds durable state with `subscribe()`
-- Other managers are side-effect handlers — they do not store persistent state
-- Always call `destroy()` on cleanup (App unmount)
-- Never create manager instances with `new` — always use `.getInstance()`
+- Do not add a `GameManager` unless the feature requires a real shared gameplay state owner.
+- Current managers may be imported directly until the target-state orchestrator exists.
+- Keep singleton managers limited to side-effect services or shared interaction state.
+- Always call `destroy()` on cleanup when a manager owns external resources.
+- Never create manager instances with `new` — always use `.getInstance()`.

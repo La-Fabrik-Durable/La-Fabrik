@@ -34,11 +34,13 @@ src/
 │       ├── useEditorHistory.ts
 │       └── useEditorSceneData.ts
 ├── types/
-│   └── editor.ts
+│   └── editor/
+│       └── editor.ts
 └── utils/
     ├── editor/
     │   └── loadEditorScene.ts
-    └── loadMapSceneData.ts
+    └── map/
+        └── loadMapSceneData.ts
 ```
 
 ## Responsibilities

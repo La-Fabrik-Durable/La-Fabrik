@@ -66,21 +66,6 @@ import { RigidBody, CuboidCollider } from "@react-three/rapier";
 - `type="dynamic"` for movable objects
 - Player uses `type="dynamic"` with `lockRotations`
 
-## Postprocessing
-
-```tsx
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
-
-<EffectComposer>
-  <Bloom intensity={0.5} luminanceThreshold={0.9} />
-  <Vignette offset={0.3} darkness={0.5} />
-</EffectComposer>;
-```
-
-- Always wrap in `<EffectComposer>`
-- Keep effects minimal for performance
-- Disable heavy effects on low-end devices via Debug panel
-
 ## What NOT to do
 
 - Do not use `new THREE.Scene()` or `new THREE.WebGLRenderer()` — R3F handles this
