@@ -44,10 +44,15 @@ export function GameStateHUD(): React.JSX.Element | null {
 
       <p className="game-state-hud__detail">Sub state: {detail}</p>
 
-      <div className="game-state-hud__states" aria-label="Main states">
+      <div
+        className="game-state-hud__states"
+        aria-label="Main states"
+        role="group"
+      >
         {MAIN_STATES.map((state) => (
           <button
             key={state}
+            aria-pressed={state === mainState}
             className={state === mainState ? "is-active" : undefined}
             type="button"
             onClick={() => setMainState(state)}

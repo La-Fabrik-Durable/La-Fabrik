@@ -56,10 +56,12 @@ interface GameActions {
 }
 
 export type GameStore = GameState & GameActions;
+type GameStateUpdate = Partial<GameState>;
 
 function getNextMissionStep(step: MissionStep): MissionStep {
   switch (step) {
     case "locked":
+      return "waiting";
     case "waiting":
       return "inspected";
     case "inspected":
@@ -72,6 +74,76 @@ function getNextMissionStep(step: MissionStep): MissionStep {
     case "done":
       return "done";
   }
+}
+
+function completeIntroState(state: GameState): GameStateUpdate {
+  return {
+    mainState: "bike",
+    intro: {
+      ...state.intro,
+      hasCompleted: true,
+      isBikeUnlocked: true,
+    },
+    bike: {
+      ...state.bike,
+      currentStep: "waiting",
+    },
+  };
+}
+
+function completeBikeState(state: GameState): GameStateUpdate {
+  return {
+    mainState: "pylone",
+    bike: {
+      ...state.bike,
+      currentStep: "done",
+      isRepaired: true,
+    },
+    pylone: {
+      ...state.pylone,
+      currentStep: "waiting",
+    },
+  };
+}
+
+function completePyloneState(state: GameState): GameStateUpdate {
+  return {
+    mainState: "ferme",
+    pylone: {
+      ...state.pylone,
+      currentStep: "done",
+      isPowered: true,
+    },
+    ferme: {
+      ...state.ferme,
+      currentStep: "waiting",
+    },
+  };
+}
+
+function completeFermeState(state: GameState): GameStateUpdate {
+  return {
+    mainState: "outro",
+    ferme: {
+      ...state.ferme,
+      currentStep: "done",
+      irrigationFixed: true,
+    },
+    outro: {
+      ...state.outro,
+      hasStarted: true,
+    },
+  };
+}
+
+function startOutroState(state: GameState): GameStateUpdate {
+  return {
+    mainState: "outro",
+    outro: {
+      ...state.outro,
+      hasStarted: true,
+    },
+  };
 }
 
 function createInitialGameState(): GameState {
@@ -117,98 +189,21 @@ export const useGameStore = create<GameStore>()((set) => ({
     set((state) => ({ ferme: { ...state.ferme, ...ferme } })),
   setOutroState: (outro) =>
     set((state) => ({ outro: { ...state.outro, ...outro } })),
-  completeIntro: () =>
-    set((state) => ({
-      mainState: "bike",
-      intro: {
-        ...state.intro,
-        hasCompleted: true,
-        isBikeUnlocked: true,
-      },
-      bike: {
-        ...state.bike,
-        currentStep: "inspected",
-      },
-    })),
-  completeBike: () =>
-    set((state) => ({
-      mainState: "pylone",
-      bike: {
-        ...state.bike,
-        currentStep: "done",
-        isRepaired: true,
-      },
-      pylone: {
-        ...state.pylone,
-        currentStep: "inspected",
-      },
-    })),
-  completePylone: () =>
-    set((state) => ({
-      mainState: "ferme",
-      pylone: {
-        ...state.pylone,
-        currentStep: "done",
-        isPowered: true,
-      },
-      ferme: {
-        ...state.ferme,
-        currentStep: "inspected",
-      },
-    })),
-  completeFerme: () =>
-    set((state) => ({
-      mainState: "outro",
-      ferme: {
-        ...state.ferme,
-        currentStep: "done",
-        irrigationFixed: true,
-      },
-      outro: {
-        ...state.outro,
-        hasStarted: true,
-      },
-    })),
-  startOutro: () =>
-    set((state) => ({
-      mainState: "outro",
-      outro: {
-        ...state.outro,
-        hasStarted: true,
-      },
-    })),
+  completeIntro: () => set(completeIntroState),
+  completeBike: () => set(completeBikeState),
+  completePylone: () => set(completePyloneState),
+  completeFerme: () => set(completeFermeState),
+  startOutro: () => set(startOutroState),
   advanceGameState: () =>
     set((state) => {
       if (state.mainState === "intro") {
-        return {
-          mainState: "bike",
-          intro: {
-            ...state.intro,
-            hasCompleted: true,
-            isBikeUnlocked: true,
-          },
-          bike: {
-            ...state.bike,
-            currentStep: "inspected",
-          },
-        };
+        return completeIntroState(state);
       }
 
       if (state.mainState === "bike") {
         const nextStep = getNextMissionStep(state.bike.currentStep);
         if (nextStep === "done") {
-          return {
-            mainState: "pylone",
-            bike: {
-              ...state.bike,
-              currentStep: "done",
-              isRepaired: true,
-            },
-            pylone: {
-              ...state.pylone,
-              currentStep: "inspected",
-            },
-          };
+          return completeBikeState(state);
         }
 
         return { bike: { ...state.bike, currentStep: nextStep } };
@@ -217,18 +212,7 @@ export const useGameStore = create<GameStore>()((set) => ({
       if (state.mainState === "pylone") {
         const nextStep = getNextMissionStep(state.pylone.currentStep);
         if (nextStep === "done") {
-          return {
-            mainState: "ferme",
-            pylone: {
-              ...state.pylone,
-              currentStep: "done",
-              isPowered: true,
-            },
-            ferme: {
-              ...state.ferme,
-              currentStep: "inspected",
-            },
-          };
+          return completePyloneState(state);
         }
 
         return { pylone: { ...state.pylone, currentStep: nextStep } };
@@ -237,29 +221,13 @@ export const useGameStore = create<GameStore>()((set) => ({
       if (state.mainState === "ferme") {
         const nextStep = getNextMissionStep(state.ferme.currentStep);
         if (nextStep === "done") {
-          return {
-            mainState: "outro",
-            ferme: {
-              ...state.ferme,
-              currentStep: "done",
-              irrigationFixed: true,
-            },
-            outro: {
-              ...state.outro,
-              hasStarted: true,
-            },
-          };
+          return completeFermeState(state);
         }
 
         return { ferme: { ...state.ferme, currentStep: nextStep } };
       }
 
-      return {
-        outro: {
-          ...state.outro,
-          hasStarted: true,
-        },
-      };
+      return startOutroState(state);
     }),
   resetGame: () => set(createInitialGameState()),
 }));
