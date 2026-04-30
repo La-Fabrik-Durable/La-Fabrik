@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import type { ReactNode } from "react";
+import { Component, useRef } from "react";
 import * as THREE from "three";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import { RepairGameZone } from "@/components/three/gameplay/RepairGameZone";
@@ -27,6 +28,40 @@ import type { OctreeReadyHandler } from "@/types/three/three";
 
 interface TestMapProps {
   onOctreeReady: OctreeReadyHandler;
+}
+
+interface ModelPreviewErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ModelPreviewErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ModelPreviewErrorBoundary extends Component<
+  ModelPreviewErrorBoundaryProps,
+  ModelPreviewErrorBoundaryState
+> {
+  constructor(props: ModelPreviewErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): ModelPreviewErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error): void {
+    console.warn("Failed to load debug animated model preview", error);
+  }
+
+  render(): ReactNode {
+    if (this.state.hasError) {
+      return null;
+    }
+
+    return this.props.children;
+  }
 }
 
 export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
@@ -89,12 +124,14 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         <RepairGameZone />
       </Physics>
 
-      <AnimatedModel
-        modelPath="/models/elec/model.gltf"
-        defaultAnimation="Idle"
-        position={[0, 0, -5]}
-        scale={1}
-      />
+      <ModelPreviewErrorBoundary>
+        <AnimatedModel
+          modelPath="/models/elec/model.gltf"
+          defaultAnimation="Idle"
+          position={[0, 0, -5]}
+          scale={1}
+        />
+      </ModelPreviewErrorBoundary>
     </>
   );
 }
