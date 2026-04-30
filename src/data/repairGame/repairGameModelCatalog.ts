@@ -3,7 +3,7 @@ export interface ModelCatalogItem {
   path: string;
 }
 
-export const MAIN_FEATURE_MODEL_CATALOG: ModelCatalogItem[] = [
+export const REPAIR_GAME_MODEL_CATALOG: ModelCatalogItem[] = [
   { name: "Electricienne", path: "/models/elecsimple/model.gltf" },
   { name: "Electricienne complete", path: "/models/elec/model.gltf" },
   { name: "Eolienne", path: "/models/eolienne/model.gltf" },

@@ -30,7 +30,7 @@ The project provides three main types of model instantiation:
 Use for GLTF models **without** skeleton/armature and no animations.
 
 ```tsx
-import { SimpleModel } from "@/components/3d";
+import { SimpleModel } from "@/components/three/models/SimpleModel";
 
 <SimpleModel
   modelPath="/models/elecsimple/model.gltf"
@@ -48,7 +48,7 @@ import { SimpleModel } from "@/components/3d";
 | --------------- | ------------------------ | ----------- | --------------------------------- |
 | `modelPath`     | `string`                 | required    | Path to GLTF file in `/public`    |
 | `position`      | `Vector3Tuple`           | `[0, 0, 0]` | World position [x, y, z]          |
-| `rotation`      | `Vector3Tuple`           | `[0, 0, 0]` | Rotation in degrees [x, y, z]     |
+| `rotation`      | `Vector3Tuple`           | `[0, 0, 0]` | Rotation in radians [x, y, z]     |
 | `scale`         | `number \| Vector3Tuple` | `1`         | Scale factor or [x, y, z]         |
 | `castShadow`    | `boolean`                | `true`      | Enable shadow casting             |
 | `receiveShadow` | `boolean`                | `true`      | Enable shadow receiving           |
@@ -61,7 +61,8 @@ import { SimpleModel } from "@/components/3d";
 Use for GLTF models **with** skeleton/armature and animations (like Mixamo characters).
 
 ```tsx
-import { AnimatedModel, useAnimatedModel } from "@/components/3d";
+import { AnimatedModel } from "@/components/three/models/AnimatedModel";
+import { useAnimatedModel } from "@/components/three/models/useAnimatedModel";
 
 // Basic usage
 <AnimatedModel
@@ -84,7 +85,7 @@ import { AnimatedModel, useAnimatedModel } from "@/components/3d";
 | `defaultAnimation` | `string`                 | `"Idle"`    | Animation name to play by default             |
 | `animations`       | `string[]`               | `[]`        | List of animation names (optional)            |
 | `position`         | `Vector3Tuple`           | `[0, 0, 0]` | World position [x, y, z]                      |
-| `rotation`         | `Vector3Tuple`           | `[0, 0, 0]` | Rotation in degrees [x, y, z]                 |
+| `rotation`         | `Vector3Tuple`           | `[0, 0, 0]` | Rotation in radians [x, y, z]                 |
 | `scale`            | `number \| Vector3Tuple` | `1`         | Scale factor                                  |
 | `autoPlay`         | `boolean`                | `true`      | Auto-play default animation                   |
 | `speed`            | `number`                 | `1`         | Animation playback speed                      |
@@ -106,7 +107,8 @@ To control animations from inside or outside the `AnimatedModel`, use the `useAn
 ### Basic Control
 
 ```tsx
-import { AnimatedModel, useAnimatedModel } from "@/components/3d";
+import { AnimatedModel } from "@/components/three/models/AnimatedModel";
+import { useAnimatedModel } from "@/components/three/models/useAnimatedModel";
 
 // Create a controller component to use inside AnimatedModel
 function AnimationController() {
@@ -178,7 +180,8 @@ function Character() {
 You can combine `AnimatedModel` inside `GrabbableObject` to create animated objects that can be picked up:
 
 ```tsx
-import { AnimatedModel, GrabbableObject } from "@/components/3d";
+import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
+import { AnimatedModel } from "@/components/three/models/AnimatedModel";
 
 // Animated weapon/tool that player can pick up
 <GrabbableObject position={[0, 1, 0]} colliders="cuboid">
@@ -195,11 +198,9 @@ import { AnimatedModel, GrabbableObject } from "@/components/3d";
 Or create an animated character that can be grabbed:
 
 ```tsx
-import {
-  AnimatedModel,
-  GrabbableObject,
-  useAnimatedModel,
-} from "@/components/3d";
+import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
+import { AnimatedModel } from "@/components/three/models/AnimatedModel";
+import { useAnimatedModel } from "@/components/three/models/useAnimatedModel";
 
 // Controller that triggers animations when grabbed
 function AnimatedGrabber() {
@@ -240,7 +241,7 @@ function AnimatedGrabber() {
 Objects that can be picked up by the player.
 
 ```tsx
-import { GrabbableObject } from "@/components/3d";
+import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
 
 <GrabbableObject position={[0, 1, 0]} colliders="cuboid">
   <mesh>
@@ -255,7 +256,7 @@ import { GrabbableObject } from "@/components/3d";
 Objects that trigger events when interacted with.
 
 ```tsx
-import { TriggerObject } from "@/components/3d";
+import { TriggerObject } from "@/components/three/interaction/TriggerObject";
 
 <TriggerObject
   position={[0, 1, 0]}
@@ -274,11 +275,13 @@ import { TriggerObject } from "@/components/3d";
 Base object for interactions.
 
 ```tsx
-import { InteractableObject } from "@/components/3d";
+import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 
 <InteractableObject
+  kind="trigger"
+  label="Interact"
   position={[0, 1, 0]}
-  onInteract={() => console.log("Interacted!")}
+  onPress={() => console.log("Interacted!")}
 >
   <mesh>
     <cylinderGeometry />
@@ -306,8 +309,8 @@ If animated models don't appear, they may be too small or too large. Try:
 
 ### Cloning
 
-- `SimpleModel` uses `scene.clone()` for proper React lifecycle
-- `AnimatedModel` uses the original scene directly to preserve SkinnedMesh + Armature structure
+- `SimpleModel` memoizes a cloned scene for proper React lifecycle
+- `AnimatedModel` memoizes a cloned scene and binds animations through a group ref
 
 ### Animation System
 
@@ -326,13 +329,15 @@ This system intentionally avoids complex state machines (like Unity's Animator).
 
 ```
 src/
-├── components/3d/
-│   ├── AnimatedModel.tsx    # Animated model component + context
-│   ├── SimpleModel.tsx      # Static model component
-│   ├── GrabbableObject.tsx  # Pickable object
-│   ├── TriggerObject.tsx    # Trigger event object
-│   ├── InteractableObject.tsx
-│   └── index.ts             # Central exports
+├── components/three/
+│   ├── models/
+│   │   ├── AnimatedModel.tsx    # Animated model component + context
+│   │   ├── SimpleModel.tsx      # Static model component
+│   │   └── useAnimatedModel.ts  # Animated model context hook
+│   └── interaction/
+│       ├── GrabbableObject.tsx  # Pickable object
+│       ├── TriggerObject.tsx    # Trigger event object
+│       └── InteractableObject.tsx
 └── hooks/
     └── useCharacterAnimation.ts  # Animation hook (legacy)
 ```

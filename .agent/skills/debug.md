@@ -58,7 +58,7 @@ if (debug.active) {
 r3f-perf is loaded only in debug mode to avoid dependency issues in production:
 
 ```tsx
-// src/utils/debug/DebugPerf.tsx
+// src/components/debug/DebugPerf.tsx
 import { Suspense, lazy } from "react";
 import { Debug } from "@/utils/debug/Debug";
 

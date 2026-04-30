@@ -64,7 +64,7 @@ interface HandTrackingHand {
 
 ## Grab Targeting
 
-The hand grab logic lives in `src/components/three/GrabbableObject.tsx`.
+The hand grab logic lives in `src/components/three/interaction/GrabbableObject.tsx`.
 
 The object is moved toward the visual center of the hand. That center is computed from the bounding box of all landmarks:
 

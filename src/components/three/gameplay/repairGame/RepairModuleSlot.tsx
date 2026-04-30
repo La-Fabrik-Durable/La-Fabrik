@@ -1,21 +1,21 @@
 import { Html } from "@react-three/drei";
 import { useCallback, useState } from "react";
-import { TriggerObject } from "@/components/three/TriggerObject";
-import { ExplodableModel } from "@/components/three/ExplodableModel";
-import { MAIN_FEATURE_MODEL_CATALOG } from "@/data/mainFeature/modelCatalog";
-import type { ModelCatalogItem } from "@/data/mainFeature/modelCatalog";
+import { TriggerObject } from "@/components/three/interaction/TriggerObject";
+import { ExplodableModel } from "@/components/three/models/ExplodableModel";
+import { REPAIR_GAME_MODEL_CATALOG } from "@/data/repairGame/repairGameModelCatalog";
+import type { ModelCatalogItem } from "@/data/repairGame/repairGameModelCatalog";
 import { useModelSelection } from "@/hooks/useModelSelection";
 import type { Vector3Tuple } from "@/types/three";
 
-interface ModelSelectorPlaceholderProps {
+interface RepairModuleSlotProps {
   position: Vector3Tuple;
   label: string;
 }
 
-export function ModelSelectorPlaceholder({
+export function RepairModuleSlot({
   position,
   label,
-}: ModelSelectorPlaceholderProps): React.JSX.Element {
+}: RepairModuleSlotProps): React.JSX.Element {
   const [selectedModel, setSelectedModel] = useState<ModelCatalogItem | null>(
     null,
   );
@@ -24,7 +24,7 @@ export function ModelSelectorPlaceholder({
     setSelectedModel(model);
     setSplit(false);
   }, []);
-  const selection = useModelSelection(MAIN_FEATURE_MODEL_CATALOG, handleSelect);
+  const selection = useModelSelection(REPAIR_GAME_MODEL_CATALOG, handleSelect);
   const triggerLabel = selectedModel
     ? split
       ? `Réassembler ${label}`
@@ -72,7 +72,7 @@ export function ModelSelectorPlaceholder({
             <span>Fleches: choisir</span>
             <span>E/Enter: valider</span>
             <ul>
-              {MAIN_FEATURE_MODEL_CATALOG.map((model, index) => (
+              {REPAIR_GAME_MODEL_CATALOG.map((model, index) => (
                 <li
                   key={model.path}
                   className={

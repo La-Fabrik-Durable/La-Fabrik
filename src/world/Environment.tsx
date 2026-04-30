@@ -3,7 +3,7 @@ import {
   PHYSICS_SCENE_BACKGROUND_COLOR,
 } from "@/data/world/environmentConfig";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
-import { SkyModel } from "@/components/three/SkyModel";
+import { SkyModel } from "@/components/three/world/SkyModel";
 
 export function Environment(): React.JSX.Element {
   const sceneMode = useSceneMode();

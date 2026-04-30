@@ -1,9 +1,9 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
-import { GrabbableObject } from "@/components/three/GrabbableObject";
-import { MainFeatureZone } from "@/components/three/MainFeatureZone";
-import { TriggerObject } from "@/components/three/TriggerObject";
+import { RepairGameZone } from "@/components/three/gameplay/repairGame/RepairGameZone";
+import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
+import { TriggerObject } from "@/components/three/interaction/TriggerObject";
 import {
   TEST_SCENE_FLOOR_COLLIDER_HALF_EXTENTS,
   TEST_SCENE_FLOOR_POSITION,
@@ -85,7 +85,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
           </mesh>
         </TriggerObject>
 
-        <MainFeatureZone />
+        <RepairGameZone />
       </Physics>
 
       {/* Temporary: re-enable when Git LFS downloads are available again.

@@ -28,12 +28,13 @@ export class SomeManager {
 
 ## Managers in this project
 
-| Manager            | File                                   | Role                                                                                                       |
-| ------------------ | -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `GameManager`      | `src/stateManager/GameManager.ts`      | Single source of truth. Owns phase, zone, mission, input lock, dialogue. Has `subscribe()` + `getState()`. |
-| `CinematicManager` | `src/stateManager/CinematicManager.ts` | GSAP timelines. Locks/unlocks input via GameManager.                                                       |
-| `AudioManager`     | `src/stateManager/AudioManager.ts`     | Music, SFX, spatial audio. Reads phase from GameManager.                                                   |
-| `ZoneManager`      | `src/stateManager/ZoneManager.ts`      | Zone entry/exit detection, LOD triggers. Notifies GameManager of zone changes.                             |
+| Manager              | File                                 | Role                                                                          |
+| -------------------- | ------------------------------------ | ----------------------------------------------------------------------------- |
+| `AudioManager`       | `src/managers/AudioManager.ts`       | Music and SFX playback.                                                       |
+| `InteractionManager` | `src/managers/InteractionManager.ts` | Focus, nearby, trigger, grab, and hand-grab interaction state.                |
+| `GameManager`        | target-state only                    | Future single source of truth for phase, zone, mission, input lock, dialogue. |
+| `CinematicManager`   | target-state only                    | Future GSAP timeline orchestrator.                                            |
+| `ZoneManager`        | target-state only                    | Future zone entry/exit detection and LOD triggers.                            |
 
 ## GameManager is the orchestrator
 

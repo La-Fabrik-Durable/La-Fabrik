@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/immutability */
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import type { AnimationAction, AnimationMixer } from "three";
 import * as THREE from "three";
@@ -36,6 +35,7 @@ export function useCharacterAnimation(
 
   const groupRef = useRef<THREE.Group | null>(null);
   const { scene, animations } = useGLTF(modelPath);
+  const model = useMemo(() => scene.clone(true), [scene]);
   const { actions, names, mixer } = useAnimations(animations, groupRef);
   const [currentAnimation, setCurrentAnimation] = useState(initialAnimation);
 
@@ -78,11 +78,11 @@ export function useCharacterAnimation(
 
   const setAnimationSpeed = useCallback(
     (speed: number) => {
-      if (mixer) {
-        mixer.timeScale = speed;
-      }
+      Object.values(actions).forEach((action) => {
+        action?.setEffectiveTimeScale(speed);
+      });
     },
-    [mixer],
+    [actions],
   );
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export function useCharacterAnimation(
   }, [actions, initialAnimation]);
 
   return {
-    scene,
+    scene: model,
     actions,
     names,
     mixer,
