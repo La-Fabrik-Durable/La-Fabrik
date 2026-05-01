@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { Component, useEffect, useRef, useState } from "react";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
+import { logger } from "@/utils/core/logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
+import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 import type { MapNode } from "@/types/editor/editor";
 import type { OctreeReadyHandler } from "@/types/three/three";
 
@@ -15,6 +17,8 @@ interface LoadedMapNode {
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  modelUrl: string;
+  node: MapNode;
 }
 
 interface ErrorBoundaryState {
@@ -35,7 +39,16 @@ class ModelErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error): void {
-    console.warn("Failed to load model", error);
+    logModelLoadError(
+      {
+        modelPath: this.props.modelUrl,
+        scope: "GameMap.ModelInstance",
+        position: this.props.node.position,
+        rotation: this.props.node.rotation,
+        scale: this.props.node.scale,
+      },
+      error,
+    );
   }
 
   render(): ReactNode {
@@ -62,7 +75,7 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
       try {
         const sceneData = await loadMapSceneData();
         if (!sceneData) {
-          console.warn("map.json not found");
+          logger.warn("GameMap", "map.json not found");
           return;
         }
 
@@ -74,14 +87,20 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
           sceneData.mapNodes.length - loadedMapNodes.length;
 
         if (missingModelCount > 0) {
-          console.warn(
-            `${missingModelCount} map nodes were skipped because their model files are missing.`,
+          logger.warn(
+            "GameMap",
+            "Map nodes skipped because model files are missing",
+            {
+              missingModelCount,
+            },
           );
         }
 
         setMapNodes(loadedMapNodes);
       } catch (error) {
-        console.error("Error loading map:", error);
+        logger.error("GameMap", "Error loading map", {
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     };
 
@@ -91,7 +110,11 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
   return (
     <group ref={groupRef}>
       {mapNodes.map((mapNode, index) => (
-        <ModelErrorBoundary key={index}>
+        <ModelErrorBoundary
+          key={index}
+          modelUrl={mapNode.modelUrl}
+          node={mapNode.node}
+        >
           <ModelInstance node={mapNode.node} modelUrl={mapNode.modelUrl} />
         </ModelErrorBoundary>
       ))}
@@ -106,9 +129,14 @@ function ModelInstance({
   node: MapNode;
   modelUrl: string;
 }): React.JSX.Element {
-  const { scene } = useGLTF(modelUrl);
-  const sceneInstance = useClonedObject(scene);
   const { position, rotation, scale } = node;
+  const { scene } = useLoggedGLTF(modelUrl, {
+    scope: "GameMap.ModelInstance",
+    position,
+    rotation,
+    scale,
+  });
+  const sceneInstance = useClonedObject(scene);
 
   return (
     <primitive

@@ -25,6 +25,7 @@ import {
 } from "@/data/debug/testSceneConfig";
 import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/three/three";
+import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
 interface TestMapProps {
   onOctreeReady: OctreeReadyHandler;
@@ -32,6 +33,7 @@ interface TestMapProps {
 
 interface ModelPreviewErrorBoundaryProps {
   children: ReactNode;
+  modelPath: string;
 }
 
 interface ModelPreviewErrorBoundaryState {
@@ -52,7 +54,15 @@ class ModelPreviewErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error): void {
-    console.warn("Failed to load debug animated model preview", error);
+    logModelLoadError(
+      {
+        modelPath: this.props.modelPath,
+        scope: "TestMap.ModelPreview",
+        position: [0, 0, -5],
+        scale: 1,
+      },
+      error,
+    );
   }
 
   render(): ReactNode {
@@ -124,7 +134,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         <RepairGameZone />
       </Physics>
 
-      <ModelPreviewErrorBoundary>
+      <ModelPreviewErrorBoundary modelPath="/models/elec/model.gltf">
         <AnimatedModel
           modelPath="/models/elec/model.gltf"
           defaultAnimation="Idle"

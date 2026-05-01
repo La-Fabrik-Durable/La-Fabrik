@@ -8,6 +8,7 @@ import {
 } from "@/data/gameplay/repairCaseConfig";
 import { AudioManager } from "@/managers/AudioManager";
 import type { Vector3Tuple } from "@/types/three/three";
+import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
 interface RepairCaseErrorBoundaryProps {
   children: ReactNode;
@@ -31,7 +32,15 @@ class RepairCaseErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error): void {
-    console.warn("Failed to load repair case model", error);
+    logModelLoadError(
+      {
+        modelPath: REPAIR_CASE_MODEL_PATH,
+        scope: "RepairCaseObject",
+        position: [0, -0.45, 0],
+        scale: 1.5,
+      },
+      error,
+    );
   }
 
   render(): ReactNode {

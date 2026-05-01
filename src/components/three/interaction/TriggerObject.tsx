@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useGLTF } from "@react-three/drei";
 import { RigidBody } from "@react-three/rapier";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import {
   TRIGGER_DEFAULT_COLLIDERS,
   TRIGGER_DEFAULT_LABEL,
@@ -38,7 +38,10 @@ function SpawnedModelInstance({
   path: string;
   position: Vector3Tuple;
 }): React.JSX.Element {
-  const { scene } = useGLTF(path);
+  const { scene } = useLoggedGLTF(path, {
+    scope: "TriggerObject.SpawnedModel",
+    position,
+  });
   const model = useClonedObject(scene);
 
   return <primitive object={model} position={position} />;
