@@ -41,7 +41,8 @@ This document describes the code that exists today in the repository.
 - `src/components/debug/DebugPerf.tsx` lazily mounts `r3f-perf` in debug mode.
 - `src/components/ui/debug/DebugOverlayLayout.tsx` mounts the compact HTML debug overlay when enabled from `lil-gui`.
 - `src/components/ui/debug/GameStateDebugPanel.tsx` exposes current game state, main/sub-state switching, previous/next step controls, and reset.
-- `src/components/ui/debug/HandTrackingDebugPanel.tsx` shows hand tracking status, usage, model-loaded placeholder, hand count, and fist state while hand tracking is active.
+- `src/components/ui/debug/HandTrackingDebugPanel.tsx` shows hand tracking status, usage, loaded glove model, hand count, and fist state while hand tracking is active.
+- `src/components/three/handTracking/HandTrackingLeftGlove.tsx` places the rigged `gant_l` model on the detected left hand in the debug physics scene.
 - `src/components/debug/scene/DebugHelpers.tsx` mounts debug helpers.
 - `src/components/debug/scene/DebugCameraControls.tsx` mounts the free debug camera.
 - `lil-gui` global debug controls include camera mode, scene mode, `R3F Perf`, and `Debug Overlay`; interaction-specific controls live in the `Interaction` folder.
@@ -50,6 +51,7 @@ This document describes the code that exists today in the repository.
 
 - `src/components/three/models/` contains reusable model helpers such as `ExplodableModel`.
 - `src/components/three/interaction/` contains reusable interaction wrappers such as `InteractableObject`, `TriggerObject`, and `GrabbableObject`.
+- `src/components/three/handTracking/` contains R3F hand tracking debug models such as the left glove overlay.
 - `src/components/three/gameplay/` contains the current core repair gameplay prototype: the repair case, repair game zone, and module slots.
 - `src/components/three/world/` contains reusable world/environment objects such as `SkyModel`.
 

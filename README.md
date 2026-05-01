@@ -63,6 +63,7 @@ la-fabrik/
     ├── components/
     │   ├── three/                          # Shared R3F components by domain
     │   │   ├── gameplay/                   # Core repair gameplay prototype
+    │   │   ├── handTracking/               # R3F hand tracking debug models
     │   │   ├── interaction/                # Trigger, grab, focus wrappers
     │   │   ├── models/                     # GLTF model components
     │   │   └── world/                      # Environment-specific 3D objects

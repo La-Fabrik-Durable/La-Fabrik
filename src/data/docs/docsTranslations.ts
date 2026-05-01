@@ -124,7 +124,8 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - \`src/components/debug/DebugPerf.tsx\` monte \`r3f-perf\` en lazy uniquement en mode debug.
 - \`src/components/ui/debug/DebugOverlayLayout.tsx\` monte l'overlay HTML debug compact quand il est activé depuis \`lil-gui\`.
 - \`src/components/ui/debug/GameStateDebugPanel.tsx\` expose l'état de jeu courant, le changement de main/sub-state, les contrôles previous/next step et le reset.
-- \`src/components/ui/debug/HandTrackingDebugPanel.tsx\` affiche le statut hand tracking, l'usage, le placeholder de modèle chargé, le nombre de mains et l'état fist pendant l'activation du hand tracking.
+- \`src/components/ui/debug/HandTrackingDebugPanel.tsx\` affiche le statut hand tracking, l'usage, le modèle de gant chargé, le nombre de mains et l'état fist pendant l'activation du hand tracking.
+- \`src/components/three/handTracking/HandTrackingLeftGlove.tsx\` place le modèle riggé \`gant_l\` sur la main gauche détectée dans la scène physics debug.
 - \`src/components/debug/scene/DebugHelpers.tsx\` monte les helpers debug.
 - \`src/components/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
 - Les contrôles globaux \`lil-gui\` incluent camera mode, scene mode, \`R3F Perf\` et \`Debug Overlay\`; les contrôles d'interaction vivent dans le dossier \`Interaction\`.

@@ -21,6 +21,11 @@ export function HandTrackingDebugPanel(): React.JSX.Element | null {
   }
 
   const fist = hands.some((hand) => hand.isFist);
+  const modelLoaded = hands.some(
+    (hand) => hand.handedness.toLowerCase() === "left",
+  )
+    ? "gant_l"
+    : "none";
 
   return (
     <section
@@ -39,7 +44,7 @@ export function HandTrackingDebugPanel(): React.JSX.Element | null {
         </div>
         <div>
           <dt>Model loaded</dt>
-          <dd>none</dd>
+          <dd>{modelLoaded}</dd>
         </div>
         {serverStatus ? (
           <div>
