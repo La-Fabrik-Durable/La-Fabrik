@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
-import { useGLTF, useAnimations } from "@react-three/drei";
+import { useAnimations } from "@react-three/drei";
 import type { AnimationAction, AnimationMixer } from "three";
 import * as THREE from "three";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 
 export interface CharacterAnimationConfig {
   modelPath: string;
@@ -34,7 +35,9 @@ export function useCharacterAnimation(
   } = config;
 
   const groupRef = useRef<THREE.Group | null>(null);
-  const { scene, animations } = useGLTF(modelPath);
+  const { scene, animations } = useLoggedGLTF(modelPath, {
+    scope: "useCharacterAnimation",
+  });
   const model = useMemo(() => scene.clone(true), [scene]);
   const { actions, names, mixer } = useAnimations(animations, groupRef);
   const [currentAnimation, setCurrentAnimation] = useState(initialAnimation);

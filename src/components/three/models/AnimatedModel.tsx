@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useGLTF, useAnimations } from "@react-three/drei";
+import { useAnimations } from "@react-three/drei";
 import type { AnimationAction } from "three";
 import * as THREE from "three";
 import {
   AnimatedModelContext,
   type AnimatedModelContextValue,
 } from "@/components/three/models/useAnimatedModel";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { Vector3Tuple } from "@/types/three/three";
 
 export interface AnimatedModelConfig {
@@ -40,7 +41,12 @@ export function AnimatedModel({
   children,
 }: AnimatedModelProps): React.JSX.Element {
   const groupRef = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(modelPath);
+  const { scene, animations } = useLoggedGLTF(modelPath, {
+    scope: "AnimatedModel",
+    position,
+    rotation,
+    scale,
+  });
   const model = useMemo(() => scene.clone(true), [scene]);
   const { actions, names, mixer } = useAnimations(animations, groupRef);
 

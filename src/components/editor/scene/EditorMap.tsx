@@ -1,9 +1,10 @@
 import { useRef, useEffect, useState } from "react";
-import { Grid, TransformControls, useGLTF } from "@react-three/drei";
+import { Grid, TransformControls } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { useClonedObject } from "@/hooks/three/useClonedObject";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { SceneData, MapNode, TransformMode } from "@/types/editor/editor";
 
 interface EditorMapProps {
@@ -258,7 +259,12 @@ function EditorModelNode({
   const originalMaterialsRef = useRef(
     new Map<THREE.Mesh, THREE.Material | THREE.Material[]>(),
   );
-  const { scene } = useGLTF(modelUrl);
+  const { scene } = useLoggedGLTF(modelUrl, {
+    scope: "EditorMap.EditorModelNode",
+    position: node.position,
+    rotation: node.rotation,
+    scale: node.scale,
+  });
   const sceneInstance = useClonedObject(scene);
   const pointerHandlers = createEditorNodePointerHandlers(
     index,

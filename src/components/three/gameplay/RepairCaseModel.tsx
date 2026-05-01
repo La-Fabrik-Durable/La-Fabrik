@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import * as THREE from "three";
@@ -16,6 +15,7 @@ import {
   REPAIR_CASE_ROTATION_RESET_SPEED,
 } from "@/data/gameplay/repairCaseConfig";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { ModelTransformProps } from "@/types/three/three";
 import { toVector3Scale } from "@/utils/three/scale";
 
@@ -42,7 +42,12 @@ export function RepairCaseModel({
   scale = 1,
 }: RepairCaseModelProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
-  const { scene } = useGLTF(modelPath);
+  const { scene } = useLoggedGLTF(modelPath, {
+    scope: "RepairCaseModel",
+    position,
+    rotation,
+    scale,
+  });
   const model = useClonedObject(scene);
   const groupRef = useRef<THREE.Group>(null);
   const lidRef = useRef<THREE.Object3D | null>(null);

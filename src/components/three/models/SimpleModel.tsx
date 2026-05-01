@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { Vector3Tuple } from "@/types/three/three";
 
 export interface SimpleModelConfig {
@@ -24,7 +24,12 @@ export function SimpleModel({
   receiveShadow = true,
   children,
 }: SimpleModelProps): React.JSX.Element {
-  const { scene } = useGLTF(modelPath);
+  const { scene } = useLoggedGLTF(modelPath, {
+    scope: "SimpleModel",
+    position,
+    rotation,
+    scale,
+  });
   const model = useMemo(() => scene.clone(true), [scene]);
 
   const parsedScale =

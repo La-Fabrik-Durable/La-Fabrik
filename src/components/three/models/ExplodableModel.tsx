@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
 import { Component, useEffect, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { ExplodedModel } from "@/utils/three/ExplodedModel";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
+import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 import { toVector3Scale } from "@/utils/three/scale";
 
 interface ModelErrorBoundaryProps {
   children: ReactNode;
+  modelPath: string;
   position?: Vector3Tuple | undefined;
 }
 
@@ -30,7 +32,14 @@ class ModelErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error): void {
-    console.warn("Failed to load explodable model", error);
+    logModelLoadError(
+      {
+        modelPath: this.props.modelPath,
+        scope: "ExplodableModel",
+        position: this.props.position,
+      },
+      error,
+    );
   }
 
   render(): ReactNode {
@@ -52,7 +61,11 @@ export function ExplodableModel(
   props: ExplodableModelInnerProps,
 ): React.JSX.Element {
   return (
-    <ModelErrorBoundary key={props.modelPath} position={props.position}>
+    <ModelErrorBoundary
+      key={props.modelPath}
+      modelPath={props.modelPath}
+      position={props.position}
+    >
       <ExplodableModelInner {...props} />
     </ModelErrorBoundary>
   );
@@ -66,7 +79,12 @@ function ExplodableModelInner({
   scale = 1,
   splitDistance = 1.2,
 }: ExplodableModelInnerProps): React.JSX.Element {
-  const { scene } = useGLTF(modelPath);
+  const { scene } = useLoggedGLTF(modelPath, {
+    scope: "ExplodableModel",
+    position,
+    rotation,
+    scale,
+  });
   const model = useClonedObject(scene);
   const explodedModel = useMemo(
     () => new ExplodedModel(model, { distance: splitDistance }),
