@@ -1,4 +1,5 @@
 import { useHandTrackingSnapshot } from "@/hooks/handTracking/useHandTrackingSnapshot";
+import { useHandTrackingGloveStatus } from "@/hooks/handTracking/useHandTrackingGloveStatus";
 import type { HandTrackingStatus } from "@/types/handTracking/handTracking";
 
 const STATUS_LABELS: Record<HandTrackingStatus, string> = {
@@ -15,22 +16,23 @@ const STATUS_LABELS: Record<HandTrackingStatus, string> = {
 export function HandTrackingDebugPanel(): React.JSX.Element | null {
   const { hands, status, usageStatus, serverStatus, error } =
     useHandTrackingSnapshot();
+  const gloves = useHandTrackingGloveStatus((state) => state.gloves);
 
   if (status === "idle") {
     return null;
   }
 
   const fist = hands.some((hand) => hand.isFist);
-  const hasLeftHand = hands.some(
-    (hand) => hand.handedness.toLowerCase() === "left",
-  );
-  const hasRightHand = hands.some(
-    (hand) => hand.handedness.toLowerCase() === "right",
-  );
   const modelLoaded =
-    [hasLeftHand ? "gant_l" : null, hasRightHand ? "gant_r" : null]
+    [
+      gloves.left === "loaded" ? "gant_l" : null,
+      gloves.right === "loaded" ? "gant_r" : null,
+    ]
       .filter(Boolean)
       .join(", ") || "none";
+  const modelFallback = Object.values(gloves).some(
+    (gloveStatus) => gloveStatus === "error",
+  );
 
   return (
     <section
@@ -50,6 +52,10 @@ export function HandTrackingDebugPanel(): React.JSX.Element | null {
         <div>
           <dt>Model loaded</dt>
           <dd>{modelLoaded}</dd>
+        </div>
+        <div>
+          <dt>SVG fallback</dt>
+          <dd>{modelFallback ? "yes" : "no"}</dd>
         </div>
         {serverStatus ? (
           <div>

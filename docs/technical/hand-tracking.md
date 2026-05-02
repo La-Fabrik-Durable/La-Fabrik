@@ -16,7 +16,7 @@ The feature is scoped to the debug physics scene rather than production gameplay
 4. The backend returns hand data including landmarks, handedness, score, center point, and `isFist`.
 5. React stores the latest snapshot in the hand tracking provider.
 6. `GrabbableObject` reads that snapshot each frame and uses fist state plus raycasting to grab objects.
-7. `HandTrackingLeftGlove` reads the same snapshot and places the rigged `gant_l` model on the detected left hand in the debug physics scene.
+7. `HandTrackingGlove` reads the same snapshot and places the rigged `gant_l` and `gant_r` models on the detected hands in the debug physics scene.
 
 ## Activation Rules
 
@@ -106,18 +106,18 @@ The final hold distance is clamped between the configured grab minimum and maxim
 The current debug UI includes:
 
 - `HandTrackingDebugPanel` inside `DebugOverlayLayout` for status, usage, loaded glove model, server state, hand count, and fist state
-- `HandTrackingVisualizer` for the SVG landmark wireframe
-- `HandTrackingLeftGlove` for the left-hand `gant_l` model in the R3F scene
+- `HandTrackingVisualizer` for the SVG landmark wireframe fallback
+- `HandTrackingGlove` for the left-hand `gant_l` and right-hand `gant_r` models in the R3F scene
 - `r3f-perf` for render performance
 - `lil-gui` for scene, camera, lighting, interaction, and grab controls
 
-The hand tracking debug panel is a compact HTML grid outside the canvas. `Model loaded` displays `gant_l` when a left hand is detected, otherwise `none`. The hand wireframe is also HTML/SVG, not a 3D hand model.
+The hand tracking debug panel is a compact HTML grid outside the canvas. `Model loaded` displays the successfully loaded glove models. The SVG hand wireframe is only a fallback while models are loading or if a glove model fails to load.
 
-## Left Glove Model
+## Glove Models
 
-The current left glove MVP uses `public/models/gant_l/model.gltf`, which contains a GLTF skin and armature. For now the model is positioned, oriented, and scaled as a whole from palm landmarks instead of driving individual finger bones.
+The current glove MVP uses `public/models/gant_l/model.gltf` and `public/models/gant_r/model.gltf`, which contain GLTF skins and armatures. For now each model is positioned, oriented, and scaled as a whole from palm landmarks instead of driving individual finger bones.
 
-The right hand is intentionally ignored in this MVP. The available right-hand models are static in the current assets and are not mapped to MediaPipe bones yet.
+The glove models are intentionally smaller than the raw SVG overlay so they do not dominate the camera view.
 
 ## Known Limitations
 
@@ -125,5 +125,5 @@ The right hand is intentionally ignored in this MVP. The available right-hand mo
 - MediaPipe depth is relative and can be noisy.
 - The virtual hit zone is an approximation based on multiple raycasts, not a real 3D collider.
 - There is no smoothing layer for hand position or depth yet.
-- The hand visualization is an SVG landmark wireframe.
-- The left glove follows the palm as a whole; finger-by-finger bone animation still requires a verified landmark-to-bone mapping and smoothing.
+- The SVG hand visualization is a fallback, not the primary display when glove models load correctly.
+- Each glove follows the palm as a whole; finger-by-finger bone animation still requires a verified landmark-to-bone mapping and smoothing.

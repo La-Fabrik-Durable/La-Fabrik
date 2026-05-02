@@ -8,7 +8,7 @@ import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
-import { HandTrackingLeftGlove } from "@/components/three/handTracking/HandTrackingLeftGlove";
+import { HandTrackingGlove } from "@/components/three/handTracking/HandTrackingGlove";
 import { Environment } from "@/world/Environment";
 import { GameMusic } from "@/world/GameMusic";
 import { Lighting } from "@/world/Lighting";
@@ -31,7 +31,12 @@ export function World(): React.JSX.Element {
       <Environment />
       <Lighting />
       <DebugHelpers />
-      {sceneMode === "physics" ? <HandTrackingLeftGlove /> : null}
+      {sceneMode === "physics" ? (
+        <>
+          <HandTrackingGlove handedness="left" />
+          <HandTrackingGlove handedness="right" />
+        </>
+      ) : null}
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (
