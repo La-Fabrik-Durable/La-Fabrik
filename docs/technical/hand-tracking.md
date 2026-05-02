@@ -115,7 +115,7 @@ The hand tracking debug panel is a compact HTML grid outside the canvas. `Model 
 
 ## Glove Models
 
-The current glove MVP uses `public/models/gant_l/model.gltf` and `public/models/gant_r/model.gltf`, which contain GLTF skins and armatures. For now each model is positioned, oriented, and scaled as a whole from palm landmarks instead of driving individual finger bones.
+The current glove MVP uses `public/models/gant_l/model.gltf` and `public/models/gant_r/model.gltf`, which contain GLTF skins and armatures. Each model is positioned, oriented, and scaled from palm landmarks, then each finger bone chain is rotated toward the matching MediaPipe landmark chain.
 
 The glove models are intentionally smaller than the raw SVG overlay so they do not dominate the camera view.
 
@@ -126,4 +126,4 @@ The glove models are intentionally smaller than the raw SVG overlay so they do n
 - The virtual hit zone is an approximation based on multiple raycasts, not a real 3D collider.
 - There is no smoothing layer for hand position or depth yet.
 - The SVG hand visualization is a fallback, not the primary display when glove models load correctly.
-- Each glove follows the palm as a whole; finger-by-finger bone animation still requires a verified landmark-to-bone mapping and smoothing.
+- Finger bone animation is an approximate landmark-to-bone mapping; it still needs calibration for per-model twist, offsets, and smoothing.
