@@ -36,19 +36,41 @@ const GLOVE_CONFIGS: Record<
 const HAND_SPACE_DISTANCE = 2.4;
 const HAND_DEPTH_SCALE = 0.45;
 
+const FINGER_LANDMARK_CHAINS = [
+  [0, 1, 2, 3, 4],
+  [0, 5, 6, 7, 8],
+  [0, 9, 10, 11, 12],
+  [0, 13, 14, 15, 16],
+  [0, 17, 18, 19, 20],
+] as const;
+
 const _cameraPosition = new THREE.Vector3();
 const _direction = new THREE.Vector3();
 const _xAxis = new THREE.Vector3();
 const _yAxis = new THREE.Vector3();
 const _zAxis = new THREE.Vector3();
 const _matrix = new THREE.Matrix4();
+const _parentInverse = new THREE.Matrix4();
 const _targetQuaternion = new THREE.Quaternion();
+const _boneTargetQuaternion = new THREE.Quaternion();
+const _boneDeltaQuaternion = new THREE.Quaternion();
 const _targetPosition = new THREE.Vector3();
+const _localSegmentStart = new THREE.Vector3();
+const _localSegmentEnd = new THREE.Vector3();
+const _localSegmentDirection = new THREE.Vector3();
 const _wristPosition = new THREE.Vector3();
 const _indexPosition = new THREE.Vector3();
 const _middlePosition = new THREE.Vector3();
 const _ringPosition = new THREE.Vector3();
 const _pinkyPosition = new THREE.Vector3();
+
+interface FingerBonePose {
+  bone: THREE.Object3D;
+  restDirection: THREE.Vector3;
+  restQuaternion: THREE.Quaternion;
+}
+
+type FingerPoseChain = FingerBonePose[];
 
 interface HandTrackingGloveProps {
   handedness: HandTrackingGloveHandedness;
@@ -122,6 +144,101 @@ function matchesHandedness(
   return handHandedness.toLowerCase() === targetHandedness;
 }
 
+function getFirstChildBone(object: THREE.Object3D): THREE.Object3D | null {
+  return object.children.find((child) => child.type === "Bone") ?? null;
+}
+
+function createFingerBonePose(bone: THREE.Object3D): FingerBonePose {
+  const firstChild = getFirstChildBone(bone);
+  const restDirection = firstChild
+    ? firstChild.position.clone()
+    : new THREE.Vector3(0, 1, 0);
+
+  restDirection.applyQuaternion(bone.quaternion).normalize();
+
+  return {
+    bone,
+    restDirection,
+    restQuaternion: bone.quaternion.clone(),
+  };
+}
+
+function createFingerPoseChain(startBone: THREE.Object3D): FingerPoseChain {
+  const chain: FingerPoseChain = [];
+  let currentBone: THREE.Object3D | null = startBone;
+
+  while (currentBone && chain.length < 4) {
+    chain.push(createFingerBonePose(currentBone));
+    currentBone = getFirstChildBone(currentBone);
+  }
+
+  return chain;
+}
+
+function createFingerPoseChains(root: THREE.Object3D): FingerPoseChain[] {
+  const rootBone = root.getObjectByName("Bone");
+
+  if (!rootBone) return [];
+
+  return rootBone.children
+    .filter((child) => child.type === "Bone")
+    .slice(0, FINGER_LANDMARK_CHAINS.length)
+    .map(createFingerPoseChain);
+}
+
+function resetFingerPose(chains: FingerPoseChain[]): void {
+  for (const chain of chains) {
+    for (const pose of chain) {
+      pose.bone.quaternion.copy(pose.restQuaternion);
+    }
+  }
+}
+
+function applyFingerPose(
+  chains: FingerPoseChain[],
+  landmarks: HandTrackingLandmark[],
+  camera: THREE.Camera,
+): void {
+  for (let fingerIndex = 0; fingerIndex < chains.length; fingerIndex += 1) {
+    const chain = chains[fingerIndex];
+    const landmarkChain = FINGER_LANDMARK_CHAINS[fingerIndex];
+
+    if (!chain || !landmarkChain) continue;
+
+    for (let boneIndex = 0; boneIndex < chain.length; boneIndex += 1) {
+      const pose = chain[boneIndex];
+      const fromLandmark = landmarks[landmarkChain[boneIndex] ?? -1];
+      const toLandmark = landmarks[landmarkChain[boneIndex + 1] ?? -1];
+      const parent = pose?.bone.parent;
+
+      if (!pose || !fromLandmark || !toLandmark || !parent) continue;
+
+      landmarkToWorldPoint(fromLandmark, camera, _localSegmentStart);
+      landmarkToWorldPoint(toLandmark, camera, _localSegmentEnd);
+
+      parent.updateWorldMatrix(true, false);
+      _parentInverse.copy(parent.matrixWorld).invert();
+      _localSegmentStart.applyMatrix4(_parentInverse);
+      _localSegmentEnd.applyMatrix4(_parentInverse);
+      _localSegmentDirection
+        .copy(_localSegmentEnd)
+        .sub(_localSegmentStart)
+        .normalize();
+
+      if (_localSegmentDirection.lengthSq() === 0) continue;
+
+      _boneDeltaQuaternion.setFromUnitVectors(
+        pose.restDirection,
+        _localSegmentDirection,
+      );
+      _boneTargetQuaternion
+        .copy(_boneDeltaQuaternion)
+        .multiply(pose.restQuaternion);
+      pose.bone.quaternion.slerp(_boneTargetQuaternion, 0.45);
+    }
+  }
+}
+
 function HandTrackingGloveModel({
   handedness,
 }: HandTrackingGloveProps): React.JSX.Element | null {
@@ -146,6 +263,10 @@ function HandTrackingGloveModel({
 
     return clone(rootNode);
   }, [config.rootNodeName, gltf.scene]);
+  const fingerPoseChains = useMemo(
+    () => createFingerPoseChains(gloveScene),
+    [gloveScene],
+  );
 
   const hand = hands.find((candidate) =>
     matchesHandedness(candidate.handedness, handedness),
@@ -163,6 +284,7 @@ function HandTrackingGloveModel({
 
     if (!group || !trackedHand || trackedHand.landmarks.length < 21) {
       if (group) group.visible = false;
+      resetFingerPose(fingerPoseChains);
       return;
     }
 
@@ -215,6 +337,8 @@ function HandTrackingGloveModel({
     const palmLength = _wristPosition.distanceTo(_middlePosition);
     const scale = palmLength * config.scale;
     group.scale.setScalar(scale);
+    group.updateMatrixWorld(true);
+    applyFingerPose(fingerPoseChains, trackedHand.landmarks, camera);
   });
 
   if (!hand) return null;
