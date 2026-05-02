@@ -30,8 +30,8 @@ export function HandTrackingDebugPanel(): React.JSX.Element | null {
     ]
       .filter(Boolean)
       .join(", ") || "none";
-  const modelFallback = Object.values(gloves).some(
-    (gloveStatus) => gloveStatus === "error",
+  const modelFallback = !Object.values(gloves).some(
+    (gloveStatus) => gloveStatus === "loaded",
   );
 
   return (

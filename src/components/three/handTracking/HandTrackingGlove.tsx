@@ -13,19 +13,28 @@ import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { HandTrackingLandmark } from "@/types/handTracking/handTracking";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
-const GLOVE_MODEL_PATHS: Record<HandTrackingGloveHandedness, string> = {
-  left: "/models/gant_l/model.gltf",
-  right: "/models/gant_r/model.gltf",
-};
-
-const GLOVE_ROOT_NODE_NAMES: Record<HandTrackingGloveHandedness, string> = {
-  left: "Hand_l",
-  right: "Hand_r",
+const GLOVE_CONFIGS: Record<
+  HandTrackingGloveHandedness,
+  {
+    modelPath: string;
+    rootNodeName: string;
+    scale: number;
+  }
+> = {
+  left: {
+    modelPath: "/models/gant_l/model.gltf",
+    rootNodeName: "Armature",
+    scale: 0.17,
+  },
+  right: {
+    modelPath: "/models/gant_r/model.gltf",
+    rootNodeName: "Hand_r",
+    scale: 0.04,
+  },
 };
 
 const HAND_SPACE_DISTANCE = 2.4;
 const HAND_DEPTH_SCALE = 0.45;
-const GLOVE_SCALE = 0.17;
 
 const _cameraPosition = new THREE.Vector3();
 const _direction = new THREE.Vector3();
@@ -73,7 +82,7 @@ class HandTrackingGloveErrorBoundary extends Component<
       {
         modelPath: this.props.modelPath,
         scope: `HandTrackingGlove.${this.props.handedness}`,
-        scale: GLOVE_SCALE,
+        scale: GLOVE_CONFIGS[this.props.handedness].scale,
       },
       error,
     );
@@ -122,24 +131,21 @@ function HandTrackingGloveModel({
   const setGloveStatus = useHandTrackingGloveStatus(
     (state) => state.setGloveStatus,
   );
-  const modelPath = GLOVE_MODEL_PATHS[handedness];
+  const config = GLOVE_CONFIGS[handedness];
+  const modelPath = config.modelPath;
   const gltf = useLoggedGLTF(modelPath, {
     scope: `HandTrackingGlove.${handedness}`,
-    scale: GLOVE_SCALE,
+    scale: config.scale,
   });
   const gloveScene = useMemo(() => {
-    const rootNode = gltf.scene.getObjectByName(
-      GLOVE_ROOT_NODE_NAMES[handedness],
-    );
+    const rootNode = gltf.scene.getObjectByName(config.rootNodeName);
 
     if (!rootNode) {
-      throw new Error(
-        `Missing glove root node ${GLOVE_ROOT_NODE_NAMES[handedness]}`,
-      );
+      throw new Error(`Missing glove root node ${config.rootNodeName}`);
     }
 
     return clone(rootNode);
-  }, [gltf.scene, handedness]);
+  }, [config.rootNodeName, gltf.scene]);
 
   const hand = hands.find((candidate) =>
     matchesHandedness(candidate.handedness, handedness),
@@ -207,7 +213,7 @@ function HandTrackingGloveModel({
     group.quaternion.slerp(_targetQuaternion, Math.min(1, delta * 18));
 
     const palmLength = _wristPosition.distanceTo(_middlePosition);
-    const scale = palmLength * GLOVE_SCALE;
+    const scale = palmLength * config.scale;
     group.scale.setScalar(scale);
   });
 
@@ -219,7 +225,7 @@ function HandTrackingGloveModel({
 export function HandTrackingGlove({
   handedness,
 }: HandTrackingGloveProps): React.JSX.Element {
-  const modelPath = GLOVE_MODEL_PATHS[handedness];
+  const modelPath = GLOVE_CONFIGS[handedness].modelPath;
 
   return (
     <HandTrackingGloveErrorBoundary
@@ -231,5 +237,5 @@ export function HandTrackingGlove({
   );
 }
 
-useGLTF.preload(GLOVE_MODEL_PATHS.left);
-useGLTF.preload(GLOVE_MODEL_PATHS.right);
+useGLTF.preload(GLOVE_CONFIGS.left.modelPath);
+useGLTF.preload(GLOVE_CONFIGS.right.modelPath);

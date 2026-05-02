@@ -28,11 +28,11 @@ const HAND_CONNECTIONS: Array<[number, number]> = [
 export function HandTrackingVisualizer(): React.JSX.Element | null {
   const { hands, status } = useHandTrackingSnapshot();
   const gloves = useHandTrackingGloveStatus((state) => state.gloves);
-  const shouldShowSvgFallback = Object.values(gloves).some(
-    (gloveStatus) => gloveStatus === "error" || gloveStatus === "idle",
+  const hasLoadedGlove = Object.values(gloves).some(
+    (gloveStatus) => gloveStatus === "loaded",
   );
 
-  if (status === "idle" || hands.length === 0 || !shouldShowSvgFallback) {
+  if (status === "idle" || hands.length === 0 || hasLoadedGlove) {
     return null;
   }
 
