@@ -4,6 +4,8 @@ export interface HandTrackingLandmark {
   z: number;
 }
 
+export type HandTrackingSource = "backend" | "browser";
+
 export interface HandTrackingHand {
   x: number;
   y: number;
