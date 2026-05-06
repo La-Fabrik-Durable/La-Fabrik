@@ -261,10 +261,7 @@ function HandTrackingGloveModel({
       throw new Error(`Missing glove root node ${config.rootNodeName}`);
     }
 
-    const clonedRootNode = clone(rootNode);
-    clonedRootNode.visible = false;
-
-    return clonedRootNode;
+    return clone(rootNode);
   }, [config.rootNodeName, gltf.scene]);
   const fingerPoseChains = useMemo(
     () => createFingerPoseChains(gloveScene),
@@ -351,7 +348,11 @@ function HandTrackingGloveModel({
     applyFingerPose(fingerPoseChains, trackedHand.landmarks, camera);
   });
 
-  return <primitive ref={groupRef} object={gloveScene} />;
+  return (
+    <group ref={groupRef} visible={false}>
+      <primitive object={gloveScene} />
+    </group>
+  );
 }
 
 export function HandTrackingGlove({
