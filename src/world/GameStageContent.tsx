@@ -1,5 +1,5 @@
 import { useGameStore } from "@/managers/stores/useGameStore";
-import type { Vector3Tuple } from "@/types/three";
+import type { Vector3Tuple } from "@/types/three/three";
 
 interface StageAnchorProps {
   color: string;

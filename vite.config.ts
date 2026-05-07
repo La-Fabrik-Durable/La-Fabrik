@@ -5,17 +5,18 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { ServerResponse } from "node:http";
 import type { Plugin } from "vite";
-import { parseMapNodes } from "./src/utils/mapNodeValidation";
+import { parseMapNodes } from "./src/utils/map/mapNodeValidation";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const MAX_MAP_PAYLOAD_BYTES = 1024 * 1024;
 const JSON_HEADERS = { "Content-Type": "application/json" };
+type JsonResponseBody = Readonly<Record<string, string | boolean>>;
 
 function sendJson(
   res: ServerResponse,
   status: number,
-  body: unknown,
+  body: JsonResponseBody,
   headers: Record<string, string> = {},
 ): void {
   res

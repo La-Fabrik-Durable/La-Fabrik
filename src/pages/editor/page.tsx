@@ -4,7 +4,7 @@ import { EditorControls } from "@/components/editor/EditorControls";
 import { EditorScene } from "@/components/editor/scene/EditorScene";
 import { useEditorHistory } from "@/hooks/editor/useEditorHistory";
 import { useEditorSceneData } from "@/hooks/editor/useEditorSceneData";
-import type { MapNode, SceneData, TransformMode } from "@/types/editor";
+import type { MapNode, SceneData, TransformMode } from "@/types/editor/editor";
 
 const SAVE_ERROR_MESSAGE = "Erreur lors de l'enregistrement";
 
@@ -138,7 +138,7 @@ export function EditorPage(): React.JSX.Element {
               <h4>Structure requise :</h4>
               <pre>
                 public/ ├── <strong>map.json</strong> (à la racine) └── models/
-                ├── arbre/ │ └── model.gltf ├── building/ │ └── model.gltf └──
+                ├── arbre/ │ └── model.glb ├── building/ │ └── model.gltf └──
                 ...
               </pre>
             </div>

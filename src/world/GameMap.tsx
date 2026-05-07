@@ -1,16 +1,24 @@
 import type { ReactNode } from "react";
-import { Component } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useGLTF } from "@react-three/drei";
+import { Component, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { useOctreeGraphNode } from "@/hooks/useOctreeGraphNode";
-import { loadMapSceneData } from "@/utils/loadMapSceneData";
-import type { OctreeReadyHandler } from "@/types/three";
-import type { MapNode } from "@/types/editor";
+import { useClonedObject } from "@/hooks/three/useClonedObject";
+import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
+import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
+import { logger } from "@/utils/core/logger";
+import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
+import { logModelLoadError } from "@/utils/three/modelLoadLogger";
+import type { MapNode } from "@/types/editor/editor";
+import type { OctreeReadyHandler } from "@/types/three/three";
+
+interface LoadedMapNode {
+  node: MapNode;
+  modelUrl: string;
+}
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ReactNode;
+  modelUrl: string;
+  node: MapNode;
 }
 
 interface ErrorBoundaryState {
@@ -26,20 +34,28 @@ class ModelErrorBoundary extends Component<
     this.state = { hasError: false };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  componentDidCatch(_error: Error): void {
-    console.warn(`Failed to load model`);
+  componentDidCatch(error: Error): void {
+    logModelLoadError(
+      {
+        modelPath: this.props.modelUrl,
+        scope: "GameMap.ModelInstance",
+        position: this.props.node.position,
+        rotation: this.props.node.rotation,
+        scale: this.props.node.scale,
+      },
+      error,
+    );
   }
 
   render(): ReactNode {
     if (this.state.hasError) {
-      return this.props.fallback ?? null;
+      return null;
     }
+
     return this.props.children;
   }
 }
@@ -49,8 +65,7 @@ interface GameMapProps {
 }
 
 export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
-  const [mapNodes, setMapNodes] = useState<MapNode[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [mapNodes, setMapNodes] = useState<LoadedMapNode[]>([]);
   const groupRef = useRef<THREE.Group>(null);
 
   useOctreeGraphNode(groupRef, onOctreeReady, mapNodes.length);
@@ -60,28 +75,32 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
       try {
         const sceneData = await loadMapSceneData();
         if (!sceneData) {
-          console.warn("map.json not found");
-          setIsLoading(false);
+          logger.warn("GameMap", "map.json not found");
           return;
         }
 
-        const loadedMapNodes = sceneData.mapNodes.filter((node) =>
-          sceneData.models.has(node.name),
-        );
+        const loadedMapNodes = sceneData.mapNodes.flatMap((node) => {
+          const modelUrl = sceneData.models.get(node.name);
+          return modelUrl ? [{ node, modelUrl }] : [];
+        });
         const missingModelCount =
           sceneData.mapNodes.length - loadedMapNodes.length;
 
         if (missingModelCount > 0) {
-          console.warn(
-            `${missingModelCount} map nodes were skipped because their model files are missing.`,
+          logger.warn(
+            "GameMap",
+            "Map nodes skipped because model files are missing",
+            {
+              missingModelCount,
+            },
           );
         }
 
         setMapNodes(loadedMapNodes);
       } catch (error) {
-        console.error("Error loading map:", error);
-      } finally {
-        setIsLoading(false);
+        logger.error("GameMap", "Error loading map", {
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     };
 
@@ -90,35 +109,37 @@ export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
 
   return (
     <group ref={groupRef}>
-      {!isLoading &&
-        mapNodes.map((node, index) => (
-          <ModelErrorBoundary key={index}>
-            <ModelInstance node={node} />
-          </ModelErrorBoundary>
-        ))}
+      {mapNodes.map((mapNode, index) => (
+        <ModelErrorBoundary
+          key={index}
+          modelUrl={mapNode.modelUrl}
+          node={mapNode.node}
+        >
+          <ModelInstance node={mapNode.node} modelUrl={mapNode.modelUrl} />
+        </ModelErrorBoundary>
+      ))}
     </group>
   );
 }
 
-function ModelInstance({ node }: { node: MapNode }): React.JSX.Element | null {
-  const modelPath = `/models/${node.name}/model.gltf`;
-
-  const groupRef = useRef<THREE.Group>(null);
-  const { scene } = useGLTF(modelPath);
-  const sceneInstance = useMemo(() => scene.clone(true), [scene]);
+function ModelInstance({
+  node,
+  modelUrl,
+}: {
+  node: MapNode;
+  modelUrl: string;
+}): React.JSX.Element {
   const { position, rotation, scale } = node;
-
-  useEffect(() => {
-    if (groupRef.current) {
-      groupRef.current.position.set(...position);
-      groupRef.current.rotation.set(...rotation);
-      groupRef.current.scale.set(...scale);
-    }
-  }, [position, rotation, scale]);
+  const { scene } = useLoggedGLTF(modelUrl, {
+    scope: "GameMap.ModelInstance",
+    position,
+    rotation,
+    scale,
+  });
+  const sceneInstance = useClonedObject(scene);
 
   return (
     <primitive
-      ref={groupRef}
       object={sceneInstance}
       position={position}
       rotation={rotation}

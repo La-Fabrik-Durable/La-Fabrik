@@ -24,7 +24,6 @@ Construit avec React, Three.js et Vite. Fonctionne dans le navigateur, sans inst
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) |
 | [@react-three/drei](https://pmndrs.github.io/drei)                                        |
 | [@react-three/rapier](https://rapier.rs/docs/)                                            |
-| [@react-three/postprocessing](https://github.com/pmndrs/postprocessing)                   |
 | [GSAP](https://gsap.com/docs/v3/Installation/)                                            |
 
 ### Performance et effets
@@ -48,17 +47,17 @@ la-fabrik/
 │   └── sounds/
 │
 └── src/
-    ├── world/                              # Monde 3D persistant
-    │   ├── World.tsx                       # Composition principale de la scène
-    │   ├── Map.tsx                         # Carte de base, toujours montée
+    ├── world/                              # Composition du monde 3D persistant
+    │   ├── World.tsx                       # Composition de la scène active
+    │   ├── GameMap.tsx                     # Chargement de carte et collision octree
     │   ├── Lighting.tsx                    # Lumières ambiante, directionnelle et ponctuelles
-    │   ├── Environment.tsx                 # HDRI, brouillard, ciel
-    │   ├── PostFX.tsx                      # Bloom, SSAO, aberration chromatique
-    │   ├── zones/                          # Zones spatiales, LOD par zone
+    │   ├── Environment.tsx                 # Arrière-plan et modèle de ciel
+    │   ├── GameMusic.tsx                   # Cycle de vie de la musique de jeu
+    │   ├── debug/                          # Scène de test debug
     │   └── player/                         # Contrôleur joueur et caméra
     │
     ├── components/
-    │   ├── 3d/                             # Éléments 3D réutilisables
+    │   ├── three/                          # Composants R3F par domaine
     │   └── ui/                             # Overlays HTML hors Canvas
     │
     ├── managers/                           # Logique, état et orchestration
@@ -99,17 +98,17 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
   - soit la carte principale, soit la scène de test physique debug
   - le rig joueur quand le mode caméra actif est \`player\`
 - \`src/world/GameMap.tsx\` charge les modèles de carte disponibles et construit l'octree de collision.
-- \`src/world/debug/TestScene.tsx\` fournit une scène orientée debug pour les interactions et la physique.
+- \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
 - \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
 
 ## Modèle d'interaction
 
 - \`src/managers/InteractionManager.ts\` est la source d'état actuelle des interactions.
-- \`src/components/three/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
-- \`src/components/three/TriggerObject.tsx\` implémente les interactions de type trigger.
-- \`src/components/three/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
-- \`src/hooks/useInteraction.ts\` expose un snapshot d'interaction à l'UI React.
+- \`src/components/three/interaction/InteractableObject.tsx\` gère la détection de focus par distance et raycasting.
+- \`src/components/three/interaction/TriggerObject.tsx\` implémente les interactions de type trigger.
+- \`src/components/three/interaction/GrabbableObject.tsx\` implémente les interactions saisir / relâcher.
+- \`src/hooks/interaction/useInteraction.ts\` expose un snapshot d'interaction à l'UI React.
 - \`src/components/ui/InteractPrompt.tsx\` affiche le prompt \`E\` pour les interactions trigger.
 
 ## Audio
@@ -123,13 +122,18 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - \`src/utils/debug/Debug.ts\` possède l'instance \`lil-gui\` et les contrôles debug.
 - \`src/hooks/debug/useCameraMode.ts\` et \`src/hooks/debug/useSceneMode.ts\` s'abonnent à l'état debug.
 - \`src/components/debug/DebugPerf.tsx\` monte \`r3f-perf\` en lazy uniquement en mode debug.
+- \`src/components/ui/debug/DebugOverlayLayout.tsx\` monte l'overlay HTML debug compact quand il est activé depuis \`lil-gui\`.
+- \`src/components/ui/debug/GameStateDebugPanel.tsx\` expose l'état de jeu courant, le changement de main/sub-state, les contrôles previous/next step et le reset.
+- \`src/components/ui/debug/HandTrackingDebugPanel.tsx\` affiche le statut hand tracking, l'usage, le modèle de gant chargé, le nombre de mains et l'état fist pendant l'activation du hand tracking.
+- \`src/components/three/handTracking/HandTrackingGlove.tsx\` place les modèles riggés \`gant_l\` et \`gant_r\` sur les mains détectées dans la scène physics debug.
 - \`src/components/debug/scene/DebugHelpers.tsx\` monte les helpers debug.
 - \`src/components/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
+- Les contrôles globaux \`lil-gui\` incluent camera mode, scene mode, \`R3F Perf\` et \`Debug Overlay\`; les contrôles d'interaction vivent dans le dossier \`Interaction\`.
 
 ## Limites actuelles
 
 - Le dépôt est encore un prototype, pas le runtime complet du jeu.
-- \`src/world/debug/TestScene.tsx\` fait encore partie de la composition active.
+- \`src/world/debug/TestMap.tsx\` fait encore partie de la composition active.
 - Il n'existe pas encore d'orchestrateur gameplay central comme \`GameManager\`.
 - Les systèmes de missions, zones, cinématiques et dialogues ne sont pas implémentés.
 - Le joueur utilise une collision octree et des règles simples, pas une pile physique gameplay complète.
@@ -142,7 +146,7 @@ Ce document décrit l'architecture visée à moyen terme pour le projet.
 ## Relation avec le code actuel
 
 - \`docs/technical/architecture.md\` reste la source de vérité de ce qui existe maintenant.
-- Ce document est volontairement aspirational.
+- Ce document décrit une direction d'architecture, pas un comportement implémenté.
 - Si ce document contredit l'implémentation actuelle, l'implémentation actuelle gagne.
 
 ## Objectifs
@@ -346,7 +350,8 @@ Dans React Three Fiber, monter ou démonter du JSX contrôle ce qui apparaît da
 
 Overlays actuels :
 
-- \`GameStateHUD\` : panneau de progression debug visible avec \`?debug\`
+- \`DebugOverlayLayout\` : layout compact des panels debug HTML visible avec \`?debug\`
+- \`GameStateDebugPanel\` : panneau de progression debug pour consulter/changer le main state, le sub state, avancer/reculer et reset le store
 - \`Crosshair\` : aide de visée joueur
 - \`InteractPrompt\` : prompt d'interaction
 
@@ -373,7 +378,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 ## Scène
 
 - Scène React Three Fiber plein écran
-- Carte principale chargée depuis \`public/models/map/model.gltf\`
+- Carte principale chargée depuis \`public/models/{name}/model.glb\`, avec fallback vers \`model.gltf\`
 - Scène de test physique debug sélectionnable depuis le panneau debug
 - Éclairage ambiant et directionnel
 - Configuration de l'environnement de fond
@@ -401,7 +406,8 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 ## Outils debug
 
 - Le paramètre \`?debug\` active le panneau debug
-- Contrôles \`lil-gui\` pour le mode caméra, le mode scène et les sphères d'interaction
+- Contrôles \`lil-gui\` pour le mode caméra, le mode scène, \`R3F Perf\`, \`Debug Overlay\` et le tuning d'interaction
+- Overlay debug compact pour les contrôles de game state et le statut hand tracking
 - Helpers de scène debug
 - Caméra libre debug
 - Overlay \`r3f-perf\`
@@ -427,7 +433,7 @@ L'éditeur travaille sur la liste de nodes stockée dans "/public/map.json".
 
 Chaque node décrit un objet de la scène :
 
-- "name" : nom du dossier modèle dans "/public/models/{name}/model.gltf"
+- "name" : nom du dossier modèle dans "/public/models/{name}/model.glb", avec fallback vers "model.gltf"
 - "type" : catégorie de l'objet
 - "position" : "[x, y, z]"
 - "rotation" : "[x, y, z]"

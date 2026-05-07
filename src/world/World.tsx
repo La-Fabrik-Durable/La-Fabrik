@@ -8,12 +8,14 @@ import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
+import { HandTrackingGlove } from "@/components/three/handTracking/HandTrackingGlove";
 import { Environment } from "@/world/Environment";
+import { GameMusic } from "@/world/GameMusic";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";
 import { GameStageContent } from "@/world/GameStageContent";
 import { Player } from "@/world/player/Player";
-import { TestScene } from "@/world/debug/TestScene";
+import { TestMap } from "@/world/debug/TestMap";
 
 export function World(): React.JSX.Element {
   const cameraMode = useCameraMode();
@@ -29,15 +31,22 @@ export function World(): React.JSX.Element {
       <Environment />
       <Lighting />
       <DebugHelpers />
+      {sceneMode === "physics" ? (
+        <>
+          <HandTrackingGlove handedness="left" />
+          <HandTrackingGlove handedness="right" />
+        </>
+      ) : null}
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (
         <>
+          <GameMusic />
           <GameMap onOctreeReady={setOctree} />
           <GameStageContent />
         </>
       ) : (
-        <TestScene onOctreeReady={setOctree} />
+        <TestMap onOctreeReady={setOctree} />
       )}
 
       {cameraMode !== "debug" ? (
