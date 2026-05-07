@@ -11,12 +11,14 @@ import {
   DocsArchitectureRoute,
   DocsEditorRoute,
   DocsFeaturesRoute,
+  DocsHandTrackingRoute,
   DocsLayoutRoute,
+  DocsMainFeatureRoute,
   DocsReadmeRoute,
   DocsTargetArchitectureRoute,
   DocsTechnicalEditorRoute,
   DocsZustandRoute,
-} from "@/routes/docs/DocsRouteComponents";
+} from "@/routes/DocsRoute";
 
 const rootRoute = createRootRoute({
   component: Outlet,
@@ -45,8 +47,10 @@ const docsChildRoutes = [
   { path: "architecture", component: DocsArchitectureRoute },
   { path: "target-architecture", component: DocsTargetArchitectureRoute },
   { path: "technical-editor", component: DocsTechnicalEditorRoute },
+  { path: "hand-tracking", component: DocsHandTrackingRoute },
   { path: "zustand", component: DocsZustandRoute },
   { path: "features", component: DocsFeaturesRoute },
+  { path: "main-feature", component: DocsMainFeatureRoute },
   { path: "editor", component: DocsEditorRoute },
   { path: "animation", component: DocsAnimationRoute },
 ].map(({ path, component }) =>

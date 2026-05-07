@@ -1,5 +1,9 @@
 # Dependencies
 node_modules/
+.venv/
+backend/.venv/
+__pycache__/
+*.pyc
 
 # Build
 dist/
@@ -38,8 +42,3 @@ Thumbs.db
 # 3D Assets Cache (drei, GLTFJSX)
 .drei/
 .glitchdrei-cache/
-
-# Temporaire
-.backend/
-backend/
-temp/

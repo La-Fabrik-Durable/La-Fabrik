@@ -24,7 +24,8 @@ You are working on **La Fabrik**, an interactive 3D web experience built with Re
 
 ## Current Architecture Rules
 
-- Scene objects live in `src/world/` and `src/components/3d/`.
+- Scene objects live in `src/world/` and `src/components/three/`.
+- Shared 3D components are grouped by domain under `src/components/three/models/`, `src/components/three/interaction/`, `src/components/three/gameplay/`, and `src/components/three/world/`.
 - HTML overlays live in `src/components/ui/`.
 - Shared static config lives in `src/data/`.
 - Debug tooling lives in `src/utils/debug/` and `src/hooks/debug/`.

@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
+/* Base document reset */
 :root {
   color-scheme: dark;
   font-family: "Helvetica Neue", Helvetica, Inter, Arial, sans-serif;
@@ -29,6 +30,7 @@ canvas {
   display: block;
 }
 
+/* Docs layout */
 .docs-page {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
@@ -40,6 +42,7 @@ canvas {
   font-family: "Helvetica Neue", Helvetica, Inter, Arial, sans-serif;
 }
 
+/* Docs sidebar navigation */
 .docs-sidebar {
   border-right: 2px solid #d8d0c4;
   background: #050505;
@@ -150,6 +153,7 @@ canvas {
   color: #050505;
 }
 
+/* Docs content */
 .docs-content {
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -321,6 +325,7 @@ canvas {
   color: #a9a196;
 }
 
+/* Docs responsive layout */
 @media (max-width: 760px) {
   .docs-page {
     display: block;
@@ -338,6 +343,7 @@ canvas {
   }
 }
 
+/* In-game interaction UI */
 .crosshair {
   position: fixed;
   top: 50%;
@@ -391,78 +397,275 @@ canvas {
   letter-spacing: 0.03em;
 }
 
-.game-state-hud {
+/* Debug overlay panels */
+.debug-overlay-layout {
   position: fixed;
-  top: 18px;
-  right: 18px;
+  top: 12px;
+  left: 12px;
   z-index: 20;
-  display: grid;
-  gap: 12px;
-  width: min(320px, calc(100vw - 36px));
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  width: min(260px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  color: #f8f8f8;
+  background: rgba(8, 8, 8, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
-  background: rgba(4, 7, 13, 0.78);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
-  color: #f8fafc;
-  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
+  pointer-events: auto;
 }
 
-.game-state-hud__header {
+.debug-overlay-layout::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debug-overlay-layout::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 999px;
+}
+
+.debug-overlay-layout__header {
+  padding: 12px 12px 10px;
+}
+
+.debug-overlay-layout__kicker {
+  color: #8f8f8f;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.debug-overlay-layout__header h2 {
+  margin: 0.2rem 0 0;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 720;
+  letter-spacing: -0.06em;
+}
+
+.debug-overlay-layout__sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.debug-overlay-section {
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.debug-overlay-section__heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 8px;
 }
 
-.game-state-hud__header span,
-.game-state-hud__detail {
-  color: rgba(248, 250, 252, 0.68);
-  font-size: 12px;
+.debug-overlay-section__heading h3,
+.game-state-debug-panel__header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.debug-overlay-section__heading span {
+  color: #a3a3a3;
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.debug-overlay-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.debug-overlay-metrics div {
+  display: grid;
+  gap: 3px;
+  min-height: 0;
+  padding: 7px 8px;
+  background: #101010;
+  border: 1px solid #242424;
+  border-radius: 10px;
+}
+
+.debug-overlay-metrics dt {
+  color: #8f8f8f;
+  font-size: 0.56rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.game-state-hud__header strong {
-  font-size: 16px;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-}
-
-.game-state-hud__detail {
+.debug-overlay-metrics dd {
   margin: 0;
-  text-transform: none;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 650;
 }
 
-.game-state-hud__states,
-.game-state-hud__actions {
+.hand-tracking-debug-panel__error {
+  color: #fca5a5;
+  display: block;
+  margin-top: 8px;
+  font-size: 0.68rem;
+}
+
+.hand-tracking-visualizer {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.55));
+}
+
+/* Repair model selector UI */
+.model-selector-panel {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+  padding: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(4, 7, 13, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 8px;
+  font-size: 12px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.model-selector-panel strong {
+  color: white;
+  font-size: 13px;
+}
+
+.model-selector-panel ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.model-selector-panel li {
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+.model-selector-panel li.is-selected {
+  color: #020617;
+  background: #38bdf8;
+}
+
+/* Zustand game state debug UI */
+.game-state-debug-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.game-state-debug-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.game-state-hud button {
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f8fafc;
-  font-size: 12px;
+.game-state-debug-panel__switch-heading span {
+  color: #8f8f8f;
+  font-size: 0.56rem;
   font-weight: 700;
-  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.game-state-hud button:hover,
-.game-state-hud button:focus-visible,
-.game-state-hud button.is-active {
-  border-color: rgba(125, 211, 252, 0.75);
-  background: rgba(125, 211, 252, 0.18);
+.game-state-debug-panel__switch-heading strong {
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: -0.03em;
+}
+
+.game-state-debug-panel__switch-group {
+  display: grid;
+  gap: 7px;
+}
+
+.game-state-debug-panel__switch-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.game-state-debug-panel__states,
+.game-state-debug-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.game-state-debug-panel__actions {
+  grid-template-columns: 1fr;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.game-state-debug-panel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  background: #101010;
+  color: #d9d9d9;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.game-state-debug-panel button:hover,
+.game-state-debug-panel button:focus-visible,
+.game-state-debug-panel button.is-active {
+  color: #ffffff;
+  border-color: #ffffff;
+  background: #181818;
   outline: none;
 }
 
-/* Editor page */
+.game-state-debug-panel button:hover {
+  transform: translateY(-1px);
+}
+
+.game-state-debug-panel button.is-active {
+  border-color: rgba(56, 189, 248, 0.75);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+/* Editor page shell */
 .editor-container {
   position: fixed;
   top: 0;
@@ -528,6 +731,7 @@ canvas {
   font-family: "SFMono-Regular", "Courier New", monospace;
 }
 
+/* Editor loading and upload states */
 .editor-upload-section {
   width: min(520px, calc(100vw - 2rem));
   background: #0d0d0d;
@@ -603,6 +807,7 @@ canvas {
   white-space: pre-wrap;
 }
 
+/* Editor scene overlays */
 .editor-camera-info {
   position: absolute;
   top: 16px;
@@ -631,6 +836,7 @@ canvas {
   font-weight: 600;
 }
 
+/* Editor controls panel */
 .editor-controls-panel {
   position: absolute;
   right: 16px;
@@ -925,6 +1131,7 @@ canvas {
   text-align: right;
 }
 
+/* Editor JSON inspector */
 .editor-json-section {
   display: flex;
   flex-direction: column;
@@ -1000,6 +1207,7 @@ canvas {
   font-size: 0.74rem;
 }
 
+/* Editor responsive layout */
 @media (max-width: 768px) {
   .editor-error h2 {
     font-size: 1.5rem;

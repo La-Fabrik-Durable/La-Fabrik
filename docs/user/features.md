@@ -5,7 +5,7 @@ This document lists features that are implemented in the current codebase.
 ## Scene
 
 - Fullscreen React Three Fiber scene
-- Main map scene loaded from `public/map.json` and matching `public/models/{name}/model.gltf` assets
+- Main map scene loaded from `public/map.json` and matching `public/models/{name}/model.glb` or `model.gltf` assets
 - Debug physics test scene selectable from the debug panel
 - Ambient and directional lighting
 - Environment background setup
@@ -33,7 +33,8 @@ This document lists features that are implemented in the current codebase.
 ## Debug Tooling
 
 - `?debug` query param enables the debug panel
-- `lil-gui` controls for camera mode, scene mode, and interaction spheres
+- `lil-gui` controls for camera mode, scene mode, `R3F Perf`, `Debug Overlay`, and interaction tuning
+- Compact debug overlay for game state controls and hand tracking status
 - Debug scene helpers
 - Free debug camera
 - `r3f-perf` overlay
@@ -43,7 +44,7 @@ This document lists features that are implemented in the current codebase.
 - `/editor` route for inspecting and editing `public/map.json`
 - Automatic loading of `public/map.json` when available
 - Folder upload fallback when `map.json` is missing
-- Rendering of available `public/models/{name}/model.gltf` assets
+- Rendering of available `public/models/{name}/model.glb` or `model.gltf` assets
 - Fallback cubes for nodes whose model is missing
 - Object selection by click
 - Transform modes for translate, rotate, and scale

@@ -34,11 +34,13 @@ src/
 │       ├── useEditorHistory.ts
 │       └── useEditorSceneData.ts
 ├── types/
-│   └── editor.ts
+│   └── editor/
+│       └── editor.ts
 └── utils/
     ├── editor/
     │   └── loadEditorScene.ts
-    └── loadMapSceneData.ts
+    └── map/
+        └── loadMapSceneData.ts
 ```
 
 ## Responsibilities
@@ -57,13 +59,13 @@ src/
 
 `src/controls/editor/FlyController.tsx` provides editor movement controls for player-style navigation.
 
-`src/utils/loadMapSceneData.ts` is shared by the game map and editor. It loads `/map.json` and resolves available `public/models/{name}/model.gltf` files.
+`src/utils/map/loadMapSceneData.ts` is shared by the game map and editor. It loads `/map.json` and resolves available `public/models/{name}/model.glb` files first, then falls back to `public/models/{name}/model.gltf`.
 
 `src/utils/editor/loadEditorScene.ts` contains editor-only upload handling for user-selected folders.
 
 ## Data Format
 
-The shared editor type lives in `src/types/editor.ts`.
+The shared editor type lives in `src/types/editor/editor.ts`.
 
 ```ts
 interface MapNode {
@@ -96,10 +98,10 @@ public/
 ├── map.json
 └── models/
     └── pylone/
-        └── model.gltf
+        └── model.glb
 ```
 
-If a model is missing, the editor renders a fallback cube so the node can still be selected and transformed.
+If `model.glb` and `model.gltf` are both missing, the editor renders a fallback cube so the node can still be selected and transformed.
 
 ## Editor Flow
 
@@ -138,7 +140,7 @@ Editor styles are in `src/index.css` under the `/* Editor page */` section. Clas
 
 ## Known Limitations
 
-- Uploaded model object URLs are not currently revoked after replacement or unmount.
+- Uploaded model object URLs are not revoked after replacement or unmount.
 - Large `map.json` files are not virtualized, culled, or LOD-managed.
 - There is no snap-to-grid, duplication, material editing, or object creation workflow.
 - Save to Server is a Vite dev-server helper, not a production backend API.
