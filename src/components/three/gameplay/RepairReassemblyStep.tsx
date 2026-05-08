@@ -14,6 +14,8 @@ export function RepairReassemblyStep({
   onComplete,
 }: RepairReassemblyStepProps): React.JSX.Element {
   const [split, setSplit] = useState(true);
+  const reassemblySeconds =
+    config.reassemblySeconds ?? REPAIR_REASSEMBLY_SECONDS;
 
   useEffect(() => {
     const closeTimeoutId = window.setTimeout(() => {
@@ -21,13 +23,13 @@ export function RepairReassemblyStep({
     }, 50);
     const completeTimeoutId = window.setTimeout(() => {
       onComplete();
-    }, REPAIR_REASSEMBLY_SECONDS * 1000);
+    }, reassemblySeconds * 1000);
 
     return () => {
       window.clearTimeout(closeTimeoutId);
       window.clearTimeout(completeTimeoutId);
     };
-  }, [onComplete]);
+  }, [onComplete, reassemblySeconds]);
 
   return (
     <group>

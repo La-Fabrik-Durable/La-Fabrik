@@ -30,7 +30,7 @@ This document lists features that are implemented in the current codebase.
 ## Repair Gameplay
 
 - Reusable production `RepairGame` mounted for `bike`, `pylone`, and `ferme` mission states
-- Repair mission config shared through `src/data/gameplay/repairMissions.ts`
+- Repair mission config shared through `src/data/gameplay/repairMissions.ts`, including per-mission broken nodes, placeholder targets, scan timing, and reassembly timing
 - Repair-game flow supports `waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission` with `.webm` prompts, repair case spawn/opening/exit, focused repair-case view, case placeholder traversal, snap-to-placeholder placement, broken-part deposit, `E`, two-fists hold input, exploded and inverse reassembly transitions, completion particles, per-part scan visuals, persistent red broken-part markers, centered broken-part UI videos, multiple grabbable replacement choices, correct-part install validation, and mission completion
 
 ## Audio

@@ -260,7 +260,7 @@ function getPlaceholderTargets(
 
   return REPLACEMENT_START_OFFSETS.map(
     (offset, index): RepairCasePlaceholder => ({
-      name: `fallback_${index + 1}`,
+      name: `placeholder_${index + 1}`,
       position: [
         REPAIR_CASE_FOCUS_POSITION[0] + offset[0],
         REPAIR_CASE_FOCUS_POSITION[1] + offset[1],

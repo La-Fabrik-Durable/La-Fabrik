@@ -139,6 +139,8 @@ For repair missions, it mounts the reusable `RepairGame` component with a missio
 
 `RepairGame` reads the active mission step from the store and writes transitions through generic actions such as `setMissionStep` and `completeMission`. This keeps the scene component small and avoids mission-specific branching inside the repair flow. The production repair flow currently supports `waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission` state transitions.
 
+Mission-specific behavior stays in `src/data/gameplay/repairMissions.ts`: each mission can define its broken nodes, placeholder targets, scan duration, and reassembly duration without adding mission branches to `RepairGame`.
+
 That means the scene can progressively move toward this pattern:
 
 ```tsx
