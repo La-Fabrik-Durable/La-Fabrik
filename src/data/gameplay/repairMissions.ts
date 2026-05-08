@@ -23,6 +23,7 @@ export interface RepairMissionConfig {
   interactUiPath: string;
   brokenUiPath: string;
   case: RepairMissionCaseConfig;
+  requiredReplacementPartId: string;
   brokenParts: readonly RepairMissionPartConfig[];
   replacementParts: readonly RepairMissionPartConfig[];
 }
@@ -47,6 +48,7 @@ export const REPAIR_MISSIONS = {
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
+    requiredReplacementPartId: "bike-cooling-core-replacement",
     brokenParts: [
       {
         id: "bike-cooling-core",
@@ -59,6 +61,16 @@ export const REPAIR_MISSIONS = {
         label: "Replacement cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
       },
+      {
+        id: "bike-radio-decoy",
+        label: "Radio module",
+        modelPath: "/models/talkie/model.gltf",
+      },
+      {
+        id: "bike-glove-decoy",
+        label: "Insulation glove",
+        modelPath: "/models/gant/model.gltf",
+      },
     ],
   },
   pylone: {
@@ -70,19 +82,63 @@ export const REPAIR_MISSIONS = {
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
-    brokenParts: [],
-    replacementParts: [],
+    requiredReplacementPartId: "pylone-grid-relay-replacement",
+    brokenParts: [
+      {
+        id: "pylone-grid-relay",
+        label: "Grid relay",
+      },
+    ],
+    replacementParts: [
+      {
+        id: "pylone-grid-relay-replacement",
+        label: "Replacement grid relay",
+        modelPath: "/models/pylone/model.gltf",
+      },
+      {
+        id: "pylone-stone-decoy",
+        label: "Stone counterweight",
+        modelPath: "/models/galet/model.gltf",
+      },
+      {
+        id: "pylone-cooling-decoy",
+        label: "Cooling core",
+        modelPath: "/models/refroidisseur/model.gltf",
+      },
+    ],
   },
   ferme: {
     id: "ferme",
     label: "Vertical farm",
-    description: "Genreric description",
+    description: "Generic description",
     modelPath: "/models/fermeverticale/model.gltf",
     stageUiPath: "/assets/UI/laferme.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
-    brokenParts: [],
-    replacementParts: [],
+    requiredReplacementPartId: "ferme-irrigation-pump-replacement",
+    brokenParts: [
+      {
+        id: "ferme-irrigation-pump",
+        label: "Irrigation pump",
+      },
+    ],
+    replacementParts: [
+      {
+        id: "ferme-irrigation-pump-replacement",
+        label: "Replacement irrigation pump",
+        modelPath: "/models/fermeverticale/model.gltf",
+      },
+      {
+        id: "ferme-tree-decoy",
+        label: "Tree sensor",
+        modelPath: "/models/sapin/model.gltf",
+      },
+      {
+        id: "ferme-radio-decoy",
+        label: "Radio module",
+        modelPath: "/models/talkie/model.gltf",
+      },
+    ],
   },
 } satisfies Record<RepairMissionId, RepairMissionConfig>;

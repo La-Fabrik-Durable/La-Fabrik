@@ -4,12 +4,19 @@ import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel
 import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
 import { TriggerObject } from "@/components/three/interaction/TriggerObject";
-import type { RepairMissionConfig } from "@/data/gameplay/repairMissions";
+import type {
+  RepairMissionConfig,
+  RepairMissionPartConfig,
+} from "@/data/gameplay/repairMissions";
 import type { Vector3Tuple } from "@/types/three/three";
 
 const INSTALL_TARGET_POSITION: Vector3Tuple = [0, 0.8, 0];
 const INSTALL_TARGET_VECTOR = new THREE.Vector3(...INSTALL_TARGET_POSITION);
-const REPLACEMENT_START_POSITION: Vector3Tuple = [0, 1.35, 1.8];
+const REPLACEMENT_START_OFFSETS: Vector3Tuple[] = [
+  [-0.9, 1.35, 1.8],
+  [0, 1.35, 2.15],
+  [0.9, 1.35, 1.8],
+];
 const REPAIR_INSTALL_RADIUS = 1.1;
 
 interface RepairRepairingStepProps {
@@ -21,20 +28,45 @@ export function RepairRepairingStep({
   config,
   onRepair,
 }: RepairRepairingStepProps): React.JSX.Element {
-  const [isReplacementPlaced, setIsReplacementPlaced] = useState(false);
-  const replacementPart = config.replacementParts[0];
-  const replacementModelPath = replacementPart?.modelPath ?? config.modelPath;
-  const replacementLabel = replacementPart?.label ?? config.label;
-  const installColor = isReplacementPlaced ? "#22c55e" : "#f97316";
-  const installFillColor = isReplacementPlaced ? "#86efac" : "#fed7aa";
+  const [placedPartIds, setPlacedPartIds] = useState<Record<string, boolean>>(
+    {},
+  );
+  const replacementParts = getReplacementParts(config);
+  const requiredReplacementPart = replacementParts.find(
+    (part) => part.id === config.requiredReplacementPartId,
+  );
+  const requiredReplacementLabel =
+    requiredReplacementPart?.label ?? config.label;
+  const hasCorrectPartPlaced = Boolean(
+    placedPartIds[config.requiredReplacementPartId],
+  );
+  const hasWrongPartPlaced = replacementParts.some(
+    (part) =>
+      part.id !== config.requiredReplacementPartId && placedPartIds[part.id],
+  );
+  const installColor = hasCorrectPartPlaced
+    ? "#22c55e"
+    : hasWrongPartPlaced
+      ? "#ef4444"
+      : "#f97316";
+  const installFillColor = hasCorrectPartPlaced
+    ? "#86efac"
+    : hasWrongPartPlaced
+      ? "#fecaca"
+      : "#fed7aa";
 
-  const handleReplacementPosition = useCallback((position: THREE.Vector3) => {
-    const isPlaced =
-      position.distanceTo(INSTALL_TARGET_VECTOR) <= REPAIR_INSTALL_RADIUS;
-    setIsReplacementPlaced((current) =>
-      current === isPlaced ? current : isPlaced,
-    );
-  }, []);
+  const handleReplacementPosition = useCallback(
+    (partId: string, position: THREE.Vector3) => {
+      const isPlaced =
+        position.distanceTo(INSTALL_TARGET_VECTOR) <= REPAIR_INSTALL_RADIUS;
+      setPlacedPartIds((current) => {
+        if (current[partId] === isPlaced) return current;
+
+        return { ...current, [partId]: isPlaced };
+      });
+    },
+    [],
+  );
 
   return (
     <group>
@@ -42,12 +74,14 @@ export function RepairRepairingStep({
         position={INSTALL_TARGET_POSITION}
         colliders="ball"
         label={
-          isReplacementPlaced
-            ? `Installer ${replacementLabel}`
-            : `Approcher ${replacementLabel}`
+          hasCorrectPartPlaced
+            ? `Installer ${requiredReplacementLabel}`
+            : hasWrongPartPlaced
+              ? `Mauvaise piece`
+              : `Approcher ${requiredReplacementLabel}`
         }
         onTrigger={() => {
-          if (!isReplacementPlaced) return;
+          if (!hasCorrectPartPlaced) return;
 
           onRepair();
         }}
@@ -66,25 +100,50 @@ export function RepairRepairingStep({
         </mesh>
       </TriggerObject>
 
-      <GrabbableObject
-        position={[
-          config.case.position[0] + REPLACEMENT_START_POSITION[0],
-          config.case.position[1] + REPLACEMENT_START_POSITION[1],
-          config.case.position[2] + REPLACEMENT_START_POSITION[2],
-        ]}
-        colliders="ball"
-        handControlled
-        label={`Prendre ${replacementLabel}`}
-        onPositionChange={handleReplacementPosition}
-      >
-        <RepairObjectModel
-          label={replacementLabel}
-          modelPath={replacementModelPath}
-          scale={0.35}
-        />
-      </GrabbableObject>
+      {replacementParts.map((part, index) => {
+        const offset =
+          REPLACEMENT_START_OFFSETS[index % REPLACEMENT_START_OFFSETS.length] ??
+          REPLACEMENT_START_OFFSETS[0]!;
+
+        return (
+          <GrabbableObject
+            key={part.id}
+            position={[
+              config.case.position[0] + offset[0],
+              config.case.position[1] + offset[1],
+              config.case.position[2] + offset[2],
+            ]}
+            colliders="ball"
+            handControlled
+            label={`Prendre ${part.label}`}
+            onPositionChange={(position) => {
+              handleReplacementPosition(part.id, position);
+            }}
+          >
+            <RepairObjectModel
+              label={part.label}
+              modelPath={part.modelPath ?? config.modelPath}
+              scale={0.28}
+            />
+          </GrabbableObject>
+        );
+      })}
 
       <RepairPromptVideo src={config.interactUiPath} position={[0, 2.3, 0]} />
     </group>
   );
+}
+
+function getReplacementParts(
+  config: RepairMissionConfig,
+): readonly RepairMissionPartConfig[] {
+  if (config.replacementParts.length > 0) return config.replacementParts;
+
+  return [
+    {
+      id: config.requiredReplacementPartId,
+      label: config.label,
+      modelPath: config.modelPath,
+    },
+  ];
 }

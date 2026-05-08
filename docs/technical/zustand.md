@@ -181,4 +181,4 @@ Current overlays:
 
 ## Next Steps
 
-The next natural step is to expand the repair interaction with case-based part selection and stricter validation of the correct replacement for each broken module.
+The next natural step is to move repair validation from this local scene interaction into richer mission data when each mission has distinct broken module nodes and replacement assets.
