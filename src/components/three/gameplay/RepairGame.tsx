@@ -92,6 +92,7 @@ export function RepairGame({
         <RepairMissionCase
           config={config}
           open={step === "repairing"}
+          zoomed={step === "repairing"}
           showFragmentationPrompt={readyForFragmentation}
         />
       ) : null}

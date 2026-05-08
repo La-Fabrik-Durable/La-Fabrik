@@ -1,3 +1,5 @@
+import type { Vector3Tuple } from "@/types/three/three";
+
 export const REPAIR_CASE_MODEL_PATH = "/models/packderelance/model.gltf";
 export const REPAIR_CASE_OPEN_SOUND_PATH = "/sounds/effect/open-malette.mp3";
 export const REPAIR_CASE_CLOSE_SOUND_PATH = "/sounds/effect/close-malette.mp3";
@@ -17,3 +19,8 @@ export const REPAIR_CASE_FLOAT_UP_SPEED = 2.4;
 export const REPAIR_CASE_FLOAT_DOWN_SPEED = 1.8;
 export const REPAIR_CASE_ROTATION_RESET_SPEED = 3;
 export const REPAIR_CASE_ROTATION_AMPLITUDE_DEGREES = 5;
+
+export const REPAIR_CASE_FOCUS_POSITION = [
+  0, 1.05, 2.05,
+] satisfies Vector3Tuple;
+export const REPAIR_CASE_FOCUS_SCALE = 2.25;
