@@ -1,21 +1,20 @@
 # Main Feature
 
-This document explains the current repair-game prototype in La-Fabrik.
+This document explains the current repair-game flow in La-Fabrik.
 
 ## What It Does
 
-The main feature is a repair interaction sandbox mounted in the debug physics scene. It lets the player approach a repair case, open it, and interact with module slots that can show selectable models and exploded-model states.
+The main feature is becoming a reusable repair flow mounted in the production game scene. It lets the player approach the active mission object, inspect it, and bring in the repair case before later repair steps take over.
 
 The current user flow is:
 
-1. Open the app with `?debug`.
-2. Switch the scene to `Physics` in the debug panel.
-3. Move close to the repair case.
-4. Press the interaction key when prompted.
-5. Watch the case open or close with sound feedback.
-6. Interact with repair module slots to cycle/select repair models.
+1. Enter a mission state such as `bike`, `pylone`, or `ferme`.
+2. Move close to the active repair object in the game scene.
+3. Aim at the object and press the interaction key when prompted.
+4. The mission step moves from `waiting` to `inspected`.
+5. The repair case appears near the mission object and can float when the player approaches it.
 
-The production repair flow is now being moved toward reusable mission data for `bike`, `pylone`, and `ferme`. This lets the same future `RepairGame` component read one mission config instead of duplicating per-mission setup.
+The older debug repair sandbox still exists in the physics test scene, but the production path now starts from the reusable `RepairGame` component.
 
 ## Why It Matters
 
@@ -23,15 +22,21 @@ This feature validates the core repair fantasy before a full mission system exis
 
 ## Current Behavior
 
-The repair case reacts to player proximity. When the player is close enough, it floats upward and rotates gently to signal interactivity. When the player moves away, it returns to its resting transform.
+In `waiting`, the active mission renders its repair object and the `interagir.webm` prompt in the game scene. The interaction uses the shared focus/raycast interaction system, so the player still gets the normal `E` prompt.
 
-Interacting with the case toggles its open state. The lid animation is handled with GSAP because it is a discrete interaction animation, not a continuous per-frame loop.
+When the player inspects the object, `RepairGame` writes `inspected` through the generic mission store action. The repair case then appears from the mission config. When the player is close enough, the existing case model floats upward and rotates gently to signal interactivity.
 
-Repair module slots are configured from static gameplay data. They render selectable repair models and can use exploded model visualization to show parts separated from their original positions.
+Repair module slots and exploded-model behavior still exist in the debug prototype. They will be migrated into the reusable repair flow in later steps.
 
 ## Key Files
 
 - `src/world/debug/TestMap.tsx` mounts the repair-game prototype in the debug physics scene.
+- `src/world/GameStageContent.tsx` mounts production `RepairGame` instances for `bike`, `pylone`, and `ferme`.
+- `src/components/three/gameplay/RepairGame.tsx` composes the reusable production repair flow.
+- `src/components/three/gameplay/RepairInspectionObject.tsx` handles the `waiting` inspection interaction.
+- `src/components/three/gameplay/RepairMissionCase.tsx` renders the mission repair case after inspection.
+- `src/components/three/gameplay/RepairPromptVideo.tsx` renders `.webm` prompts inside the 3D scene.
+- `src/hooks/gameplay/useRepairMissionStep.ts` reads the active mission step from the game store.
 - `src/components/three/gameplay/RepairGameZone.tsx` composes the repair-game zone.
 - `src/components/three/gameplay/RepairCaseObject.tsx` connects the repair case to trigger interaction and audio.
 - `src/components/three/gameplay/RepairCaseModel.tsx` renders and animates the case model.
@@ -43,12 +48,12 @@ Repair module slots are configured from static gameplay data. They render select
 - `src/data/gameplay/repairMissions.ts` stores reusable repair mission config for `bike`, `pylone`, and `ferme`.
 - `src/managers/stores/useGameStore.ts` stores mission progression state and generic mission step helpers.
 
-## Debug Requirements
+## Runtime Requirements
 
-The repair-game prototype currently requires:
+The production repair flow currently requires:
 
-- the app opened with `?debug`
-- the debug scene set to `Physics`
+- the active `mainState` to be one of `bike`, `pylone`, or `ferme`
+- `GameStageContent` mounted inside the game scene Rapier `Physics` boundary
 - model assets available under `public/models/`
 - sound assets available under `public/sounds/`
 
@@ -58,7 +63,7 @@ Frontend command:
 npm run dev
 ```
 
-Debug URL:
+Debug URL for state switching and inspection:
 
 ```txt
 http://localhost:5173/?debug
@@ -77,8 +82,7 @@ python -m backend.main
 
 ## Current Limitations
 
-- It is mounted only in the debug physics scene.
-- The production `RepairGame` component is not mounted in the main game scene yet.
+- The reusable production `RepairGame` currently covers only `waiting -> inspected`.
 - Mission progression exists in Zustand, but the full repair mission flow is still being integrated.
 - There is no central `GameManager` in this branch.
 - Hand tracking is available as debug interaction input, not as final repair gameplay.

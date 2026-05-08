@@ -1,3 +1,4 @@
+import { RepairGame } from "@/components/three/gameplay/RepairGame";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import type { Vector3Tuple } from "@/types/three/three";
 
@@ -33,11 +34,11 @@ export function GameStageContent(): React.JSX.Element {
     case "intro":
       return <StageAnchor color="#7dd3fc" position={[0, 4, 0]} />;
     case "bike":
-      return <StageAnchor color="#facc15" position={[8, 3, -6]} />;
+      return <RepairGame mission="bike" position={[8, 0, -6]} />;
     case "pylone":
-      return <StageAnchor color="#a78bfa" position={[64, 6, -66]} />;
+      return <RepairGame mission="pylone" position={[64, 0, -66]} />;
     case "ferme":
-      return <StageAnchor color="#86efac" position={[-24, 5, 42]} />;
+      return <RepairGame mission="ferme" position={[-24, 0, 42]} />;
     case "outro":
       return <StageAnchor color="#fb7185" position={[0, 6, 10]} scale={1.25} />;
   }

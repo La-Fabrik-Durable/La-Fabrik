@@ -27,6 +27,12 @@ This document lists features that are implemented in the current codebase.
 - Physics-backed gameplay objects can be mounted inside stage content without replacing player octree collision
 - Interaction prompt shown for trigger interactions
 
+## Repair Gameplay
+
+- Reusable production `RepairGame` mounted for `bike`, `pylone`, and `ferme` mission states
+- Repair mission config shared through `src/data/gameplay/repairMissions.ts`
+- First repair-game slice supports `waiting -> inspected` with `.webm` interaction prompts and repair case spawn
+
 ## Audio
 
 - One-shot sound playback for trigger interactions
@@ -57,7 +63,7 @@ This document lists features that are implemented in the current codebase.
 
 ## Not Implemented Yet
 
-- mission system
+- complete mission system
 - zone system
 - cinematic system
 - dialogue system

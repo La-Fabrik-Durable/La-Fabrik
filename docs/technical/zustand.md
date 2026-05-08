@@ -130,6 +130,14 @@ This keeps reusable gameplay components such as repair flows from duplicating mi
 
 `src/world/GameStageContent.tsx` subscribes to `mainState` and mounts stage-specific content.
 
+For repair missions, it mounts the reusable `RepairGame` component with a mission id:
+
+```tsx
+<RepairGame mission="bike" position={[8, 0, -6]} />
+```
+
+`RepairGame` reads the active mission step from the store and writes transitions through generic actions such as `setMissionStep`. This keeps the scene component small and avoids mission-specific branching inside the repair flow.
+
 That means the scene can progressively move toward this pattern:
 
 ```tsx
@@ -173,4 +181,4 @@ Current overlays:
 
 ## Next Steps
 
-The next natural step is to replace the temporary stage anchors in `GameStageContent` with real stage components, for example `IntroContent`, `BikeContent`, `PyloneContent`, `FermeContent`, and `OutroContent`.
+The next natural step is to extend `RepairGame` beyond `waiting -> inspected` with fragmentation, scanning, repairing, and completion behavior.
