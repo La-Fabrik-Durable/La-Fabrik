@@ -98,7 +98,7 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
   - soit la carte principale, soit la scène de test physique debug
   - le rig joueur quand le mode caméra actif est \`player\`
 - \`src/world/GameMap.tsx\` charge les modèles de carte disponibles et construit l'octree de collision.
-- \`src/world/GameStageContent.tsx\` est enveloppé dans le contexte Rapier \`Physics\` dans la scène de jeu de production afin que les objets gameplay de stage puissent utiliser la physique sans migrer la carte ou le joueur vers Rapier.
+- \`src/world/GameStageContent.tsx\` est enveloppé dans le contexte Rapier \`Physics\` dans la scène de jeu de production afin que les objets gameplay de stage puissent utiliser la physique sans migrer la carte ou le joueur vers Rapier. Il monte maintenant des instances réutilisables de \`RepairGame\` pour les états de mission \`bike\`, \`pylone\` et \`ferme\`.
 - \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
 - \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
@@ -140,12 +140,20 @@ Le joueur et l'octree de carte doivent rester hors du provider Rapier tant qu'il
 - \`src/components/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
 - Les contrôles globaux \`lil-gui\` incluent camera mode, scene mode, \`R3F Perf\` et \`Debug Overlay\`; les contrôles d'interaction vivent dans le dossier \`Interaction\`.
 
+## Domaines de composants 3D
+
+- \`src/components/three/models/\` contient les helpers de modèles réutilisables comme \`ExplodableModel\`.
+- \`src/components/three/interaction/\` contient les wrappers d'interaction réutilisables comme \`InteractableObject\`, \`TriggerObject\` et \`GrabbableObject\`.
+- \`src/components/three/handTracking/\` contient les modèles debug R3F liés au hand tracking, comme les gants.
+- \`src/components/three/gameplay/\` contient les composants de gameplay de réparation : le flow de production réutilisable \`RepairGame\`, la mallette de réparation, la zone debug repair et les slots de modules.
+- \`src/components/three/world/\` contient les objets world/environnement réutilisables comme \`SkyModel\`.
+
 ## Limites actuelles
 
 - Le dépôt est encore un prototype, pas le runtime complet du jeu.
 - \`src/world/debug/TestMap.tsx\` fait encore partie de la composition active.
 - Il n'existe pas encore d'orchestrateur gameplay central comme \`GameManager\`.
-- Les systèmes de missions, zones, cinématiques et dialogues ne sont pas implémentés.
+- L'état de mission existe dans Zustand, mais les zones, cinématiques, dialogues et le flow complet de réparation ne sont pas implémentés.
 - Le joueur utilise une collision octree et des règles simples, pas une pile physique gameplay complète.
 `;
 
@@ -347,6 +355,14 @@ Cela évite aux composants gameplay réutilisables, comme les flows de réparati
 
 \`src/world/GameStageContent.tsx\` s'abonne à \`mainState\` et monte le contenu spécifique au state courant.
 
+Pour les missions de réparation, il monte le composant réutilisable \`RepairGame\` avec un id de mission :
+
+\`\`\`tsx
+<RepairGame mission="bike" position={[8, 0, -6]} />
+\`\`\`
+
+\`RepairGame\` lit l'étape de mission active depuis le store et écrit les transitions via des actions génériques comme \`setMissionStep\`. Cela garde le composant de scène petit et évite les branches spécifiques à chaque mission dans le flow de réparation.
+
 La scène peut donc évoluer progressivement vers ce pattern :
 
 \`\`\`tsx
@@ -390,7 +406,7 @@ Overlays actuels :
 
 ## Prochaines étapes
 
-La prochaine étape naturelle est de remplacer les ancres temporaires de \`GameStageContent\` par de vrais composants de phase, par exemple \`IntroContent\`, \`BikeContent\`, \`PyloneContent\`, \`FermeContent\` et \`OutroContent\`.
+La prochaine étape naturelle est d'étendre \`RepairGame\` au-delà de \`waiting -> inspected\` avec la fragmentation, le scan, la réparation et la complétion.
 `;
 
 export const featuresFr = `# Fonctionnalités implémentées
@@ -422,6 +438,12 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Les objets gameplay avec physique peuvent être montés dans le contenu de stage sans remplacer la collision octree du joueur
 - Prompt d'interaction affiché pour les interactions trigger
 
+## Gameplay de réparation
+
+- \`RepairGame\` de production réutilisable monté pour les états de mission \`bike\`, \`pylone\` et \`ferme\`
+- Configuration de mission partagée via \`src/data/gameplay/repairMissions.ts\`
+- Première slice repair-game avec \`waiting -> inspected\`, prompts d'interaction \`.webm\` et apparition de la mallette
+
 ## Audio
 
 - Lecture de sons one-shot pour les interactions trigger
@@ -438,7 +460,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 
 ## Pas encore implémenté
 
-- système de missions
+- système de missions complet
 - système de zones
 - système de cinématiques
 - système de dialogues
