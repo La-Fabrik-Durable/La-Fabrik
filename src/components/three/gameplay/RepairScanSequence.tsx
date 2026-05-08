@@ -30,6 +30,7 @@ export function RepairScanSequence({
   const [parts, setParts] = useState<readonly ExplodedPart[]>([]);
   const [activePartIndex, setActivePartIndex] = useState(0);
   const activePart = parts[activePartIndex];
+  const scanPartSeconds = config.scanPartSeconds ?? REPAIR_SCAN_PART_SECONDS;
   const brokenPartIndexes = getBrokenPartIndexes(parts, config.brokenParts);
   const visibleBrokenPartIndexes = brokenPartIndexes.filter(
     (partIndex) => partIndex <= activePartIndex,
@@ -48,12 +49,12 @@ export function RepairScanSequence({
 
         return nextIndex;
       });
-    }, REPAIR_SCAN_PART_SECONDS * 1000);
+    }, scanPartSeconds * 1000);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [activePartIndex, config, onComplete, parts]);
+  }, [activePartIndex, config, onComplete, parts, scanPartSeconds]);
 
   return (
     <group>

@@ -24,7 +24,9 @@ export interface RepairMissionConfig {
   interactUiPath: string;
   brokenUiPath: string;
   case: RepairMissionCaseConfig;
+  reassemblySeconds?: number;
   requiredReplacementPartId: string;
+  scanPartSeconds?: number;
   brokenParts: readonly RepairMissionPartConfig[];
   replacementParts: readonly RepairMissionPartConfig[];
 }
@@ -54,6 +56,8 @@ export const REPAIR_MISSIONS = {
       {
         id: "bike-cooling-core",
         label: "Cooling core",
+        nodeName: "Cylinder",
+        placeholderName: "placeholder_1",
       },
     ],
     replacementParts: [
@@ -77,17 +81,28 @@ export const REPAIR_MISSIONS = {
   pylone: {
     id: "pylone",
     label: "Power pylon",
-    description: "Generic description",
+    description:
+      "Restore the pylon lamp relay and damaged panel before reconnecting the grid",
     modelPath: "/models/pylone/model.gltf",
     stageUiPath: "/assets/UI/centrale.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
+    reassemblySeconds: 1.8,
     requiredReplacementPartId: "pylone-grid-relay-replacement",
+    scanPartSeconds: 1.4,
     brokenParts: [
       {
         id: "pylone-grid-relay",
         label: "Grid relay",
+        nodeName: "lampe",
+        placeholderName: "placeholder_1",
+      },
+      {
+        id: "pylone-damaged-panel",
+        label: "Damaged solar panel",
+        nodeName: "panneau2",
+        placeholderName: "placeholder_2",
       },
     ],
     replacementParts: [
@@ -111,17 +126,26 @@ export const REPAIR_MISSIONS = {
   ferme: {
     id: "ferme",
     label: "Vertical farm",
-    description: "Generic description",
+    description:
+      "Stabilize the irrigation loop and humidity sensor before restarting the farm",
     modelPath: "/models/fermeverticale/model.gltf",
     stageUiPath: "/assets/UI/laferme.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
+    reassemblySeconds: 1.2,
     requiredReplacementPartId: "ferme-irrigation-pump-replacement",
+    scanPartSeconds: 0.9,
     brokenParts: [
       {
         id: "ferme-irrigation-pump",
         label: "Irrigation pump",
+        placeholderName: "placeholder_1",
+      },
+      {
+        id: "ferme-humidity-sensor",
+        label: "Humidity sensor",
+        placeholderName: "placeholder_2",
       },
     ],
     replacementParts: [
