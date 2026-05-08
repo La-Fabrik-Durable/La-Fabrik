@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
+import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
+import { RepairRepairingStep } from "@/components/three/gameplay/RepairRepairingStep";
 import { RepairScanVisual } from "@/components/three/gameplay/RepairScanVisual";
 import {
   REPAIR_FRAGMENTATION_SEQUENCE_SECONDS,
@@ -77,9 +79,23 @@ export function RepairGame({
         <ExplodableModel modelPath={config.modelPath} split />
       ) : null}
       {step === "scanning" ? <RepairScanVisual config={config} /> : null}
-      {step !== "waiting" ? (
+      {step === "repairing" ? (
+        <RepairRepairingStep
+          config={config}
+          onRepair={() => setMissionStep(mission, "done")}
+        />
+      ) : null}
+      {step === "done" ? (
+        <RepairObjectModel
+          label={config.label}
+          modelPath={config.modelPath}
+          scale={1}
+        />
+      ) : null}
+      {step !== "waiting" && step !== "done" ? (
         <RepairMissionCase
           config={config}
+          open={step === "repairing"}
           showFragmentationPrompt={readyForFragmentation}
         />
       ) : null}
