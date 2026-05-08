@@ -5,18 +5,20 @@ import type { RepairMissionConfig } from "@/data/gameplay/repairMissions";
 
 interface RepairMissionCaseProps {
   config: RepairMissionConfig;
+  open?: boolean;
   showFragmentationPrompt?: boolean;
 }
 
 export function RepairMissionCase({
   config,
+  open = false,
   showFragmentationPrompt = false,
 }: RepairMissionCaseProps): React.JSX.Element {
   return (
     <group>
       <RepairCaseModel
         modelPath={REPAIR_CASE_MODEL_PATH}
-        open={false}
+        open={open}
         position={config.case.position}
         rotation={config.case.rotation}
         scale={config.case.scale}
