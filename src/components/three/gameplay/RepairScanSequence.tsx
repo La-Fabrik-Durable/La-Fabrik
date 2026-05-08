@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { RepairBrokenPartHighlight } from "@/components/three/gameplay/RepairBrokenPartHighlight";
+import { RepairBrokenPartPrompt } from "@/components/three/gameplay/RepairBrokenPartPrompt";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
 import { RepairScanVisual } from "@/components/three/gameplay/RepairScanVisual";
 import { REPAIR_SCAN_PART_SECONDS } from "@/data/gameplay/repairGameConfig";
@@ -60,10 +61,13 @@ export function RepairScanSequence({
         if (!part) return null;
 
         return (
-          <RepairBrokenPartHighlight
-            key={part.object.uuid}
-            target={part.object}
-          />
+          <group key={part.object.uuid}>
+            <RepairBrokenPartHighlight target={part.object} />
+            <RepairBrokenPartPrompt
+              src={config.brokenUiPath}
+              target={part.object}
+            />
+          </group>
         );
       })}
     </group>
