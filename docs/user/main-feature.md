@@ -15,6 +15,8 @@ The current user flow is:
 5. Watch the case open or close with sound feedback.
 6. Interact with repair module slots to cycle/select repair models.
 
+The production repair flow is now being moved toward reusable mission data for `bike`, `pylone`, and `ferme`. This lets the same future `RepairGame` component read one mission config instead of duplicating per-mission setup.
+
 ## Why It Matters
 
 This feature validates the core repair fantasy before a full mission system exists. It tests whether repair objects, physical proximity, model selection, audio feedback, and exploded model visualization can work together in the 3D scene.
@@ -38,6 +40,8 @@ Repair module slots are configured from static gameplay data. They render select
 - `src/data/gameplay/repairCaseConfig.ts` stores repair case model, sound, and animation constants.
 - `src/data/gameplay/repairGameConfig.ts` stores repair zone and slot positions.
 - `src/data/gameplay/repairGameModelCatalog.ts` stores selectable repair models.
+- `src/data/gameplay/repairMissions.ts` stores reusable repair mission config for `bike`, `pylone`, and `ferme`.
+- `src/managers/stores/useGameStore.ts` stores mission progression state and generic mission step helpers.
 
 ## Debug Requirements
 
@@ -74,7 +78,8 @@ python -m backend.main
 ## Current Limitations
 
 - It is mounted only in the debug physics scene.
-- There is no mission progression system yet.
-- There is no central `GameManager` or Zustand store in this branch.
+- The production `RepairGame` component is not mounted in the main game scene yet.
+- Mission progression exists in Zustand, but the full repair mission flow is still being integrated.
+- There is no central `GameManager` in this branch.
 - Hand tracking is available as debug interaction input, not as final repair gameplay.
 - The repair-game content is configured statically in `src/data/gameplay/`.
