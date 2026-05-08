@@ -4,11 +4,8 @@ import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompleti
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
 import { RepairRepairingStep } from "@/components/three/gameplay/RepairRepairingStep";
-import { RepairScanVisual } from "@/components/three/gameplay/RepairScanVisual";
-import {
-  REPAIR_FRAGMENTATION_SEQUENCE_SECONDS,
-  REPAIR_SCAN_SEQUENCE_SECONDS,
-} from "@/data/gameplay/repairGameConfig";
+import { RepairScanSequence } from "@/components/three/gameplay/RepairScanSequence";
+import { REPAIR_FRAGMENTATION_SEQUENCE_SECONDS } from "@/data/gameplay/repairGameConfig";
 import { REPAIR_MISSIONS } from "@/data/gameplay/repairMissions";
 import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmentationInput";
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
@@ -47,17 +44,11 @@ export function RepairGame({
   useEffect(() => {
     if (mainState !== mission) return undefined;
 
-    if (step !== "fragmented" && step !== "scanning") return undefined;
-
-    const nextStep = step === "fragmented" ? "scanning" : "repairing";
-    const sequenceSeconds =
-      step === "fragmented"
-        ? REPAIR_FRAGMENTATION_SEQUENCE_SECONDS
-        : REPAIR_SCAN_SEQUENCE_SECONDS;
+    if (step !== "fragmented") return undefined;
 
     const timeoutId = window.setTimeout(() => {
-      setMissionStep(mission, nextStep);
-    }, sequenceSeconds * 1000);
+      setMissionStep(mission, "scanning");
+    }, REPAIR_FRAGMENTATION_SEQUENCE_SECONDS * 1000);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -79,7 +70,12 @@ export function RepairGame({
       {step === "fragmented" ? (
         <ExplodableModel modelPath={config.modelPath} split />
       ) : null}
-      {step === "scanning" ? <RepairScanVisual config={config} /> : null}
+      {step === "scanning" ? (
+        <RepairScanSequence
+          config={config}
+          onComplete={() => setMissionStep(mission, "repairing")}
+        />
+      ) : null}
       {step === "repairing" ? (
         <RepairRepairingStep
           config={config}

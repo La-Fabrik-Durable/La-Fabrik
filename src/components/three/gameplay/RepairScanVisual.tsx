@@ -1,27 +1,36 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
-import type { RepairMissionConfig } from "@/data/gameplay/repairMissions";
 
 interface RepairScanVisualProps {
-  config: RepairMissionConfig;
+  target?: THREE.Object3D | null | undefined;
 }
 
 export function RepairScanVisual({
-  config,
+  target = null,
 }: RepairScanVisualProps): React.JSX.Element {
+  const groupRef = useRef<THREE.Group>(null);
   const scanLineRef = useRef<THREE.Mesh>(null);
+  const worldPosition = useRef(new THREE.Vector3());
+  const localPosition = useRef(new THREE.Vector3());
 
   useFrame(({ clock }) => {
+    const group = groupRef.current;
     const scanLine = scanLineRef.current;
-    if (!scanLine) return;
+    if (!group || !scanLine) return;
+
+    if (target) {
+      target.getWorldPosition(worldPosition.current);
+      localPosition.current.copy(worldPosition.current);
+      group.parent?.worldToLocal(localPosition.current);
+      group.position.copy(localPosition.current);
+    }
 
     scanLine.position.y = 0.35 + Math.sin(clock.elapsedTime * 4) * 0.7;
   });
 
   return (
-    <group>
+    <group ref={groupRef}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[1.35, 0.035, 12, 96]} />
         <meshBasicMaterial color="#38bdf8" transparent opacity={0.75} />
@@ -39,7 +48,6 @@ export function RepairScanVisual({
         <sphereGeometry args={[1.25, 32, 16]} />
         <meshBasicMaterial color="#0ea5e9" transparent opacity={0.12} />
       </mesh>
-      <RepairPromptVideo src={config.brokenUiPath} position={[0, 2.3, 0]} />
     </group>
   );
 }
