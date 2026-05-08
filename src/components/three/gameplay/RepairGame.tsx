@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
+import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompletionStep";
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
-import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
 import { RepairRepairingStep } from "@/components/three/gameplay/RepairRepairingStep";
 import { RepairScanVisual } from "@/components/three/gameplay/RepairScanVisual";
 import {
@@ -33,6 +33,7 @@ export function RepairGame({
 }: RepairGameProps): React.JSX.Element | null {
   const config = REPAIR_MISSIONS[mission];
   const mainState = useGameStore((state) => state.mainState);
+  const completeMission = useGameStore((state) => state.completeMission);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
   const step = useRepairMissionStep(mission);
   const parsedScale = toVector3Scale(scale);
@@ -86,10 +87,9 @@ export function RepairGame({
         />
       ) : null}
       {step === "done" ? (
-        <RepairObjectModel
-          label={config.label}
-          modelPath={config.modelPath}
-          scale={1}
+        <RepairCompletionStep
+          config={config}
+          onComplete={() => completeMission(mission)}
         />
       ) : null}
       {step !== "waiting" && step !== "done" ? (

@@ -136,7 +136,7 @@ For repair missions, it mounts the reusable `RepairGame` component with a missio
 <RepairGame mission="bike" position={[8, 0, -6]} />
 ```
 
-`RepairGame` reads the active mission step from the store and writes transitions through generic actions such as `setMissionStep`. This keeps the scene component small and avoids mission-specific branching inside the repair flow. The production repair flow currently supports `waiting -> inspected -> fragmented -> scanning -> repairing -> done` state transitions.
+`RepairGame` reads the active mission step from the store and writes transitions through generic actions such as `setMissionStep` and `completeMission`. This keeps the scene component small and avoids mission-specific branching inside the repair flow. The production repair flow currently supports `waiting -> inspected -> fragmented -> scanning -> repairing -> done -> next mission` state transitions.
 
 That means the scene can progressively move toward this pattern:
 
@@ -181,4 +181,4 @@ Current overlays:
 
 ## Next Steps
 
-The next natural step is to move repair validation from this local scene interaction into richer mission data when each mission has distinct broken module nodes and replacement assets.
+The next natural step is to move repair validation from this local scene interaction into richer mission data when each mission has distinct broken module nodes, replacement assets, and narrative completion beats.
