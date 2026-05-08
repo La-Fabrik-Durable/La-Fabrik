@@ -15,7 +15,7 @@ The current user flow is:
 5. The repair case appears near the mission object and can float when the player approaches it.
 6. Press `E` or hold both fists closed for one second to move from `inspected` to `fragmented`.
 7. The mission object uses an exploded-model transition, then moves to `scanning`.
-8. The scan visual moves across the fragmented model one part at a time.
+8. The scan visual moves across the fragmented model one part at a time and keeps a red marker on any configured broken part once it has been found.
 9. In `repairing`, the case opens and several grabbable replacement parts appear near the case.
 10. Move the correct replacement part close to the install target.
 11. Press `E` on the green install target to move to `done` and show the reassembled object. Wrong parts turn the target red and cannot finish the repair.
@@ -33,13 +33,14 @@ When the player inspects the object, `RepairGame` writes `inspected` through the
 
 In `inspected`, `RepairGame` can also move to `fragmented`. The player can use the interaction key or hold both fists closed for one second. The hand-tracking path is state-based, so it does not depend on being inside a local object interaction radius.
 
-In `fragmented`, the repair object is rendered with `ExplodableModel`, then automatically advances to `scanning`. In `scanning`, the exploded model remains visible and a blue scan visual moves from part to part before the flow advances to `repairing`. In `repairing`, the case opens, several grabbable replacement parts appear, and the install target only validates the configured correct part for the active mission. In `done`, the repaired object remains visible with a completion target that plays the case exit animation before advancing the global mission progression.
+In `fragmented`, the repair object is rendered with `ExplodableModel`, then automatically advances to `scanning`. In `scanning`, the exploded model remains visible, a blue scan visual moves from part to part, and a red halo/wire marker stays attached to configured broken parts after the scanner reaches them. The scan can match a specific `nodeName` when mission data provides one, otherwise it falls back to the first scanned parts as placeholder broken parts. In `repairing`, the case opens, several grabbable replacement parts appear, and the install target only validates the configured correct part for the active mission. In `done`, the repaired object remains visible with a completion target that plays the case exit animation before advancing the global mission progression.
 
 ## Key Files
 
 - `src/world/GameStageContent.tsx` mounts production `RepairGame` instances for `bike`, `pylone`, and `ferme`.
 - `src/components/three/gameplay/RepairCompletionStep.tsx` renders the final repaired object, completion target, case exit animation, and mission UI prompt.
 - `src/components/three/gameplay/RepairGame.tsx` composes the reusable production repair flow.
+- `src/components/three/gameplay/RepairBrokenPartHighlight.tsx` renders the red halo and wire marker around detected broken parts during scanning.
 - `src/components/three/gameplay/RepairInspectionObject.tsx` handles the `waiting` inspection interaction.
 - `src/components/three/gameplay/RepairMissionCase.tsx` renders the mission repair case after inspection.
 - `src/components/three/gameplay/RepairRepairingStep.tsx` renders grabbable replacement choices, correct-part placement validation, and the install trigger in `repairing`.
