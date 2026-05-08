@@ -4,6 +4,7 @@ import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel
 import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
 import { TriggerObject } from "@/components/three/interaction/TriggerObject";
+import { REPAIR_CASE_FOCUS_POSITION } from "@/data/gameplay/repairCaseConfig";
 import type {
   RepairMissionConfig,
   RepairMissionPartConfig,
@@ -13,9 +14,9 @@ import type { Vector3Tuple } from "@/types/three/three";
 const INSTALL_TARGET_POSITION: Vector3Tuple = [0, 0.8, 0];
 const INSTALL_TARGET_VECTOR = new THREE.Vector3(...INSTALL_TARGET_POSITION);
 const REPLACEMENT_START_OFFSETS: Vector3Tuple[] = [
-  [-0.9, 1.35, 1.8],
-  [0, 1.35, 2.15],
-  [0.9, 1.35, 1.8],
+  [-1.15, 1, 0.25],
+  [0, 1.05, 0.45],
+  [1.15, 1, 0.25],
 ];
 const REPAIR_INSTALL_RADIUS = 1.1;
 
@@ -109,9 +110,9 @@ export function RepairRepairingStep({
           <GrabbableObject
             key={part.id}
             position={[
-              config.case.position[0] + offset[0],
-              config.case.position[1] + offset[1],
-              config.case.position[2] + offset[2],
+              REPAIR_CASE_FOCUS_POSITION[0] + offset[0],
+              REPAIR_CASE_FOCUS_POSITION[1] + offset[1],
+              REPAIR_CASE_FOCUS_POSITION[2] + offset[2],
             ]}
             colliders="ball"
             handControlled
@@ -123,7 +124,7 @@ export function RepairRepairingStep({
             <RepairObjectModel
               label={part.label}
               modelPath={part.modelPath ?? config.modelPath}
-              scale={0.28}
+              scale={0.36}
             />
           </GrabbableObject>
         );

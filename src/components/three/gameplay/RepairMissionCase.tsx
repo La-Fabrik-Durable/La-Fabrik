@@ -1,6 +1,10 @@
 import { RepairCaseModel } from "@/components/three/gameplay/RepairCaseModel";
 import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
-import { REPAIR_CASE_MODEL_PATH } from "@/data/gameplay/repairCaseConfig";
+import {
+  REPAIR_CASE_FOCUS_POSITION,
+  REPAIR_CASE_FOCUS_SCALE,
+  REPAIR_CASE_MODEL_PATH,
+} from "@/data/gameplay/repairCaseConfig";
 import type { RepairMissionConfig } from "@/data/gameplay/repairMissions";
 
 interface RepairMissionCaseProps {
@@ -8,6 +12,7 @@ interface RepairMissionCaseProps {
   exiting?: boolean;
   onExitComplete?: (() => void) | undefined;
   open?: boolean;
+  zoomed?: boolean;
   showFragmentationPrompt?: boolean;
 }
 
@@ -16,8 +21,14 @@ export function RepairMissionCase({
   exiting = false,
   onExitComplete,
   open = false,
+  zoomed = false,
   showFragmentationPrompt = false,
 }: RepairMissionCaseProps): React.JSX.Element {
+  const casePosition = zoomed
+    ? REPAIR_CASE_FOCUS_POSITION
+    : config.case.position;
+  const caseScale = zoomed ? REPAIR_CASE_FOCUS_SCALE : config.case.scale;
+
   return (
     <group>
       <RepairCaseModel
@@ -25,14 +36,14 @@ export function RepairMissionCase({
         exiting={exiting}
         onExitComplete={onExitComplete}
         open={open}
-        position={config.case.position}
+        position={casePosition}
         rotation={config.case.rotation}
-        scale={config.case.scale}
+        scale={caseScale}
       />
       {showFragmentationPrompt && !exiting ? (
         <RepairPromptVideo
           src={config.interactUiPath}
-          position={[config.case.position[0], 2.4, config.case.position[2]]}
+          position={[casePosition[0], 2.4, casePosition[2]]}
           size={80}
         />
       ) : null}
