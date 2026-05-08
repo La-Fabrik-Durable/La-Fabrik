@@ -361,7 +361,7 @@ Pour les missions de réparation, il monte le composant réutilisable \`RepairGa
 <RepairGame mission="bike" position={[8, 0, -6]} />
 \`\`\`
 
-\`RepairGame\` lit l'étape de mission active depuis le store et écrit les transitions via des actions génériques comme \`setMissionStep\`. Cela garde le composant de scène petit et évite les branches spécifiques à chaque mission dans le flow de réparation. Le flow de réparation de production supporte actuellement les transitions \`waiting -> inspected -> fragmented -> scanning -> repairing -> done\`.
+\`RepairGame\` lit l'étape de mission active depuis le store et écrit les transitions via des actions génériques comme \`setMissionStep\` et \`completeMission\`. Cela garde le composant de scène petit et évite les branches spécifiques à chaque mission dans le flow de réparation. Le flow de réparation de production supporte actuellement les transitions \`waiting -> inspected -> fragmented -> scanning -> repairing -> done -> next mission\`.
 
 La scène peut donc évoluer progressivement vers ce pattern :
 
@@ -406,7 +406,7 @@ Overlays actuels :
 
 ## Prochaines étapes
 
-La prochaine étape naturelle est de déplacer la validation de réparation depuis cette interaction locale vers des données de mission plus riches quand chaque mission aura des nodes de modules cassés et des assets de remplacement dédiés.
+La prochaine étape naturelle est de déplacer la validation de réparation depuis cette interaction locale vers des données de mission plus riches quand chaque mission aura des nodes de modules cassés, des assets de remplacement dédiés et des beats narratifs de complétion.
 `;
 
 export const featuresFr = `# Fonctionnalités implémentées
@@ -442,7 +442,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 
 - \`RepairGame\` de production réutilisable monté pour les états de mission \`bike\`, \`pylone\` et \`ferme\`
 - Configuration de mission partagée via \`src/data/gameplay/repairMissions.ts\`
-- Flow repair-game avec \`waiting -> inspected -> fragmented -> scanning -> repairing -> done\`, prompts \`.webm\`, apparition/ouverture de la mallette, touche \`E\`, hold deux poings, transition de modèle explosé, visuels de scan, plusieurs choix de pièces grabbables et validation de la bonne pièce
+- Flow repair-game avec \`waiting -> inspected -> fragmented -> scanning -> repairing -> done -> next mission\`, prompts \`.webm\`, apparition/ouverture de la mallette, touche \`E\`, hold deux poings, transition de modèle explosé, visuels de scan, plusieurs choix de pièces grabbables, validation de la bonne pièce et complétion de mission
 
 ## Audio
 
