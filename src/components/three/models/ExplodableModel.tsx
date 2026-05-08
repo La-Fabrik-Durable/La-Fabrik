@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { ExplodedModel } from "@/utils/three/ExplodedModel";
+import type { ExplodedPart } from "@/utils/three/ExplodedModel";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 import { toVector3Scale } from "@/utils/three/scale";
@@ -55,6 +56,7 @@ interface ExplodableModelInnerProps extends ModelTransformProps {
   modelPath: string;
   split: boolean;
   splitDistance?: number;
+  onPartsReady?: (parts: readonly ExplodedPart[]) => void;
 }
 
 export function ExplodableModel(
@@ -78,6 +80,7 @@ function ExplodableModelInner({
   rotation = [0, 0, 0],
   scale = 1,
   splitDistance = 1.2,
+  onPartsReady,
 }: ExplodableModelInnerProps): React.JSX.Element {
   const { scene } = useLoggedGLTF(modelPath, {
     scope: "ExplodableModel",
@@ -95,6 +98,10 @@ function ExplodableModelInner({
   useEffect(() => {
     explodedModel.setSplit(split);
   }, [explodedModel, split]);
+
+  useEffect(() => {
+    onPartsReady?.(explodedModel.getParts());
+  }, [explodedModel, onPartsReady]);
 
   useFrame((_, delta) => {
     explodedModel.update(delta);
