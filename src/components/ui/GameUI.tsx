@@ -3,6 +3,7 @@ import { DebugOverlayLayout } from "@/components/ui/debug/DebugOverlayLayout";
 import { GameSettingsMenu } from "@/components/ui/GameSettingsMenu";
 import { HandTrackingVisualizer } from "@/components/ui/HandTrackingVisualizer";
 import { InteractPrompt } from "@/components/ui/InteractPrompt";
+import { Subtitles } from "@/components/ui/Subtitles";
 
 export function GameUI(): React.JSX.Element {
   return (
@@ -11,6 +12,7 @@ export function GameUI(): React.JSX.Element {
       <Crosshair />
       <InteractPrompt />
       <HandTrackingVisualizer />
+      <Subtitles />
       <GameSettingsMenu />
     </>
   );
