@@ -240,7 +240,9 @@ export function RepairRepairingStep({
         );
       })}
 
-      <RepairPromptVideo src={config.interactUiPath} position={[0, 2.3, 0]} />
+      {isReadyToInstall ? (
+        <RepairPromptVideo src={config.interactUiPath} position={[0, 2.3, 0]} />
+      ) : null}
     </group>
   );
 }
