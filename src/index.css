@@ -1532,6 +1532,28 @@ canvas {
   color: #ffffff;
 }
 
+.editor-srt-time-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.editor-srt-time-actions button {
+  padding: 8px 10px;
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  border-radius: 12px;
+  background: rgba(125, 211, 252, 0.08);
+  color: #bae6fd;
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.editor-srt-time-actions button:hover {
+  border-color: #7dd3fc;
+  background: rgba(125, 211, 252, 0.14);
+}
+
 .editor-srt-jump-button {
   width: 100%;
   padding: 8px 10px;
