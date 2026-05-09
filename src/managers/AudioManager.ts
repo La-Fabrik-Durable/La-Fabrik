@@ -1,6 +1,10 @@
 import { logger } from "@/utils/core/logger";
 
+export type AudioCategory = "music" | "sfx" | "dialogue";
+export type OneShotAudioCategory = Exclude<AudioCategory, "music">;
+
 interface PlaySoundOptions {
+  category?: OneShotAudioCategory;
   playbackRate?: number;
 }
 
@@ -12,6 +16,7 @@ export class AudioManager {
   private _musicUnlockHandler: (() => void) | null = null;
 
   private static readonly MAX_POOL_SIZE_PER_SOUND = 6;
+  private static readonly DEFAULT_SOUND_CATEGORY: OneShotAudioCategory = "sfx";
   private static readonly IGNORED_PLAYBACK_ERRORS = new Set([
     "AbortError",
     "NotAllowedError",
@@ -29,6 +34,7 @@ export class AudioManager {
 
   playSound(path: string, volume = 1, options: PlaySoundOptions = {}): void {
     const audio = this._acquireAudio(path);
+    const category = options.category ?? AudioManager.DEFAULT_SOUND_CATEGORY;
     audio.volume = Math.max(0, Math.min(1, volume));
     audio.playbackRate = options.playbackRate ?? 1;
     audio.currentTime = 0;
@@ -43,6 +49,7 @@ export class AudioManager {
 
       logger.error("AudioManager", "Failed to play sound", {
         path,
+        category,
         error: AudioManager._toLogValue(error),
       });
     });

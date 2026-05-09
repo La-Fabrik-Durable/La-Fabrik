@@ -70,7 +70,9 @@ export function RepairCaseObject({
       label={open ? "Mallette inspectée" : "Inspecter la mallette"}
       onTrigger={() => {
         if (open) return;
-        AudioManager.getInstance().playSound(REPAIR_CASE_OPEN_SOUND_PATH);
+        AudioManager.getInstance().playSound(REPAIR_CASE_OPEN_SOUND_PATH, 1, {
+          category: "sfx",
+        });
         onInspect();
       }}
     >
