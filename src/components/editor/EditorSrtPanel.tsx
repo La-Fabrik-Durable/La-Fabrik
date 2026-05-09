@@ -41,8 +41,32 @@ function getSrtPath(
   return `/sounds/dialogue/subtitles/${language}/${voice}.srt`;
 }
 
-function createEmptySrtTemplate(speaker: DialogueSpeaker): string {
-  return `1\n00:00:00,000 --> 00:00:02,000\n${speaker}: Nouveau sous-titre\n`;
+function createSrtTemplate(
+  speaker: DialogueSpeaker,
+  expectedCueIndexes: number[],
+): string {
+  const cueIndexes = expectedCueIndexes.length > 0 ? expectedCueIndexes : [1];
+
+  return `${cueIndexes
+    .map((cueIndex, index) => {
+      const startTime = index * 3;
+      const endTime = startTime + 2;
+
+      return `${cueIndex}\n${formatSrtTime(startTime)} --> ${formatSrtTime(endTime)}\n${speaker}: Sous-titre ${cueIndex} a definir`;
+    })
+    .join("\n\n")}\n`;
+}
+
+function formatSrtTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  return `${padTime(hours)}:${padTime(minutes)}:${padTime(seconds)},000`;
+}
+
+function padTime(value: number): string {
+  return value.toString().padStart(2, "0");
 }
 
 function getSrtDiagnostic(
@@ -176,6 +200,10 @@ export function EditorSrtPanel(): React.JSX.Element {
   const expectedCueIndexes = getExpectedCueIndexes(manifest, voice);
   const diagnostic = getSrtDiagnostic(content, expectedCueIndexes);
   const isSrtValid = diagnostic.errors.length === 0;
+  const srtTemplate = createSrtTemplate(
+    selectedVoice.label,
+    expectedCueIndexes,
+  );
 
   async function handleSave(): Promise<void> {
     if (!isSrtValid) {
@@ -222,7 +250,7 @@ export function EditorSrtPanel(): React.JSX.Element {
         if (!mounted) return;
 
         if (!response.ok) {
-          setContent(createEmptySrtTemplate(selectedVoice.label));
+          setContent(srtTemplate);
           setStatus("Fichier absent, template local cree");
           return;
         }
@@ -232,14 +260,14 @@ export function EditorSrtPanel(): React.JSX.Element {
       })
       .catch(() => {
         if (!mounted) return;
-        setContent(createEmptySrtTemplate(selectedVoice.label));
+        setContent(srtTemplate);
         setStatus("Erreur de chargement, template local cree");
       });
 
     return () => {
       mounted = false;
     };
-  }, [language, selectedVoice.label, voice]);
+  }, [language, selectedVoice.label, srtTemplate, voice]);
 
   return (
     <section className="editor-srt-section" aria-labelledby="srt-heading">
@@ -295,9 +323,7 @@ export function EditorSrtPanel(): React.JSX.Element {
         <button
           className="editor-action-button"
           type="button"
-          onClick={() =>
-            setContent(createEmptySrtTemplate(selectedVoice.label))
-          }
+          onClick={() => setContent(srtTemplate)}
         >
           <RefreshCw size={15} aria-hidden="true" />
           Template
