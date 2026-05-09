@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, Save } from "lucide-react";
 import type { SubtitleLanguage } from "@/managers/stores/useSettingsStore";
 import type {
   DialogueSpeaker,
@@ -48,13 +48,48 @@ function downloadSrtFile(
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+async function saveSrtFile(
+  voice: DialogueVoiceId,
+  language: SubtitleLanguage,
+  content: string,
+): Promise<void> {
+  const response = await fetch("/api/save-srt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voice, language, content }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(body?.error ?? "Sauvegarde SRT impossible");
+  }
+}
+
 export function EditorSrtPanel(): React.JSX.Element {
   const [voice, setVoice] = useState<DialogueVoiceId>("narrateur");
   const [language, setLanguage] = useState<SubtitleLanguage>("fr");
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("Chargement du SRT...");
+  const [isSaving, setIsSaving] = useState(false);
   const selectedVoice =
     SRT_VOICES.find((item) => item.id === voice) ?? DEFAULT_SRT_VOICE;
+
+  async function handleSave(): Promise<void> {
+    setIsSaving(true);
+    setStatus("Sauvegarde du SRT...");
+
+    try {
+      await saveSrtFile(voice, language, content);
+      setStatus(`Sauvegarde dans ${getSrtPath(voice, language)}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setStatus(`${message}. Utilise Export SRT si le serveur dev est absent.`);
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -147,6 +182,15 @@ export function EditorSrtPanel(): React.JSX.Element {
         </button>
         <button
           className="editor-action-button editor-action-button-primary"
+          type="button"
+          disabled={isSaving}
+          onClick={() => void handleSave()}
+        >
+          <Save size={15} aria-hidden="true" />
+          {isSaving ? "Saving..." : "Save SRT"}
+        </button>
+        <button
+          className="editor-action-button"
           type="button"
           onClick={() => downloadSrtFile(voice, language, content)}
         >
