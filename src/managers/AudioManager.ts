@@ -3,6 +3,10 @@ import { logger } from "@/utils/core/logger";
 export type AudioCategory = "music" | "sfx" | "dialogue";
 export type OneShotAudioCategory = Exclude<AudioCategory, "music">;
 
+interface AudioContextWindow extends Window {
+  webkitAudioContext?: typeof AudioContext;
+}
+
 const DEFAULT_CATEGORY_VOLUMES: Record<AudioCategory, number> = {
   music: 1,
   sfx: 1,
@@ -11,15 +15,23 @@ const DEFAULT_CATEGORY_VOLUMES: Record<AudioCategory, number> = {
 
 interface PlaySoundOptions {
   category?: OneShotAudioCategory;
+  pan?: number;
   playbackRate?: number;
+}
+
+interface StereoNodes {
+  source: MediaElementAudioSourceNode;
+  panner: StereoPannerNode;
 }
 
 export class AudioManager {
   private static _instance: AudioManager | null = null;
   private readonly _audioPools = new Map<string, HTMLAudioElement[]>();
+  private readonly _stereoNodes = new WeakMap<HTMLAudioElement, StereoNodes>();
   private readonly _categoryVolumes: Record<AudioCategory, number> = {
     ...DEFAULT_CATEGORY_VOLUMES,
   };
+  private _audioContext: AudioContext | null = null;
   private _music: HTMLAudioElement | null = null;
   private _musicPath: string | null = null;
   private _musicVolume = 1;
@@ -64,6 +76,11 @@ export class AudioManager {
     audio.volume = this._getEffectiveVolume(category, volume);
     audio.playbackRate = options.playbackRate ?? 1;
     audio.currentTime = 0;
+    this._setStereoPan(audio, options.pan ?? 0);
+
+    if (this._audioContext?.state === "suspended") {
+      void this._audioContext.resume();
+    }
 
     void audio.play().catch((error: unknown) => {
       if (
@@ -130,6 +147,8 @@ export class AudioManager {
       });
     });
     this._audioPools.clear();
+    void this._audioContext?.close();
+    this._audioContext = null;
     AudioManager._instance = null;
   }
 
@@ -181,8 +200,42 @@ export class AudioManager {
     this._musicUnlockHandler = null;
   }
 
+  private _setStereoPan(audio: HTMLAudioElement, pan: number): void {
+    const audioContext = this._getAudioContext();
+    if (!audioContext || !("createStereoPanner" in audioContext)) return;
+
+    let nodes = this._stereoNodes.get(audio);
+    if (!nodes) {
+      nodes = {
+        source: audioContext.createMediaElementSource(audio),
+        panner: audioContext.createStereoPanner(),
+      };
+      nodes.source.connect(nodes.panner).connect(audioContext.destination);
+      this._stereoNodes.set(audio, nodes);
+    }
+
+    nodes.panner.pan.value = AudioManager._clampPan(pan);
+  }
+
+  private _getAudioContext(): AudioContext | null {
+    if (this._audioContext) return this._audioContext;
+
+    const AudioContextConstructor =
+      window.AudioContext ??
+      (window as AudioContextWindow).webkitAudioContext ??
+      null;
+    if (!AudioContextConstructor) return null;
+
+    this._audioContext = new AudioContextConstructor();
+    return this._audioContext;
+  }
+
   private _getEffectiveVolume(category: AudioCategory, volume: number): number {
     return AudioManager._clampVolume(volume) * this._categoryVolumes[category];
+  }
+
+  private static _clampPan(pan: number): number {
+    return Math.max(-1, Math.min(1, pan));
   }
 
   private static _clampVolume(volume: number): number {
