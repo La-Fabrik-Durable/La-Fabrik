@@ -1506,6 +1506,32 @@ canvas {
   height: 34px;
 }
 
+.editor-srt-active-cue {
+  display: grid;
+  gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid #242424;
+  border-radius: 12px;
+  background: #101010;
+}
+
+.editor-srt-active-cue span {
+  color: #8d8d8d;
+  font-size: 0.7rem;
+}
+
+.editor-srt-active-cue p {
+  margin: 0;
+  color: #d7d7d7;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.editor-srt-active-cue strong {
+  margin-right: 4px;
+  color: #ffffff;
+}
+
 .editor-srt-jump-button {
   width: 100%;
   padding: 8px 10px;

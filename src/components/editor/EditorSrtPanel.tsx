@@ -71,6 +71,10 @@ function formatSrtTime(totalSeconds: number): string {
   return `${padTime(hours)}:${padTime(minutes)}:${padTime(seconds)},000`;
 }
 
+function formatPreviewTime(totalSeconds: number): string {
+  return `${Math.floor(totalSeconds)}.${Math.floor((totalSeconds % 1) * 10)}s`;
+}
+
 function padTime(value: number): string {
   return value.toString().padStart(2, "0");
 }
@@ -227,17 +231,24 @@ export function EditorSrtPanel(): React.JSX.Element {
   const [status, setStatus] = useState("Chargement du SRT...");
   const [isSaving, setIsSaving] = useState(false);
   const [manifest, setManifest] = useState<DialogueManifest | null>(null);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [selectedDialogueId, setSelectedDialogueId] = useState("");
   const selectedVoice =
     SRT_VOICES.find((item) => item.id === voice) ?? DEFAULT_SRT_VOICE;
   const expectedDialogues = getExpectedDialogues(manifest, voice);
   const expectedCueIndexes = getExpectedCueIndexes(manifest, voice);
+  const parsedCues = parseSrt(content);
+  const activeCue =
+    parsedCues.find(
+      (cue) =>
+        audioCurrentTime >= cue.startTime && audioCurrentTime < cue.endTime,
+    ) ?? null;
   const diagnostic = getSrtDiagnostic(content, expectedCueIndexes);
   const isSrtValid = diagnostic.errors.length === 0;
   const srtTemplate = createSrtTemplate(
     selectedVoice.label,
     expectedCueIndexes,
   );
-  const [selectedDialogueId, setSelectedDialogueId] = useState("");
   const selectedDialogue =
     expectedDialogues.find((dialogue) => dialogue.id === selectedDialogueId) ??
     expectedDialogues[0] ??
@@ -388,7 +399,21 @@ export function EditorSrtPanel(): React.JSX.Element {
               key={selectedDialogue.audio}
               controls
               src={selectedDialogue.audio}
+              onLoadedMetadata={() => setAudioCurrentTime(0)}
+              onTimeUpdate={(event) =>
+                setAudioCurrentTime(event.currentTarget.currentTime)
+              }
             />
+            <div className="editor-srt-active-cue">
+              <span>Temps audio: {formatPreviewTime(audioCurrentTime)}</span>
+              {activeCue ? (
+                <p>
+                  <strong>Cue {activeCue.index}</strong> {activeCue.text}
+                </p>
+              ) : (
+                <p>Aucune cue active a ce moment.</p>
+              )}
+            </div>
             <button
               className="editor-srt-jump-button"
               type="button"
