@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Download, RefreshCw, Save } from "lucide-react";
 import type { SubtitleLanguage } from "@/managers/stores/useSettingsStore";
 import type {
+  DialogueManifest,
   DialogueSpeaker,
   DialogueVoiceId,
 } from "@/types/dialogues/dialogues";
+import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { parseSrt } from "@/utils/subtitles/parseSrt";
 
 interface SrtVoiceOption {
@@ -14,6 +16,7 @@ interface SrtVoiceOption {
 
 interface SrtDiagnostic {
   cueCount: number;
+  expectedCueCount: number;
   errors: string[];
 }
 
@@ -42,7 +45,10 @@ function createEmptySrtTemplate(speaker: DialogueSpeaker): string {
   return `1\n00:00:00,000 --> 00:00:02,000\n${speaker}: Nouveau sous-titre\n`;
 }
 
-function getSrtDiagnostic(content: string): SrtDiagnostic {
+function getSrtDiagnostic(
+  content: string,
+  expectedCueIndexes: number[],
+): SrtDiagnostic {
   const normalizedContent = content.replace(/^\uFEFF/, "").replace(/\r/g, "");
   const blocks = normalizedContent
     .trim()
@@ -92,10 +98,37 @@ function getSrtDiagnostic(content: string): SrtDiagnostic {
     );
   }
 
+  const cueIndexes = new Set(cues.map((cue) => cue.index));
+  const missingCueIndexes = expectedCueIndexes.filter(
+    (cueIndex) => !cueIndexes.has(cueIndex),
+  );
+
+  if (missingCueIndexes.length > 0) {
+    errors.push(
+      `Cues attendues par le manifeste manquantes: ${missingCueIndexes.join(", ")}.`,
+    );
+  }
+
   return {
     cueCount: cues.length,
+    expectedCueCount: expectedCueIndexes.length,
     errors,
   };
+}
+
+function getExpectedCueIndexes(
+  manifest: DialogueManifest | null,
+  voice: DialogueVoiceId,
+): number[] {
+  if (!manifest) return [];
+
+  return manifest.dialogues
+    .filter((dialogue) => dialogue.voice === voice)
+    .map((dialogue) => dialogue.subtitleCueIndex)
+    .filter(
+      (cueIndex, index, cueIndexes) => cueIndexes.indexOf(cueIndex) === index,
+    )
+    .sort((a, b) => a - b);
 }
 
 function downloadSrtFile(
@@ -137,9 +170,11 @@ export function EditorSrtPanel(): React.JSX.Element {
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("Chargement du SRT...");
   const [isSaving, setIsSaving] = useState(false);
+  const [manifest, setManifest] = useState<DialogueManifest | null>(null);
   const selectedVoice =
     SRT_VOICES.find((item) => item.id === voice) ?? DEFAULT_SRT_VOICE;
-  const diagnostic = getSrtDiagnostic(content);
+  const expectedCueIndexes = getExpectedCueIndexes(manifest, voice);
+  const diagnostic = getSrtDiagnostic(content, expectedCueIndexes);
   const isSrtValid = diagnostic.errors.length === 0;
 
   async function handleSave(): Promise<void> {
@@ -161,6 +196,22 @@ export function EditorSrtPanel(): React.JSX.Element {
       setIsSaving(false);
     }
   }
+
+  useEffect(() => {
+    let mounted = true;
+
+    void loadDialogueManifest()
+      .then((loadedManifest) => {
+        if (mounted) setManifest(loadedManifest);
+      })
+      .catch(() => {
+        if (mounted) setManifest(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -276,7 +327,7 @@ export function EditorSrtPanel(): React.JSX.Element {
       >
         <strong>
           {isSrtValid
-            ? `${diagnostic.cueCount} cue${diagnostic.cueCount > 1 ? "s" : ""} valide${diagnostic.cueCount > 1 ? "s" : ""}`
+            ? `${diagnostic.cueCount} cue${diagnostic.cueCount > 1 ? "s" : ""} valide${diagnostic.cueCount > 1 ? "s" : ""} / ${diagnostic.expectedCueCount} attendue${diagnostic.expectedCueCount > 1 ? "s" : ""}`
             : `${diagnostic.errors.length} erreur${diagnostic.errors.length > 1 ? "s" : ""} SRT`}
         </strong>
         {!isSrtValid && (
