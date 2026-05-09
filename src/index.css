@@ -1395,6 +1395,77 @@ canvas {
   font-size: 0.74rem;
 }
 
+/* Editor SRT panel */
+.editor-srt-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.editor-srt-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.editor-srt-controls label {
+  display: grid;
+  gap: 5px;
+  color: #8d8d8d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-srt-controls select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #242424;
+  border-radius: 12px;
+  background: #101010;
+  color: #f2f2f2;
+}
+
+.editor-srt-textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #1f1f1f;
+  border-radius: 16px;
+  background: #050505;
+  color: #d7d7d7;
+  font-family: "SFMono-Regular", "Courier New", monospace;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.editor-srt-textarea:focus,
+.editor-srt-controls select:focus {
+  border-color: #ffffff;
+  outline: none;
+}
+
+.editor-srt-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.editor-srt-actions .editor-action-button + .editor-action-button {
+  margin-top: 0;
+}
+
+.editor-srt-status {
+  margin: 0;
+  color: #8d8d8d;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 /* Editor responsive layout */
 @media (max-width: 768px) {
   .editor-error h2 {

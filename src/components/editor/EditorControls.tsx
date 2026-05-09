@@ -12,6 +12,7 @@ import {
   Save,
   Undo2,
 } from "lucide-react";
+import { EditorSrtPanel } from "@/components/editor/EditorSrtPanel";
 import type { MapNode, TransformMode } from "@/types/editor/editor";
 
 interface EditorControlsProps {
@@ -236,6 +237,8 @@ export function EditorControls({
               : `Selected node ${selectedNodeIndex + 1} raw lines`}
           </div>
         </section>
+
+        <EditorSrtPanel />
       </aside>
     </>
   );
