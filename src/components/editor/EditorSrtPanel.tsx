@@ -26,6 +26,9 @@ interface TextRange {
   end: number;
 }
 
+type CueTimeEdge = "start" | "end";
+const CUE_NUDGE_SECONDS = 0.1;
+
 const SRT_VOICES: SrtVoiceOption[] = [
   { id: "narrateur", label: "Narrateur" },
   { id: "fermier", label: "Fermier" },
@@ -73,6 +76,21 @@ function formatSrtTime(totalSeconds: number): string {
 
 function formatPreviewTime(totalSeconds: number): string {
   return `${Math.floor(totalSeconds)}.${Math.floor((totalSeconds % 1) * 10)}s`;
+}
+
+function parseSrtTime(value: string): number | null {
+  const match = value.match(/^(\d{2}):(\d{2}):(\d{2}),(\d{3})$/);
+  if (!match) return null;
+
+  const [, hours, minutes, seconds, milliseconds] = match;
+  if (!hours || !minutes || !seconds || !milliseconds) return null;
+
+  return (
+    Number(hours) * 3600 +
+    Number(minutes) * 60 +
+    Number(seconds) +
+    Number(milliseconds) / 1000
+  );
 }
 
 function padTime(value: number): string {
@@ -190,6 +208,58 @@ function findCueBlockRange(
   return { start, end };
 }
 
+function updateCueTimecode(
+  content: string,
+  cueIndex: number,
+  edge: CueTimeEdge,
+  time: number,
+): string | null {
+  const range = findCueBlockRange(content, cueIndex);
+  if (!range) return null;
+
+  const block = content.slice(range.start, range.end);
+  const lines = block.split("\n");
+  const timecodeLine = lines[1];
+  if (!timecodeLine) return null;
+
+  const [start, end] = timecodeLine.split(" --> ");
+  if (!start || !end) return null;
+
+  lines[1] =
+    edge === "start"
+      ? `${formatSrtTime(time)} --> ${end}`
+      : `${start} --> ${formatSrtTime(time)}`;
+
+  return `${content.slice(0, range.start)}${lines.join("\n")}${content.slice(range.end)}`;
+}
+
+function nudgeCueTimecode(
+  content: string,
+  cueIndex: number,
+  delta: number,
+): string | null {
+  const range = findCueBlockRange(content, cueIndex);
+  if (!range) return null;
+
+  const block = content.slice(range.start, range.end);
+  const lines = block.split("\n");
+  const timecodeLine = lines[1];
+  if (!timecodeLine) return null;
+
+  const [start, end] = timecodeLine.split(" --> ");
+  if (!start || !end) return null;
+
+  const startTime = parseSrtTime(start);
+  const endTime = parseSrtTime(end);
+  if (startTime === null || endTime === null) return null;
+
+  const nextStartTime = Math.max(0, startTime + delta);
+  const nextEndTime = Math.max(nextStartTime + 0.001, endTime + delta);
+  lines[1] = `${formatSrtTime(nextStartTime)} --> ${formatSrtTime(nextEndTime)}`;
+
+  return `${content.slice(0, range.start)}${lines.join("\n")}${content.slice(range.end)}`;
+}
+
 function downloadSrtFile(
   voice: DialogueVoiceId,
   language: SubtitleLanguage,
@@ -285,6 +355,39 @@ export function EditorSrtPanel(): React.JSX.Element {
     textareaRef.current.focus();
     textareaRef.current.setSelectionRange(range.start, range.end);
     setStatus(`Cue ${cueIndex} selectionnee dans le SRT.`);
+  }
+
+  function handleSetCueTime(cueIndex: number, edge: CueTimeEdge): void {
+    const updatedContent = updateCueTimecode(
+      content,
+      cueIndex,
+      edge,
+      audioCurrentTime,
+    );
+
+    if (!updatedContent) {
+      setStatus(`Cue ${cueIndex} introuvable ou timecode invalide.`);
+      return;
+    }
+
+    setContent(updatedContent);
+    setStatus(
+      `Cue ${cueIndex}: ${edge === "start" ? "debut" : "fin"} place a ${formatSrtTime(audioCurrentTime)}.`,
+    );
+  }
+
+  function handleNudgeCue(cueIndex: number, delta: number): void {
+    const updatedContent = nudgeCueTimecode(content, cueIndex, delta);
+
+    if (!updatedContent) {
+      setStatus(`Cue ${cueIndex} introuvable ou timecode invalide.`);
+      return;
+    }
+
+    setContent(updatedContent);
+    setStatus(
+      `Cue ${cueIndex} decalee de ${delta > 0 ? "+" : ""}${delta.toFixed(1)}s.`,
+    );
   }
 
   useEffect(() => {
@@ -413,6 +516,46 @@ export function EditorSrtPanel(): React.JSX.Element {
               ) : (
                 <p>Aucune cue active a ce moment.</p>
               )}
+            </div>
+            <div className="editor-srt-time-actions">
+              <button
+                type="button"
+                onClick={() =>
+                  handleSetCueTime(selectedDialogue.subtitleCueIndex, "start")
+                }
+              >
+                Set start
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleSetCueTime(selectedDialogue.subtitleCueIndex, "end")
+                }
+              >
+                Set end
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleNudgeCue(
+                    selectedDialogue.subtitleCueIndex,
+                    -CUE_NUDGE_SECONDS,
+                  )
+                }
+              >
+                -100ms
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleNudgeCue(
+                    selectedDialogue.subtitleCueIndex,
+                    CUE_NUDGE_SECONDS,
+                  )
+                }
+              >
+                +100ms
+              </button>
             </div>
             <button
               className="editor-srt-jump-button"
