@@ -1,0 +1,91 @@
+1
+00:00:00,000 --> 00:00:08,000
+Bienvenue a Altera.
+
+2
+00:00:00,000 --> 00:00:08,000
+Quel est ton prenom ?
+
+3
+00:00:00,000 --> 00:00:08,000
+Parfait, on peut commencer la visite.
+
+4
+00:00:00,000 --> 00:00:08,000
+Ta premiere mission concerne un velo electrique.
+
+5
+00:00:00,000 --> 00:00:08,000
+Le velo electrique est casse.
+
+6
+00:00:00,000 --> 00:00:08,000
+Scanne le galet pour identifier le probleme.
+
+7
+00:00:00,000 --> 00:00:08,000
+Le velo electrique est repare.
+
+8
+00:00:00,000 --> 00:00:08,000
+Del aide a besoin de toi pour la suite.
+
+9
+00:00:00,000 --> 00:00:08,000
+Une coupure electrique vient d'etre signalee.
+
+10
+00:00:00,000 --> 00:00:08,000
+Le poteau electrique est endommage.
+
+11
+00:00:00,000 --> 00:00:08,000
+Le courant est retabli.
+
+12
+00:00:00,000 --> 00:00:08,000
+Prends la route vers la ferme verticale.
+
+13
+00:00:00,000 --> 00:00:08,000
+Nous arrivons a la ferme.
+
+14
+00:00:00,000 --> 00:00:08,000
+Fouille le centre pour trouver une solution.
+
+15
+00:00:00,000 --> 00:00:08,000
+Interagis avec les tuyaux pres du lac.
+
+16
+00:00:00,000 --> 00:00:08,000
+Observe le refroidisseur.
+
+17
+00:00:00,000 --> 00:00:08,000
+Le refroidisseur est casse.
+
+18
+00:00:00,000 --> 00:00:08,000
+Le createur de pluie est pret.
+
+19
+00:00:00,000 --> 00:00:08,000
+Merci pour ton aide.
+
+20
+00:00:00,000 --> 00:00:08,000
+Bonne chance pour la suite.
+
+21
+00:00:00,000 --> 00:00:08,000
+Voici l'atelier de La Fabrik.
+
+22
+00:00:00,000 --> 00:00:08,000
+Voici les outils a ta disposition.
+
+23
+00:00:00,000 --> 00:00:08,000
+Electricienne fait partie de l'histoire de La Fabrik.

@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:08,000
+Tu peux me donner un coup de main ?
+
+2
+00:00:00,000 --> 00:00:08,000
+On y est presque, continue comme ca.
+
+3
+00:00:00,000 --> 00:00:08,000
+Merci, la mission est terminee.

@@ -14,7 +14,7 @@ interface SrtVoiceOption {
 const SRT_VOICES: SrtVoiceOption[] = [
   { id: "narrateur", label: "Narrateur" },
   { id: "fermier", label: "Fermier" },
-  { id: "leonie", label: "Leonie" },
+  { id: "electricienne", label: "Electricienne" },
 ];
 const DEFAULT_SRT_VOICE: SrtVoiceOption = {
   id: "narrateur",

@@ -9,12 +9,12 @@ import type {
 const VALID_VOICE_IDS = new Set<DialogueVoiceId>([
   "narrateur",
   "fermier",
-  "leonie",
+  "electricienne",
 ]);
 const VALID_SPEAKERS = new Set<DialogueSpeaker>([
   "Narrateur",
   "Fermier",
-  "Leonie",
+  "Electricienne",
 ]);
 
 export function parseDialogueManifest(data: unknown): DialogueManifest {

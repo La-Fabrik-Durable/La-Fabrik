@@ -18,11 +18,11 @@
       }
     },
     {
-      "id": "leonie",
-      "speaker": "Leonie",
+      "id": "electricienne",
+      "speaker": "Electricienne",
       "subtitles": {
-        "fr": "/sounds/dialogue/subtitles/fr/leonie.srt",
-        "en": "/sounds/dialogue/subtitles/en/leonie.srt"
+        "fr": "/sounds/dialogue/subtitles/fr/electricienne.srt",
+        "en": "/sounds/dialogue/subtitles/en/electricienne.srt"
       }
     }
   ],
@@ -161,9 +161,9 @@
       "subtitleCueIndex": 22
     },
     {
-      "id": "narrateur_histoireleonie",
+      "id": "narrateur_histoireelectricienne",
       "voice": "narrateur",
-      "audio": "/sounds/dialogue/narrateur_histoireleonie.mp3",
+      "audio": "/sounds/dialogue/narrateur_histoireelectricienne.mp3",
       "subtitleCueIndex": 23
     },
     {

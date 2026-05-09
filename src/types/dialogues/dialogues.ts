@@ -1,7 +1,7 @@
 import type { SubtitleLanguage } from "@/managers/stores/useSettingsStore";
 
-export type DialogueVoiceId = "narrateur" | "fermier" | "leonie";
-export type DialogueSpeaker = "Narrateur" | "Fermier" | "Leonie";
+export type DialogueVoiceId = "narrateur" | "fermier" | "electricienne";
+export type DialogueSpeaker = "Narrateur" | "Fermier" | "Electricienne";
 
 export interface DialogueVoice {
   id: DialogueVoiceId;
