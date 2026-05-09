@@ -5,10 +5,16 @@ import type {
   DialogueSpeaker,
   DialogueVoiceId,
 } from "@/types/dialogues/dialogues";
+import { parseSrt } from "@/utils/subtitles/parseSrt";
 
 interface SrtVoiceOption {
   id: DialogueVoiceId;
   label: DialogueSpeaker;
+}
+
+interface SrtDiagnostic {
+  cueCount: number;
+  errors: string[];
 }
 
 const SRT_VOICES: SrtVoiceOption[] = [
@@ -22,6 +28,8 @@ const DEFAULT_SRT_VOICE: SrtVoiceOption = {
 };
 
 const SRT_LANGUAGES: SubtitleLanguage[] = ["fr", "en"];
+const SRT_TIME_LINE_PATTERN =
+  /^\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}$/;
 
 function getSrtPath(
   voice: DialogueVoiceId,
@@ -32,6 +40,62 @@ function getSrtPath(
 
 function createEmptySrtTemplate(speaker: DialogueSpeaker): string {
   return `1\n00:00:00,000 --> 00:00:02,000\n${speaker}: Nouveau sous-titre\n`;
+}
+
+function getSrtDiagnostic(content: string): SrtDiagnostic {
+  const normalizedContent = content.replace(/^\uFEFF/, "").replace(/\r/g, "");
+  const blocks = normalizedContent
+    .trim()
+    .split(/\n{2,}/)
+    .filter(Boolean);
+  const cues = parseSrt(content);
+  const errors: string[] = [];
+  const indexes = new Set<number>();
+
+  if (blocks.length === 0) {
+    errors.push("Le fichier SRT est vide.");
+  }
+
+  blocks.forEach((block, blockIndex) => {
+    const lines = block
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const displayIndex = blockIndex + 1;
+    const cueIndex = Number(lines[0]);
+
+    if (lines.length < 3) {
+      errors.push(
+        `Bloc ${displayIndex}: il manque un index, un timecode ou un texte.`,
+      );
+      return;
+    }
+
+    if (!Number.isInteger(cueIndex)) {
+      errors.push(`Bloc ${displayIndex}: l'index doit etre un nombre entier.`);
+    } else if (indexes.has(cueIndex)) {
+      errors.push(`Bloc ${displayIndex}: l'index ${cueIndex} est duplique.`);
+    } else {
+      indexes.add(cueIndex);
+    }
+
+    if (!SRT_TIME_LINE_PATTERN.test(lines[1] ?? "")) {
+      errors.push(
+        `Bloc ${displayIndex}: le timecode doit utiliser HH:MM:SS,mmm --> HH:MM:SS,mmm.`,
+      );
+    }
+  });
+
+  if (blocks.length > 0 && cues.length !== blocks.length) {
+    errors.push(
+      "Un ou plusieurs blocs ont une duree invalide ou un timecode illisible.",
+    );
+  }
+
+  return {
+    cueCount: cues.length,
+    errors,
+  };
 }
 
 function downloadSrtFile(
@@ -75,8 +139,15 @@ export function EditorSrtPanel(): React.JSX.Element {
   const [isSaving, setIsSaving] = useState(false);
   const selectedVoice =
     SRT_VOICES.find((item) => item.id === voice) ?? DEFAULT_SRT_VOICE;
+  const diagnostic = getSrtDiagnostic(content);
+  const isSrtValid = diagnostic.errors.length === 0;
 
   async function handleSave(): Promise<void> {
+    if (!isSrtValid) {
+      setStatus("Corrige les erreurs SRT avant de sauvegarder.");
+      return;
+    }
+
     setIsSaving(true);
     setStatus("Sauvegarde du SRT...");
 
@@ -183,7 +254,7 @@ export function EditorSrtPanel(): React.JSX.Element {
         <button
           className="editor-action-button editor-action-button-primary"
           type="button"
-          disabled={isSaving}
+          disabled={isSaving || !isSrtValid}
           onClick={() => void handleSave()}
         >
           <Save size={15} aria-hidden="true" />
@@ -200,6 +271,22 @@ export function EditorSrtPanel(): React.JSX.Element {
       </div>
 
       <p className="editor-srt-status">{status}</p>
+      <div
+        className={`editor-srt-diagnostic ${isSrtValid ? "is-valid" : "is-invalid"}`}
+      >
+        <strong>
+          {isSrtValid
+            ? `${diagnostic.cueCount} cue${diagnostic.cueCount > 1 ? "s" : ""} valide${diagnostic.cueCount > 1 ? "s" : ""}`
+            : `${diagnostic.errors.length} erreur${diagnostic.errors.length > 1 ? "s" : ""} SRT`}
+        </strong>
+        {!isSrtValid && (
+          <ul>
+            {diagnostic.errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

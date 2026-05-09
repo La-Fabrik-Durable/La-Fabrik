@@ -1472,6 +1472,39 @@ canvas {
   line-height: 1.4;
 }
 
+.editor-srt-diagnostic {
+  display: grid;
+  gap: 6px;
+  padding: 9px 10px;
+  border: 1px solid #242424;
+  border-radius: 12px;
+  background: #101010;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.editor-srt-diagnostic.is-valid {
+  border-color: rgba(134, 239, 172, 0.32);
+  color: #86efac;
+}
+
+.editor-srt-diagnostic.is-invalid {
+  border-color: rgba(248, 113, 113, 0.38);
+  color: #fca5a5;
+}
+
+.editor-srt-diagnostic strong {
+  font-size: 0.74rem;
+}
+
+.editor-srt-diagnostic ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+  color: #fca5a5;
+}
+
 /* Editor responsive layout */
 @media (max-width: 768px) {
   .editor-error h2 {
