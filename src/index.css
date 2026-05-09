@@ -1232,6 +1232,12 @@ canvas {
   transform: translateY(-1px);
 }
 
+.editor-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
 .editor-action-button-primary,
 .editor-player-button.active {
   background: #ffffff;
@@ -1451,7 +1457,7 @@ canvas {
 
 .editor-srt-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
