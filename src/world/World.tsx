@@ -11,6 +11,8 @@ import {
   ZoneDetection,
 } from "@/components/zone/ZoneDetection";
 import { GameFlow } from "@/components/game/GameFlow";
+import { CentralObject } from "@/components/3d/CentralObject";
+import { VillageoisHelperObject } from "@/components/3d/VillageoisHelperObject";
 import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
@@ -36,6 +38,8 @@ export function World(): React.JSX.Element {
       <ZoneDetection />
       <ZoneDebugVisuals />
       <GameFlow />
+      <VillageoisHelperObject position={[1, 12, -55]} />
+      <CentralObject position={[1, 15, -45]} />
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (

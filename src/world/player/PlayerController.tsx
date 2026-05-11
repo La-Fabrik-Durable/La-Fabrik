@@ -24,7 +24,7 @@ import {
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/playerConfig";
 import { InteractionManager } from "@/stateManager/InteractionManager";
-import { GameStepManager } from "@/stateManager/GameStepManager";
+import { useGameStore } from "@/stores/gameStore";
 import type { Vector3Tuple } from "@/types/3d";
 
 type Keys = {
@@ -64,7 +64,7 @@ export function PlayerController({
   const velocity = useRef(new THREE.Vector3());
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
-  const gameStepManager = GameStepManager.getInstance();
+  const canMove = useGameStore((state) => state.canMove);
 
   const capsule = useRef(
     new Capsule(
@@ -167,7 +167,7 @@ export function PlayerController({
   }, []);
 
   useFrame((_, delta) => {
-    if (!gameStepManager.canMove()) {
+    if (!canMove) {
       velocity.current.set(0, 0, 0);
       camera.position.copy(capsule.current.end);
       return;

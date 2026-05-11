@@ -1,4 +1,5 @@
 import type { GameStep, GameStepSnapshot } from "@/types/game";
+import { useGameStore } from "@/stores/gameStore";
 
 export class GameStepManager {
   private static _instance: GameStepManager | null = null;
@@ -49,6 +50,7 @@ export class GameStepManager {
 
     this._currentStep = step;
     this._cachedSnapshot = null;
+    useGameStore.getState().setStep(step);
     this._emit();
   }
 
@@ -57,6 +59,7 @@ export class GameStepManager {
 
     this._playerName = name;
     this._cachedSnapshot = null;
+    useGameStore.getState().setPlayerName(name);
     this._emit();
   }
 
@@ -65,6 +68,7 @@ export class GameStepManager {
 
     this._canMove = canMove;
     this._cachedSnapshot = null;
+    useGameStore.getState().setCanMove(canMove);
     this._emit();
   }
 

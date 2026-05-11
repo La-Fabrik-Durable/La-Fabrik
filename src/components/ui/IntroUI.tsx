@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useGameStep } from "@/hooks/useGameStep";
+import { useGameStore } from "@/stores/gameStore";
 
 export function IntroUI(): React.JSX.Element | null {
-  const { step, setPlayerName, transitionTo } = useGameStep();
+  const step = useGameStore((state) => state.step);
+  const setPlayerName = useGameStore((state) => state.setPlayerName);
+  const setStep = useGameStore((state) => state.setStep);
   const [inputValue, setInputValue] = useState("");
 
   if (step !== "naming") return null;
@@ -13,7 +15,7 @@ export function IntroUI(): React.JSX.Element | null {
     console.log("[IntroUI] Submitting, name:", inputValue.trim());
     setPlayerName(inputValue.trim());
     console.log("[IntroUI] Calling transitionTo('bienvenue')");
-    transitionTo("bienvenue");
+    setStep("bienvenue");
     console.log("[IntroUI] After transitionTo, step should be:", step);
   };
 
@@ -98,7 +100,8 @@ export function IntroUI(): React.JSX.Element | null {
 }
 
 export function BienvenueDisplay(): React.JSX.Element | null {
-  const { step, playerName } = useGameStep();
+  const step = useGameStore((state) => state.step);
+  const playerName = useGameStore((state) => state.playerName);
 
   if (step !== "bienvenue") return null;
 

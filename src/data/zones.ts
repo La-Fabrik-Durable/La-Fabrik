@@ -7,6 +7,13 @@ export const ZONES: Zone[] = [
     position: [-5, 25, -15] as Vector3Tuple,
     radius: 10,
     height: 20,
-    targetStep: "bike",
+    targetStep: "mission2",
+  },
+  {
+    id: "searchingZone",
+    position: [-5, 25, -30] as Vector3Tuple,
+    radius: 10,
+    height: 20,
+    targetStep: "searching",
   },
 ];

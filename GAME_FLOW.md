@@ -3,7 +3,7 @@
 ## Étapes du jeu
 
 ```
-intro → start-intro → naming → bienvenue → star-move → bike
+intro → start-intro → naming → bienvenue → star-move → mission2 → searching_problem → preparation → outOfFabrik
 ```
 
 ---
@@ -14,11 +14,12 @@ intro → start-intro → naming → bienvenue → star-move → bike
 
 - État initial au chargement du jeu
 - Aucune action, juste une étape de départ
+- Transition automatique vers `start-intro`
 
 ### 2. `start-intro`
 
 - **Déclenchement** : Auto-transition depuis `intro` quand la scène est chargée
-- **Action** : Joue l'audio d'intro via `AudioManager.playSoundWithCallback()`
+- **Action** : Joue l'audio d'intro (`intro`)
 - **Attente** : Attend que l'audio se termine
 - **Transition** : Vers `naming` quand l'audio se termine
 
@@ -45,25 +46,50 @@ intro → start-intro → naming → bienvenue → star-move → bike
 - **État** : Le joueur peut maintenant se déplacer librement
 - **Zone** : La détection de zone devient active (ZoneDetection)
 
-### 6. `bike`
+### 6. `mission2`
 
-- **Déclenchement** : Quand le joueur entre dans la zone de sortie
+- **Déclenchement** : Quand le joueur entre dans la zone `fabrikExit` (position: `[-5, 25, -15]`)
+- **Actions** :
+  - Stocke `activityCity: false` dans le store Zustand
+  - Joue l'audio `alertCentral`
+- **État** : Les objets avec hook `useActivityCity()` détectent le changement et jouent leurs animations
+- **Attente** : Le joueur atteint la zone de trigger pour `searching_problem`
+
+### 7. `searching_problem`
+
+- **Déclenchement** : Quand le joueur entre dans la zone `searchingProblemZone` (position: `[-5, 25, -30]`)
+- **Actions** :
+  - Joue l'audio `searchingProblem`
+  - Affiche l'objet "central" (position: `[1, 15, -45]`)
+- **Attente** : Le joueur interagit avec l'objet "central"
+
+### 8. `preparation`
+
+- **Déclenchement** : Quand le joueur interagit avec l'objet "central"
+- **Actions** :
+  - Bloque le mouvement (`setCanMove(false)`)
+  - Cache l'objet "central"
+
+### 9. `outOfFabrik`
+
+- **Déclenchement** : (non implémenté pour le moment)
 - **Action** : Transition vers l'étape finale
-- **Zone** : Détectée par `ZoneDetection` quand le joueur approche de la position configurée
 
 ---
 
 ## Fichiers clés
 
-| Fichier                                  | Rôle                                                          |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| `src/stateManager/GameStepManager.ts`    | Gère l'état global du jeu (étape actuelle, prénom, mouvement) |
-| `src/components/game/GameFlow.tsx`       | Gère les transitions automatiques et la lecture audio         |
-| `src/components/ui/IntroUI.tsx`          | Affiche l'input pour le prénom                                |
-| `src/components/ui/BienvenueDisplay.tsx` | Affiche le message de bienvenue                               |
-| `src/components/zone/ZoneDetection.tsx`  | Détecte quand le joueur entre dans une zone                   |
-| `src/data/audioConfig.ts`                | Chemins des fichiers audio                                    |
-| `src/data/zones.ts`                      | Configuration des zones de transition                         |
+| Fichier                                 | Rôle                                                      |
+| --------------------------------------- | --------------------------------------------------------- |
+| `src/stores/gameStore.ts`               | Store Zustand pour l'état global du jeu                   |
+| `src/stateManager/GameStepManager.ts`   | Synchronise avec le store Zustand                         |
+| `src/components/game/GameFlow.tsx`      | Gère les transitions automatiques et la lecture audio     |
+| `src/components/ui/IntroUI.tsx`         | Affiche l'input pour le prénom et le message de bienvenue |
+| `src/components/zone/ZoneDetection.tsx` | Détecte quand le joueur entre dans une zone               |
+| `src/components/3d/CentralObject.tsx`   | Objet interactif "central" pour la mission 2              |
+| `src/data/audioConfig.ts`               | Chemins des fichiers audio                                |
+| `src/data/zones.ts`                     | Configuration des zones de transition                     |
+| `src/hooks/useActivityCity.ts`          | Hook pour détecter le changement d'activité de la ville   |
 
 ---
 
@@ -72,8 +98,10 @@ intro → start-intro → naming → bienvenue → star-move → bike
 ```typescript
 // src/data/audioConfig.ts
 export const AUDIO_PATHS = {
-  intro: "/sounds/fa.mp3", // Audio joué pendant start-intro
-  bienvenue: "/sounds/fa.mp3", // Audio joué pendant bienvenue
+  intro: "/sounds/fa.mp3",
+  bienvenue: "/sounds/fa.mp3",
+  alertCentral: "/sounds/fa.mp3",
+  searchingProblem: "/sounds/fa.mp3",
 };
 ```
 
@@ -86,12 +114,56 @@ export const AUDIO_PATHS = {
 export const ZONES: Zone[] = [
   {
     id: "fabrikExit",
-    position: [50, 0, 50], // Position de la zone de sortie
-    radius: 10, // Rayon de détection
-    height: 20, // Hauteur de la zone (pour la visualisation)
-    targetStep: "bike", // Étape cible quand on entre dans la zone
+    position: [-5, 25, -15],
+    radius: 10,
+    height: 20,
+    targetStep: "mission2",
+  },
+  {
+    id: "searchingProblemZone",
+    position: [-5, 25, -30],
+    radius: 10,
+    height: 20,
+    targetStep: "searching_problem",
   },
 ];
+```
+
+---
+
+## Store Zustand
+
+```typescript
+// src/stores/gameStore.ts
+interface GameState {
+  step: GameStep;
+  activityCity: boolean;
+  playerName: string;
+  canMove: boolean;
+  setStep: (step: GameStep) => void;
+  setActivityCity: (value: boolean) => void;
+  setPlayerName: (name: string) => void;
+  setCanMove: (canMove: boolean) => void;
+}
+```
+
+---
+
+## Hooks personnalisés
+
+### useActivityCity
+
+Permet aux objets 3D de réagir au changement d'activité de la ville :
+
+```typescript
+import { useActivityCity } from "@/hooks/useActivityCity";
+
+function MyAnimatedObject() {
+  const activityCity = useActivityCity(); // true par défaut, false en mission2
+
+  // L'animation se déclenche quand activityCity change à false
+  // Utiliser useEffect pour réagir au changement
+}
 ```
 
 ---
@@ -102,13 +174,14 @@ En mode debug (`?debug` dans l'URL), on peut voir :
 
 - **Game Step** : L'étape actuelle dans le panneau lil-gui
 - **Player Position** : Position X, Y, Z du joueur en temps réel
-- **Zone Visualization** : Anneaux visuels au sol pour les zones
+- **Zone Visualization** : Anneaux visuels au sol pour les zones + cylindres transparents
 
 ---
 
 ## Notes techniques
 
 - Le mouvement du joueur est bloqué tant que `canMove` est `false`
-- `useSyncExternalStore` est utilisé pour synchroniser l'état du jeu avec React
-- Les transitions sont gérées par le `GameStepManager` via le pattern singleton
+- Le store Zustand (`useGameStore`) est la source principale de vérité
+- `GameStepManager` synchronise automatiquement avec le store Zustand lors des transitions
+- Les transitions via les zones utilisent `GameStepManager.transitionTo()` qui met à jour le store
 - L'audio utilise un callback `onEnded` pour déclencher les transitions automatiques

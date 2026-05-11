@@ -3,16 +3,31 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZONES } from "@/data/zones";
 import { GameStepManager } from "@/stateManager/GameStepManager";
+import { useGameStore } from "@/stores/gameStore";
 import { Debug } from "@/utils/debug/Debug";
+import type { GameStep } from "@/types/game";
 
 const _playerPos = new THREE.Vector3();
 const _zonePos = new THREE.Vector3();
+
+const GAME_STEPS: GameStep[] = [
+  "intro",
+  "start-intro",
+  "naming",
+  "bienvenue",
+  "star-move",
+  "mission2",
+  "searching_problem",
+  "preparation",
+  "outOfFabrik",
+];
 
 export function ZoneDetection(): null {
   const camera = useThree((state) => state.camera);
   const manager = GameStepManager.getInstance();
   const triggeredZones = useRef<Set<string>>(new Set());
   const debug = Debug.getInstance();
+  const step = useGameStore((state) => state.step);
 
   useEffect(() => {
     if (!debug.active) return;
@@ -20,20 +35,17 @@ export function ZoneDetection(): null {
     const folder = debug.createFolder("Game");
     if (!folder) return;
 
-    const gameState = { step: manager.getStep() };
+    const gameState = { step: step };
     const playerPos = { x: 0, y: 0, z: 0 };
 
-    folder
-      .add(gameState, "step", ["intro", "bike"])
-      .name("Game Step")
-      .disable();
+    folder.add(gameState, "step", GAME_STEPS).name("Game Step").disable();
 
     folder.add(playerPos, "x").name("Player X").listen().disable();
     folder.add(playerPos, "y").name("Player Y").listen().disable();
     folder.add(playerPos, "z").name("Player Z").listen().disable();
 
-    const unsubManager = manager.subscribe(() => {
-      gameState.step = manager.getStep();
+    const unsubStore = useGameStore.subscribe((state) => {
+      gameState.step = state.step;
       folder.controllersRecursive().forEach((c) => c.updateDisplay());
     });
 
@@ -51,9 +63,9 @@ export function ZoneDetection(): null {
     return () => {
       cancelAnimationFrame(frameId);
       debug.destroyFolder("Game");
-      unsubManager();
+      unsubStore();
     };
-  }, [debug, manager, camera]);
+  }, [debug, camera, step]);
 
   useFrame(() => {
     camera.getWorldPosition(_playerPos);

@@ -6,7 +6,11 @@ export type GameStep =
   | "naming"
   | "bienvenue"
   | "star-move"
-  | "bike";
+  | "mission2"
+  | "searching"
+  | "helped"
+  | "manipulation"
+  | "outOfFabrik";
 
 export interface Zone {
   id: string;

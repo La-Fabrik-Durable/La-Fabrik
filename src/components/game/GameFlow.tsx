@@ -1,28 +1,23 @@
-import { useEffect, useRef, useState } from "react";
-import { GameStepManager } from "@/stateManager/GameStepManager";
+import { useEffect, useRef } from "react";
+import { useGameStore } from "@/stores/gameStore";
 import { AudioManager } from "@/stateManager/AudioManager";
 import { AUDIO_PATHS } from "@/data/audioConfig";
 
 export function GameFlow(): null {
-  const manager = GameStepManager.getInstance();
+  const step = useGameStore((state) => state.step);
+  const setStep = useGameStore((state) => state.setStep);
+  const setActivityCity = useGameStore((state) => state.setActivityCity);
+  const setCanMove = useGameStore((state) => state.setCanMove);
   const hasInitialized = useRef(false);
-  const [step, setStep] = useState(manager.getStep());
-
-  useEffect(() => {
-    const unsubscribe = manager.subscribe(() => {
-      setStep(manager.getStep());
-    });
-    return unsubscribe;
-  }, [manager]);
 
   useEffect(() => {
     console.log("[GameFlow] Current step:", step);
     if (!hasInitialized.current && step === "intro") {
       hasInitialized.current = true;
       console.log("[GameFlow] Transition to start-intro");
-      manager.transitionTo("start-intro");
+      setStep("start-intro");
     }
-  }, [step, manager]);
+  }, [step, setStep]);
 
   useEffect(() => {
     console.log("[GameFlow] useEffect triggered, step:", step);
@@ -32,7 +27,7 @@ export function GameFlow(): null {
       const audio = AudioManager.getInstance();
       audio.playSoundWithCallback(AUDIO_PATHS.intro, 0.5, () => {
         console.log("[GameFlow] Intro audio ended, transition to naming");
-        manager.transitionTo("naming");
+        setStep("naming");
       });
 
       return () => {};
@@ -43,15 +38,43 @@ export function GameFlow(): null {
       const audio = AudioManager.getInstance();
       audio.playSoundWithCallback(AUDIO_PATHS.bienvenue, 0.5, () => {
         console.log("[GameFlow] Bienvenue audio ended, enable movement");
-        manager.setCanMove(true);
-        manager.transitionTo("star-move");
+        setCanMove(true);
+        setStep("star-move");
       });
 
       return () => {};
     }
 
+    if (step === "mission2") {
+      console.log("[GameFlow] mission2 - setting activityCity to false");
+      setActivityCity(false);
+      const audio = AudioManager.getInstance();
+      audio.playSound(AUDIO_PATHS.alertCentral, 0.5);
+    }
+
+    if (step === "searching") {
+      console.log("[GameFlow] Playing searching audio");
+      const audio = AudioManager.getInstance();
+      audio.playSoundWithCallback(AUDIO_PATHS.searching, 0.5, () => {
+        console.log("[GameFlow] searching audio ended");
+      });
+
+      return () => {};
+    }
+
+    if (step === "helped") {
+      console.log("[GameFlow] Playing helped audio");
+      const audio = AudioManager.getInstance();
+      audio.playSound(AUDIO_PATHS.helped, 0.5);
+    }
+
+    if (step === "manipulation") {
+      console.log("[GameFlow] manipulation - blocking movement");
+      setCanMove(false);
+    }
+
     return undefined;
-  }, [step, manager]);
+  }, [step, setStep, setActivityCity, setCanMove]);
 
   return null;
 }
