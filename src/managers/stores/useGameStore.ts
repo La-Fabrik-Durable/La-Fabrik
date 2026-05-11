@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { GameStep } from "@/types/game";
 import {
   isRepairMissionId,
   type MissionStep,
@@ -19,9 +20,18 @@ interface MissionState {
   dialogueAudio: string | null;
 }
 
+interface MissionFlowState {
+  activityCity: boolean;
+  canMove: boolean;
+  dialogMessage: string | null;
+  playerName: string;
+  step: GameStep;
+}
+
 interface GameState {
   mainState: MainGameState;
   isCinematicPlaying: boolean;
+  missionFlow: MissionFlowState;
   intro: IntroState;
   bike: MissionState & {
     isRepaired: boolean;
@@ -41,7 +51,12 @@ interface GameState {
 interface GameActions {
   setMainState: (mainState: MainGameState) => void;
   setCinematicPlaying: (isCinematicPlaying: boolean) => void;
+  hideDialog: () => void;
+  setActivityCity: (activityCity: boolean) => void;
+  setCanMove: (canMove: boolean) => void;
+  setFlowStep: (step: GameStep) => void;
   setIntroState: (intro: Partial<IntroState>) => void;
+  setPlayerName: (playerName: string) => void;
   setBikeState: (bike: Partial<GameState["bike"]>) => void;
   setPyloneState: (pylone: Partial<GameState["pylone"]>) => void;
   setFermeState: (ferme: Partial<GameState["ferme"]>) => void;
@@ -56,6 +71,7 @@ interface GameActions {
   advanceGameState: () => void;
   rewindGameState: () => void;
   resetGame: () => void;
+  showDialog: (dialogMessage: string) => void;
 }
 
 type GameStore = GameState & GameActions;
@@ -225,6 +241,13 @@ function createInitialGameState(): GameState {
   return {
     mainState: "intro",
     isCinematicPlaying: false,
+    missionFlow: {
+      activityCity: true,
+      canMove: false,
+      dialogMessage: null,
+      playerName: "",
+      step: "intro",
+    },
     intro: {
       dialogueAudio: null,
       hasCompleted: false,
@@ -256,8 +279,26 @@ export const useGameStore = create<GameStore>()((set) => ({
   ...createInitialGameState(),
   setMainState: (mainState) => set({ mainState }),
   setCinematicPlaying: (isCinematicPlaying) => set({ isCinematicPlaying }),
+  hideDialog: () =>
+    set((state) => ({
+      missionFlow: { ...state.missionFlow, dialogMessage: null },
+    })),
+  setActivityCity: (activityCity) =>
+    set((state) => ({
+      missionFlow: { ...state.missionFlow, activityCity },
+    })),
+  setCanMove: (canMove) =>
+    set((state) => ({
+      missionFlow: { ...state.missionFlow, canMove },
+    })),
+  setFlowStep: (step) =>
+    set((state) => ({ missionFlow: { ...state.missionFlow, step } })),
   setIntroState: (intro) =>
     set((state) => ({ intro: { ...state.intro, ...intro } })),
+  setPlayerName: (playerName) =>
+    set((state) => ({
+      missionFlow: { ...state.missionFlow, playerName },
+    })),
   setBikeState: (bike) =>
     set((state) => ({ bike: { ...state.bike, ...bike } })),
   setPyloneState: (pylone) =>
@@ -300,4 +341,8 @@ export const useGameStore = create<GameStore>()((set) => ({
       return { outro: { ...state.outro, hasStarted: false } };
     }),
   resetGame: () => set(createInitialGameState()),
+  showDialog: (dialogMessage) =>
+    set((state) => ({
+      missionFlow: { ...state.missionFlow, dialogMessage },
+    })),
 }));

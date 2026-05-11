@@ -6,7 +6,7 @@ import { DialogMessage } from "@/components/ui/DialogMessage";
 import { GameUI } from "@/components/ui/GameUI";
 import { BienvenueDisplay, IntroUI } from "@/components/ui/IntroUI";
 import { SceneLoadingOverlay } from "@/components/ui/SceneLoadingOverlay";
-import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { HandTrackingProvider } from "@/providers/gameplay/HandTrackingProvider";
 import {
   INITIAL_SCENE_LOADING_STATE,
@@ -15,8 +15,10 @@ import {
 import { World } from "@/world/World";
 
 export function HomePage(): React.JSX.Element {
-  const dialogMessage = useMissionFlowStore((state) => state.dialogMessage);
-  const hideDialog = useMissionFlowStore((state) => state.hideDialog);
+  const dialogMessage = useGameStore(
+    (state) => state.missionFlow.dialogMessage,
+  );
+  const hideDialog = useGameStore((state) => state.hideDialog);
   const [sceneLoadingState, setSceneLoadingState] = useState<SceneLoadingState>(
     INITIAL_SCENE_LOADING_STATE,
   );

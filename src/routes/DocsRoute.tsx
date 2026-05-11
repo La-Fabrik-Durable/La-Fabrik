@@ -55,6 +55,10 @@ const LazyDocsZustandPage = lazyNamed(
   () => import("@/pages/docs/zustand/page"),
   "DocsZustandPage",
 );
+const LazyDocsMissionFlowPage = lazyNamed(
+  () => import("@/pages/docs/mission-flow/page"),
+  "DocsMissionFlowPage",
+);
 const LazyDocsFeaturesPage = lazyNamed(
   () => import("@/pages/docs/features/page"),
   "DocsFeaturesPage",
@@ -83,6 +87,7 @@ export const DocsTechnicalEditorRoute = createDocsRoute(
 );
 export const DocsHandTrackingRoute = createDocsRoute(LazyDocsHandTrackingPage);
 export const DocsZustandRoute = createDocsRoute(LazyDocsZustandPage);
+export const DocsMissionFlowRoute = createDocsRoute(LazyDocsMissionFlowPage);
 export const DocsFeaturesRoute = createDocsRoute(LazyDocsFeaturesPage);
 export const DocsMainFeatureRoute = createDocsRoute(LazyDocsMainFeaturePage);
 export const DocsEditorRoute = createDocsRoute(LazyDocsEditorPage);

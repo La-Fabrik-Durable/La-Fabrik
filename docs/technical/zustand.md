@@ -59,12 +59,15 @@ Rule of thumb:
 The store exposes:
 
 - `mainState`: the active game phase
+- `missionFlow`: intro and mission 2 prototype state
 - `intro`: intro-specific state
 - `bike`: e-bike mission state
 - `pylone`: power grid mission state
 - `ferme`: farm mission state
 - `outro`: ending state
 - actions for direct updates and progression updates
+
+The `missionFlow` slice contains the prototype step, player name, movement lock, city activity flag, and temporary dialog message. It is in the main game store because it is global gameplay state used by UI, world components, and the player controller.
 
 The mission steps currently use this sequence:
 
@@ -141,6 +144,8 @@ For repair missions, it mounts the reusable `RepairGame` component with a missio
 
 Mission-specific behavior stays in `src/data/gameplay/repairMissions.ts`: each mission can define its broken nodes, placeholder targets, scan duration, and reassembly duration without adding mission branches to `RepairGame`.
 
+The intro and mission 2 prototype flow is documented separately in `docs/technical/mission-flow.md`. It intentionally uses the same `useGameStore` source of truth instead of a dedicated `GameStepManager` or a second Zustand store.
+
 That means the scene can progressively move toward this pattern:
 
 ```tsx
@@ -171,8 +176,9 @@ Current overlays:
 - `Crosshair`: player aiming helper
 - `InteractPrompt`: interaction prompt
 - `RepairMovementLockIndicator`: player-facing indicator shown while repair steps temporarily disable movement
+- Mission flow overlays such as `IntroUI`, `BienvenueDisplay`, and `DialogMessage` are mounted by `src/pages/page.tsx` because they are route-level HTML overlays rather than persistent game HUD elements.
 
-`src/pages/page.tsx` should stay thin and mount only the canvas and `GameUI`.
+`src/pages/page.tsx` should stay thin and mount the canvas, persistent `GameUI`, and route-level overlays.
 
 ## Regression Rules
 

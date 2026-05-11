@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZONES } from "@/data/zones";
-import { GameStepManager } from "@/managers/GameStepManager";
-import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { Debug } from "@/utils/debug/Debug";
 import type { GameStep } from "@/types/game";
 
@@ -25,10 +24,10 @@ const GAME_STEPS: GameStep[] = [
 
 export function ZoneDetection(): null {
   const camera = useThree((state) => state.camera);
-  const manager = GameStepManager.getInstance();
   const triggeredZones = useRef<Set<string>>(new Set());
   const debug = Debug.getInstance();
-  const step = useMissionFlowStore((state) => state.step);
+  const step = useGameStore((state) => state.missionFlow.step);
+  const setStep = useGameStore((state) => state.setFlowStep);
 
   useEffect(() => {
     if (!debug.active) return;
@@ -45,8 +44,8 @@ export function ZoneDetection(): null {
     folder.add(playerPos, "y").name("Player Y").listen().disable();
     folder.add(playerPos, "z").name("Player Z").listen().disable();
 
-    const unsubStore = useMissionFlowStore.subscribe((state) => {
-      gameState.step = state.step;
+    const unsubStore = useGameStore.subscribe((state) => {
+      gameState.step = state.missionFlow.step;
       folder.controllersRecursive().forEach((c) => c.updateDisplay());
     });
 
@@ -79,7 +78,7 @@ export function ZoneDetection(): null {
       const distanceSq = _playerPos.distanceToSquared(_zonePos);
 
       if (distanceSq <= zone.radius * zone.radius) {
-        manager.transitionTo(zone.targetStep);
+        setStep(zone.targetStep);
         triggeredZones.current.add(zone.id);
         break;
       }

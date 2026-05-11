@@ -23,11 +23,3 @@ export interface Zone {
 export interface GameState {
   step: GameStep;
 }
-
-export interface GameStepSnapshot {
-  step: GameStep;
-  playerName: string;
-  canMove: boolean;
-  transitionTo: (step: GameStep) => void;
-  setPlayerName: (name: string) => void;
-}

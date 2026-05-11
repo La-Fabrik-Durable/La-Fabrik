@@ -1,5 +1,5 @@
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
-import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { Debug } from "@/utils/debug/Debug";
 import type { Vector3Tuple } from "@/types/three/three";
 
@@ -10,10 +10,10 @@ interface CentralObjectProps {
 export function CentralObject({
   position,
 }: CentralObjectProps): React.JSX.Element {
-  const step = useMissionFlowStore((state) => state.step);
-  const setStep = useMissionFlowStore((state) => state.setStep);
-  const setCanMove = useMissionFlowStore((state) => state.setCanMove);
-  const showDialog = useMissionFlowStore((state) => state.showDialog);
+  const step = useGameStore((state) => state.missionFlow.step);
+  const setStep = useGameStore((state) => state.setFlowStep);
+  const setCanMove = useGameStore((state) => state.setCanMove);
+  const showDialog = useGameStore((state) => state.showDialog);
   const debug = Debug.getInstance();
 
   const handlePress = (): void => {

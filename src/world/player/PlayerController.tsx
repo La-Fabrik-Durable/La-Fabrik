@@ -26,7 +26,6 @@ import {
 import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
 import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
-import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
 import type { Vector3Tuple } from "@/types/three/three";
 
@@ -95,7 +94,7 @@ export function PlayerController({
   const velocity = useRef(new THREE.Vector3());
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
-  const canMove = useMissionFlowStore((state) => state.canMove);
+  const canMove = useGameStore((state) => state.missionFlow.canMove);
 
   const capsule = useRef(
     new Capsule(

@@ -1,5 +1,5 @@
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
-import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { Debug } from "@/utils/debug/Debug";
 import type { Vector3Tuple } from "@/types/three/three";
 
@@ -10,8 +10,8 @@ interface VillageoisHelperObjectProps {
 export function VillageoisHelperObject({
   position,
 }: VillageoisHelperObjectProps): React.JSX.Element {
-  const step = useMissionFlowStore((state) => state.step);
-  const setStep = useMissionFlowStore((state) => state.setStep);
+  const step = useGameStore((state) => state.missionFlow.step);
+  const setStep = useGameStore((state) => state.setFlowStep);
   const debug = Debug.getInstance();
 
   const handlePress = (): void => {
