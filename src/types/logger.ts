@@ -1,6 +1,6 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
-type LogValue =
+export type LogValue =
   | string
   | number
   | boolean

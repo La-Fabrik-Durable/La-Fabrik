@@ -5,7 +5,7 @@ This document describes the intended medium-term architecture for the project.
 ## Relationship To The Current Code
 
 - `docs/technical/architecture.md` is the source of truth for what exists now.
-- This document describes intended direction, not implemented behavior.
+- This document is intentionally aspirational.
 - If this document conflicts with the current implementation, the current implementation wins.
 
 ## Goals
@@ -40,12 +40,12 @@ This document describes the intended medium-term architecture for the project.
   - performance overlay
   - scene helpers
   - free camera and calibration controls
-  - debug test scenes used during development
+  - temporary test scenes used during development
 
 ### UI Layer
 
 - `src/components/ui/` should contain player-facing HTML overlays.
-- Candidate examples:
+- Expected future examples:
   - crosshair
   - loading flow
   - mission HUD
@@ -54,7 +54,7 @@ This document describes the intended medium-term architecture for the project.
 ### Gameplay Layer
 
 - As the project grows, gameplay state can move toward a clearer orchestration layer.
-- Likely concerns:
+- Likely future concerns:
   - missions
   - zones
   - cinematics
@@ -67,4 +67,4 @@ This document describes the intended medium-term architecture for the project.
 - Prefer direct, working code over speculative scaffolding.
 - Shared types should stay close to their domain until they have multiple real consumers.
 - Avoid creating new managers or service layers without an active runtime need.
-- Debug-only runtime paths should be clearly marked and easy to remove when obsolete.
+- Debug-only runtime paths should be clearly marked and easy to remove later.
