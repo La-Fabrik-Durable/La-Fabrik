@@ -228,17 +228,17 @@ function createInitialGameState(): GameState {
       isBikeUnlocked: false,
     },
     bike: {
-      currentStep: "waiting",
+      currentStep: "locked",
       dialogueAudio: null,
       isRepaired: false,
     },
     pylone: {
-      currentStep: "waiting",
+      currentStep: "locked",
       dialogueAudio: null,
       isPowered: false,
     },
     ferme: {
-      currentStep: "waiting",
+      currentStep: "locked",
       dialogueAudio: null,
       irrigationFixed: false,
     },
