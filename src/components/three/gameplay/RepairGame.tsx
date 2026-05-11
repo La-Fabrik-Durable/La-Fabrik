@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
 import type { RepairCasePlaceholder } from "@/components/three/gameplay/RepairCaseModel";
 import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompletionStep";
@@ -71,54 +71,56 @@ export function RepairGame({
 
   return (
     <group position={position} rotation={rotation} scale={parsedScale}>
-      {step === "waiting" ? (
-        <RepairInspectionObject
-          config={config}
-          worldPosition={position}
-          onInspect={() => setMissionStep(mission, "inspected")}
-        />
-      ) : null}
-      {step === "fragmented" ? (
-        <ExplodableModel modelPath={config.modelPath} split />
-      ) : null}
-      {step === "scanning" ? (
-        <RepairScanSequence
-          config={config}
-          onComplete={(brokenParts) => {
-            setScannedBrokenParts(brokenParts);
-            setMissionStep(mission, "repairing");
-          }}
-        />
-      ) : null}
-      {step === "repairing" ? (
-        <RepairRepairingStep
-          brokenParts={scannedBrokenParts}
-          config={config}
-          placeholders={casePlaceholders}
-          onRepair={() => setMissionStep(mission, "reassembling")}
-        />
-      ) : null}
-      {step === "reassembling" ? (
-        <RepairReassemblyStep
-          config={config}
-          onComplete={() => setMissionStep(mission, "done")}
-        />
-      ) : null}
-      {step === "done" ? (
-        <RepairCompletionStep
-          config={config}
-          onComplete={() => completeMission(mission)}
-        />
-      ) : null}
-      {step !== "waiting" && step !== "done" && step !== "reassembling" ? (
-        <RepairMissionCase
-          config={config}
-          onPlaceholdersChange={setCasePlaceholders}
-          open={step === "repairing"}
-          zoomed={step === "repairing"}
-          showFragmentationPrompt={readyForFragmentation}
-        />
-      ) : null}
+      <Suspense fallback={null}>
+        {step === "waiting" ? (
+          <RepairInspectionObject
+            config={config}
+            worldPosition={position}
+            onInspect={() => setMissionStep(mission, "inspected")}
+          />
+        ) : null}
+        {step === "fragmented" ? (
+          <ExplodableModel modelPath={config.modelPath} split />
+        ) : null}
+        {step === "scanning" ? (
+          <RepairScanSequence
+            config={config}
+            onComplete={(brokenParts) => {
+              setScannedBrokenParts(brokenParts);
+              setMissionStep(mission, "repairing");
+            }}
+          />
+        ) : null}
+        {step === "repairing" ? (
+          <RepairRepairingStep
+            brokenParts={scannedBrokenParts}
+            config={config}
+            placeholders={casePlaceholders}
+            onRepair={() => setMissionStep(mission, "reassembling")}
+          />
+        ) : null}
+        {step === "reassembling" ? (
+          <RepairReassemblyStep
+            config={config}
+            onComplete={() => setMissionStep(mission, "done")}
+          />
+        ) : null}
+        {step === "done" ? (
+          <RepairCompletionStep
+            config={config}
+            onComplete={() => completeMission(mission)}
+          />
+        ) : null}
+        {step !== "waiting" && step !== "done" && step !== "reassembling" ? (
+          <RepairMissionCase
+            config={config}
+            onPlaceholdersChange={setCasePlaceholders}
+            open={step === "repairing"}
+            zoomed={step === "repairing"}
+            showFragmentationPrompt={readyForFragmentation}
+          />
+        ) : null}
+      </Suspense>
     </group>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Physics } from "@react-three/rapier";
 import {
   PLAYER_SPAWN_POSITION_GAME,
@@ -43,10 +44,10 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
       <Lighting />
       <DebugHelpers />
       {showHandTrackingGloves ? (
-        <>
+        <Suspense fallback={null}>
           <HandTrackingGlove handedness="left" />
           <HandTrackingGlove handedness="right" />
-        </>
+        </Suspense>
       ) : null}
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
       {sceneMode === "game" ? (
