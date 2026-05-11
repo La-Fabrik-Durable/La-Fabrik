@@ -23,6 +23,9 @@ function toPascalCase(value: string): string {
 
 export function GameStateDebugPanel(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
+  const bikeStep = useGameStore((state) => state.bike.currentStep);
+  const pyloneStep = useGameStore((state) => state.pylone.currentStep);
+  const fermeStep = useGameStore((state) => state.ferme.currentStep);
   const detail = useGameStore((state) => {
     switch (state.mainState) {
       case "intro":
@@ -83,6 +86,24 @@ export function GameStateDebugPanel(): React.JSX.Element {
     }
   }
 
+  function setDebugMainState(nextMainState: MainGameState): void {
+    setMainState(nextMainState);
+
+    if (nextMainState === "bike" && bikeStep === "locked") {
+      setBikeState({ currentStep: "waiting" });
+      return;
+    }
+
+    if (nextMainState === "pylone" && pyloneStep === "locked") {
+      setPyloneState({ currentStep: "waiting" });
+      return;
+    }
+
+    if (nextMainState === "ferme" && fermeStep === "locked") {
+      setFermeState({ currentStep: "waiting" });
+    }
+  }
+
   return (
     <section
       className="game-state-debug-panel debug-overlay-section"
@@ -108,7 +129,7 @@ export function GameStateDebugPanel(): React.JSX.Element {
               aria-pressed={state === mainState}
               className={state === mainState ? "is-active" : undefined}
               type="button"
-              onClick={() => setMainState(state)}
+              onClick={() => setDebugMainState(state)}
             >
               {toPascalCase(state)}
             </button>
