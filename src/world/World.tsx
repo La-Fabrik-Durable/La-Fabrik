@@ -6,6 +6,10 @@ import {
 } from "@/data/playerConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
+import {
+  ZoneDebugVisuals,
+  ZoneDetection,
+} from "@/components/zone/ZoneDetection";
 import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
@@ -28,6 +32,8 @@ export function World(): React.JSX.Element {
       <Environment />
       <Lighting />
       <DebugHelpers />
+      <ZoneDetection />
+      <ZoneDebugVisuals />
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (
