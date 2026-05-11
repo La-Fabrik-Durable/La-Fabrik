@@ -8,6 +8,7 @@ import {
   REPAIR_GAME_ZONE_RADIUS,
 } from "@/data/gameplay/repairGameConfig";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { playGameplayDialogueById } from "@/utils/dialogues/playDialogue";
 
 const CASE_CLOSED_STEPS = new Set(["locked", "waiting"]);
 
@@ -26,6 +27,7 @@ export function RepairGameZone(): React.JSX.Element {
 
     if (CASE_CLOSED_STEPS.has(bikeStep)) {
       setBikeState({ currentStep: "inspected" });
+      void playGameplayDialogueById("narrateur_ebikecasse");
     }
   };
 
@@ -46,6 +48,7 @@ export function RepairGameZone(): React.JSX.Element {
 
     if (bikeStep === "fragmented") {
       setBikeState({ currentStep: "scanning" });
+      void playGameplayDialogueById("narrateur_galetscan");
     }
   };
 

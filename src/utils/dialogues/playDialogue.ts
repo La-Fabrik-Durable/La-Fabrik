@@ -2,7 +2,10 @@ import { AudioManager } from "@/managers/AudioManager";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
 import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type { DialogueManifest } from "@/types/dialogues/dialogues";
-import { loadDialogueSubtitleCue } from "@/utils/dialogues/loadDialogueManifest";
+import {
+  loadDialogueManifest,
+  loadDialogueSubtitleCue,
+} from "@/utils/dialogues/loadDialogueManifest";
 
 interface QueuedDialogueRequest {
   manifest: DialogueManifest;
@@ -12,6 +15,8 @@ interface QueuedDialogueRequest {
 
 const DIALOGUE_PLAY_START_TIMEOUT_MS = 800;
 const dialogueQueue: QueuedDialogueRequest[] = [];
+let gameplayDialogueManifestPromise: Promise<DialogueManifest | null> | null =
+  null;
 let isDialogueQueuePlaying = false;
 
 export function queueDialogueById(
@@ -28,6 +33,16 @@ export function clearQueuedDialogues(): void {
   while (dialogueQueue.length > 0) {
     dialogueQueue.shift()?.resolve(null);
   }
+}
+
+export async function playGameplayDialogueById(
+  dialogueId: string,
+): Promise<HTMLAudioElement | null> {
+  gameplayDialogueManifestPromise ??= loadDialogueManifest();
+  const manifest = await gameplayDialogueManifestPromise;
+  if (!manifest) return null;
+
+  return queueDialogueById(manifest, dialogueId);
 }
 
 export async function playDialogueById(
