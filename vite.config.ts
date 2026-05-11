@@ -283,7 +283,13 @@ interface CinematicManifestData {
 interface CinematicData {
   id: string;
   timecode?: number;
+  dialogueCues?: CinematicDialogueCueData[];
   cameraKeyframes: CinematicKeyframeData[];
+}
+
+interface CinematicDialogueCueData {
+  time: number;
+  dialogueId: string;
 }
 
 interface CinematicKeyframeData {
@@ -510,7 +516,33 @@ function parseCinematicData(data: unknown): CinematicData {
     cinematic.timecode = data.timecode;
   }
 
+  if (data.dialogueCues !== undefined) {
+    if (!Array.isArray(data.dialogueCues)) {
+      throw new Error(`Cinematic ${data.id} has invalid dialogue cues`);
+    }
+    cinematic.dialogueCues = data.dialogueCues.map(
+      parseCinematicDialogueCueData,
+    );
+  }
+
   return cinematic;
+}
+
+function parseCinematicDialogueCueData(
+  data: unknown,
+): CinematicDialogueCueData {
+  if (
+    !isRecord(data) ||
+    typeof data.time !== "number" ||
+    typeof data.dialogueId !== "string"
+  ) {
+    throw new Error("Invalid cinematic dialogue cue");
+  }
+
+  return {
+    time: data.time,
+    dialogueId: data.dialogueId,
+  };
 }
 
 function parseCinematicKeyframeData(data: unknown): CinematicKeyframeData {
