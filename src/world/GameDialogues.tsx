@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { DialogueManifest } from "@/types/dialogues/dialogues";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
-import { playDialogueById } from "@/utils/dialogues/playDialogue";
+import {
+  clearQueuedDialogues,
+  queueDialogueById,
+} from "@/utils/dialogues/playDialogue";
 import { logger } from "@/utils/core/logger";
 
 export function GameDialogues(): null {
@@ -26,6 +29,7 @@ export function GameDialogues(): null {
 
     return () => {
       mounted = false;
+      clearQueuedDialogues();
       activeAudios.forEach((audio) => audio.pause());
       activeAudios.clear();
     };
@@ -43,7 +47,7 @@ export function GameDialogues(): null {
 
       playedDialoguesRef.current.add(dialogue.id);
 
-      void playDialogueById(manifest, dialogue.id).then((audio) => {
+      void queueDialogueById(manifest, dialogue.id).then((audio) => {
         if (!audio) return;
         activeAudiosRef.current.add(audio);
         audio.addEventListener(
