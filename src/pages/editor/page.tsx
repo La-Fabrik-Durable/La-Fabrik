@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { EditorControls } from "@/components/editor/EditorControls";
 import { EditorScene } from "@/components/editor/scene/EditorScene";
+import { Subtitles } from "@/components/ui/Subtitles";
 import { useEditorHistory } from "@/hooks/editor/useEditorHistory";
 import { useEditorSceneData } from "@/hooks/editor/useEditorSceneData";
 import type { MapNode, SceneData, TransformMode } from "@/types/editor/editor";
@@ -196,6 +197,7 @@ export function EditorPage(): React.JSX.Element {
           isPlayerMode={isPlayerMode}
         />
       )}
+      <Subtitles />
     </div>
   );
 }

@@ -1731,6 +1731,7 @@ canvas {
 }
 
 .editor-dialogue-manifest-actions button,
+.editor-dialogue-manifest-preview,
 .editor-dialogue-manifest-delete {
   display: inline-flex;
   align-items: center;
@@ -1747,12 +1748,18 @@ canvas {
 }
 
 .editor-dialogue-manifest-actions button:hover,
+.editor-dialogue-manifest-preview:hover,
 .editor-dialogue-manifest-delete:hover {
   border-color: #ffffff;
   background: #202020;
 }
 
 .editor-dialogue-manifest-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.editor-dialogue-manifest-preview:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -1799,6 +1806,11 @@ canvas {
 .editor-dialogue-manifest-delete {
   border-color: rgba(248, 113, 113, 0.32);
   color: #fca5a5;
+}
+
+.editor-dialogue-manifest-preview {
+  border-color: rgba(125, 211, 252, 0.24);
+  color: #bae6fd;
 }
 
 .editor-dialogue-manifest-status {

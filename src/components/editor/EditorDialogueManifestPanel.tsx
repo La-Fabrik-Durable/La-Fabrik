@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
-import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Play, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import type {
   DialogueDefinition,
   DialogueManifest,
   DialogueVoiceId,
 } from "@/types/dialogues/dialogues";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
+import { playDialogueById } from "@/utils/dialogues/playDialogue";
 
 const DEFAULT_VOICE: DialogueVoiceId = "narrateur";
 type DialoguePatch = Partial<Omit<DialogueDefinition, "timecode">> & {
@@ -89,10 +90,12 @@ function getPatchedDialogue(
 }
 
 export function EditorDialogueManifestPanel(): React.JSX.Element {
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const [manifest, setManifest] = useState<DialogueManifest | null>(null);
   const [selectedDialogueId, setSelectedDialogueId] = useState("");
   const [status, setStatus] = useState("Chargement du manifeste...");
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const errors = getManifestErrors(manifest);
   const selectedDialogue =
     manifest?.dialogues.find(
@@ -184,6 +187,43 @@ export function EditorDialogueManifestPanel(): React.JSX.Element {
     setSelectedDialogueId(nextId);
   }
 
+  async function handlePreviewDialogue(): Promise<void> {
+    if (!manifest || !selectedDialogue) return;
+    if (errors.length > 0) {
+      setStatus("Corrige les erreurs avant de lancer la preview.");
+      return;
+    }
+
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
+    setIsPreviewing(true);
+    setStatus(`Preview dialogue: ${selectedDialogue.id}`);
+
+    try {
+      const audio = await playDialogueById(manifest, selectedDialogue.id);
+      previewAudioRef.current = audio;
+
+      if (!audio) {
+        setStatus("Dialogue introuvable pour la preview.");
+        return;
+      }
+
+      const handleFinish = (): void => {
+        audio.removeEventListener("ended", handleFinish);
+        audio.removeEventListener("pause", handleFinish);
+        if (previewAudioRef.current === audio) previewAudioRef.current = null;
+        setIsPreviewing(false);
+      };
+
+      audio.addEventListener("ended", handleFinish);
+      audio.addEventListener("pause", handleFinish);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setStatus(message);
+      setIsPreviewing(false);
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -209,6 +249,8 @@ export function EditorDialogueManifestPanel(): React.JSX.Element {
 
     return () => {
       mounted = false;
+      previewAudioRef.current?.pause();
+      previewAudioRef.current = null;
     };
   }, []);
 
@@ -331,6 +373,16 @@ export function EditorDialogueManifestPanel(): React.JSX.Element {
               }}
             />
           </label>
+
+          <button
+            className="editor-dialogue-manifest-preview"
+            type="button"
+            disabled={errors.length > 0 || isPreviewing}
+            onClick={() => void handlePreviewDialogue()}
+          >
+            <Play size={14} aria-hidden="true" />
+            {isPreviewing ? "Playing..." : "Preview dialogue"}
+          </button>
 
           <button
             className="editor-dialogue-manifest-delete"
