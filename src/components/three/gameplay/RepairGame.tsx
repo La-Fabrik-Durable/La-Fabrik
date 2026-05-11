@@ -19,7 +19,10 @@ import {
 } from "@/data/gameplay/repairMissions";
 import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmentationInput";
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
-import type { RepairMissionId } from "@/types/gameplay/repairMission";
+import type {
+  MissionStep,
+  RepairMissionId,
+} from "@/types/gameplay/repairMission";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
 import { toVector3Scale } from "@/utils/three/scale";
@@ -74,6 +77,19 @@ export function RepairGame({
     keyboardEnabled: false,
     onFragment: () => setMissionStep(mission, "fragmented"),
   });
+
+  useEffect(() => {
+    if (mainState === mission && shouldKeepRepairRuntimeState(step)) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setCasePlaceholders([]);
+      setScannedBrokenParts([]);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [mainState, mission, step]);
 
   useEffect(() => {
     if (mainState !== mission) return undefined;
@@ -154,6 +170,10 @@ export function RepairGame({
       </Suspense>
     </group>
   );
+}
+
+function shouldKeepRepairRuntimeState(step: MissionStep): boolean {
+  return step === "repairing" || step === "reassembling" || step === "done";
 }
 
 function getRepairMissionModelPaths(config: RepairMissionConfig): string[] {
