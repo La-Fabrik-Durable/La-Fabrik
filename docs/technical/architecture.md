@@ -20,7 +20,7 @@ This document describes the code that exists today in the repository.
 - `src/world/GameStageContent.tsx` is wrapped in Rapier `Physics` in the production game scene so stage gameplay objects can use physics without moving the map or player to Rapier. It now mounts reusable `RepairGame` instances for `bike`, `pylone`, and `ferme` mission states.
 - `src/world/debug/TestMap.tsx` provides a debug-oriented interaction and physics map with the existing grab/trigger/model-preview objects plus separate `Bike`, `Pylone`, and `Farm` repair playground zones.
 - `src/world/player/Player.tsx` mounts the camera and controller.
-- `src/world/player/PlayerController.tsx` owns pointer lock movement, jump handling, and interaction input.
+- `src/world/player/PlayerController.tsx` owns pointer lock movement, jump handling, repair-step movement locking, and interaction input.
 
 ## Physics Boundaries
 
