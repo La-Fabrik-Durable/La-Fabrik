@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:08,000
+Hey !! Comment ça va ? Tu as besoin d'aide pour poser les galets ?
+
+2
+00:00:00,000 --> 00:00:08,000
+N'hésite pas, si tu as besoin d'autre chose !
+
+3
+00:00:00,000 --> 00:00:08,000
+À la prochaine !

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "cinematics": [
+    {
+      "id": "intro_overview",
+      "timecode": 0,
+      "dialogueCues": [
+        {
+          "time": 0,
+          "dialogueId": "narrateur_bienvenueaaltera"
+        }
+      ],
+      "cameraKeyframes": [
+        {
+          "time": 0,
+          "position": [8, 5, 12],
+          "target": [0, 2, 0]
+        },
+        {
+          "time": 4,
+          "position": [12, 4, -6],
+          "target": [10, 1.4, -8]
+        }
+      ]
+    }
+  ]
+}

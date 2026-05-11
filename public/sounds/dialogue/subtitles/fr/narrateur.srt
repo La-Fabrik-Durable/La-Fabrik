@@ -1,0 +1,91 @@
+1
+00:00:00,000 --> 00:00:02,760
+Bonjour à toi, futur habitant d'Altéra ! Aujourd'hui tu vas découvrir le rôle de technicien au sein de La Fabrik qui s'occupe des technologies et réparation Low-Tech.
+
+2
+00:00:00,000 --> 00:00:11,592
+Avant de commencer, comment tu t'appelles ?
+
+3
+00:00:00,000 --> 00:00:10,824
+Très bien ! On va commencer pas à pas pour te montrer comment fonctionne l'atelier. Ensuite, tu commenceras ta journée et tu pourras te rendre compte de l'impact positif qu'a la Fabrik sur la communauté et le quartier.
+
+4
+00:00:00,000 --> 00:00:06,072
+Allez go ! Il faudrait que tu ailles à la ferme, on cherche à améliorer quelque chose ! Monte sur ton E-Bike.
+
+5
+00:00:00,000 --> 00:00:12,720
+Quoi ? Ton E-Bike est cassé ? Bon c'est pas très grave, ça arrive ! Utilise les deux galets qui sont sur tes gants. Ce sont de véritables bijoux technologiques. Poses en un en-dessous du vélo, et un au-dessus.
+
+6
+00:00:00,000 --> 00:00:08,064
+Alors ? Pas magnifique ça ? Enfin bref, ces galets vont scanner les composants pour savoir ce qu'on doit réparer et / ou changer.
+
+7
+00:00:00,000 --> 00:00:04,992
+Parfait ! C'est le refroidisseur qui a lâché, tu peux le remplacer avec un des composants de ton pack. Eeeet voilà ! Il fonctionne comme une horloge ! Allez fonce !
+
+8
+00:00:00,000 --> 00:00:04,512
+N'hésite pas à aller demander de l'aide si tu as besoin, tout le monde est super accueillant ici.
+
+9
+00:00:00,000 --> 00:00:08,880
+Oh woooow !! T'as vu ça ???? Tous les feux, ordinateurs et lumières se sont éteints !! Faut vite que t'aille au Centre de l'Énergie, on ne peut même plus renvoyer les appareils réparés !
+
+10
+00:00:00,000 --> 00:00:09,840
+Ah ! C'est un poteau d'alimentation qui est tombé ! Mince ! Alalaaa, ces petites taupes, elles en font des bêtises... Mais elles sont si chouuuu !
+
+11
+00:00:00,000 --> 00:00:07,632
+Wouuuuhouuu ! Super ! Le courant est revenu dans tout le quartier ! Bien joué ! Allez, fonce à la ferme.
+
+12
+00:00:00,000 --> 00:00:05,352
+Booon, grâce à toi j'ai pu finir mon urgence ! Oh mais t'arrives bientôt à la ferme !
+
+13
+00:00:00,000 --> 00:00:11,760
+Bon, fini le moment émotion haha ! Pour la ferme, comme je te l'ai dis, ici, il faut qu'on change l'irrigation. Durant les périodes de sécheresse, les habitants se plaignent d'un souci. Vois ce que tu peux faire.
+
+14
+00:00:00,000 --> 00:00:04,560
+Ok parfait tu y es ! Fouille le Centre pour voir d'où vient le problème.
+
+15
+00:00:00,000 --> 00:00:06,864
+Ouiii ! C'est ça ! On aimerait ne plus pomper l'eau dans le lac, sinon on va épuiser toutes ses réserves. Qu'est-ce que tu proposes ?
+
+16
+00:00:00,000 --> 00:00:10,944
+L'ancien refroidisseur de ton E-Bike ?? Mais oui !! Hahaha, très bonne idée ! Combiné aux anciens tuyaux du lac, on va pouvoir faire quelque chose de cool ! Met tout ça entre tes pads !
+
+17
+00:00:00,000 --> 00:00:05,712
+Le refroidisseur de ton E-Bike est cassé, mais on peut encore en faire quelque chose d'utile.
+
+18
+00:00:00,000 --> 00:00:10,032
+Ma-gni-fique ! Je vois que Gilbert t'as aidé haha, il est adorable celui-là ! Tu as fait du super boulot ! Et grâce à toi, le quartier est amélioré.
+
+19
+00:00:00,000 --> 00:00:11,520
+Merci beaucoup pour ce que tu as apporté à la communauté. L'électricienne et Gilbert ont beaucoup apprécié t'aider et m'ont dit qu'ils avaient hâte de la prochaine fête de village pour mieux apprendre à te connaître.
+
+20
+00:00:00,000 --> 00:00:02,352
+Allez bonne chance ! J'ai du boulot !
+
+21
+00:00:00,000 --> 00:00:33,600
+Bienvenue dans ton atelier !! Alors ? Ça claque hein ? Bon je te présente en rapide tout ce qu'il y a : ici c'est ton plan de travail. Dans les tuyaux, ce sont des objets des résidents du quartier qui sont tombés en panne qui attendent d'être réparés. Une fois réparé, tu mets l'objet dans ce tuyau et ça repart chez la bonne personne.
+
+22
+00:00:00,000 --> 00:00:14,760
+Ici, c'est un tableau de bord. T'imagines bien que si ton frigo ou ton four tombe en panne, tu ne vas pas pouvoir le mettre dans le tuyau haha ! Donc ici, ça te signale quand des résidents ont un objet volumineux tombé en panne, ou quand il y a un problème dans la ville. Oh oh... j'ai une urgence, il va bientôt falloir que je te laisse ! Donc tiens, tes outils pour pouvoir réparer la plupart des choses : une mini imprimante 3D à base de déchets électroniques, des gants Pousse Pièces pour désassembler les objets, ainsi qu'un pack de Relance !
+
+23
+00:00:00,000 --> 00:00:54,000
+L'électricienne t'a aidé à la Centrale ? Aaaaah c'est ça que j'adore ici, tout le monde s'entraide, personne se juge, une vraie petite famille. Sache que l'électricienne a une histoire assez particulière. Elle est née au nord du continent, dans la ville de Kalska. Elle a grandit heureuse, avec sa mère Edith, son père Jordan et ses deux petits frères Malo et Justin. Il y a quelques années de ça, comme tu le sais, c'est les pays du Nord, qui par grande surprise, ont été obligés de migrer en premier. Ils ont alors entamé leur périple, pays par pays, ville par ville, village par village. Un jour de marche comme les autres depuis plusieurs mois, une tempête climatique les a pris de court. S'étant séparés pour trouver des vivres dans le village, le père et un des deux frères sont malheureusement partis. C'est tragique. Mais un beau jour, ils sont tombés ici, par hasard dans leur périple. On les a accueillis les bras ouverts et ils ont pu se reconstruire doucement parmi nous et font partie intégrante de la communauté aujourd'hui.

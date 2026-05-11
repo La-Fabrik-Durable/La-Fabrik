@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "voices": [
+    {
+      "id": "narrateur",
+      "speaker": "Narrateur",
+      "subtitles": {
+        "fr": "/sounds/dialogue/subtitles/fr/narrateur.srt",
+        "en": "/sounds/dialogue/subtitles/en/narrateur.srt"
+      }
+    },
+    {
+      "id": "fermier",
+      "speaker": "Fermier",
+      "subtitles": {
+        "fr": "/sounds/dialogue/subtitles/fr/fermier.srt",
+        "en": "/sounds/dialogue/subtitles/en/fermier.srt"
+      }
+    },
+    {
+      "id": "electricienne",
+      "speaker": "Electricienne",
+      "subtitles": {
+        "fr": "/sounds/dialogue/subtitles/fr/electricienne.srt",
+        "en": "/sounds/dialogue/subtitles/en/electricienne.srt"
+      }
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "narrateur_bienvenueaaltera",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_bienvenueaaltera.mp3",
+      "subtitleCueIndex": 1
+    },
+    {
+      "id": "narrateur_intro_prenom",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_intro_prenom.mp3",
+      "subtitleCueIndex": 2
+    },
+    {
+      "id": "narrateur_intro_apresprenom",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_intro_apresprenom.mp3",
+      "subtitleCueIndex": 3
+    },
+    {
+      "id": "narrateur_ordreebike",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_ordreebike.mp3",
+      "subtitleCueIndex": 4
+    },
+    {
+      "id": "narrateur_ebikecasse",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_ebikecassé.mp3",
+      "subtitleCueIndex": 5
+    },
+    {
+      "id": "narrateur_galetscan",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_galetscan.mp3",
+      "subtitleCueIndex": 6
+    },
+    {
+      "id": "narrateur_ebikerepare",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_ebikeréparé.mp3",
+      "subtitleCueIndex": 7
+    },
+    {
+      "id": "narrateur_ordredemandedelaide",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_ordredemandedelaide.mp3",
+      "subtitleCueIndex": 8
+    },
+    {
+      "id": "narrateur_coupureelec",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_coupureélec.mp3",
+      "subtitleCueIndex": 9
+    },
+    {
+      "id": "narrateur_poteaueleccasse",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_poteauéleccassé.mp3",
+      "subtitleCueIndex": 10
+    },
+    {
+      "id": "narrateur_courantrepare",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_courantréparé.mp3",
+      "subtitleCueIndex": 11
+    },
+    {
+      "id": "narrateur_routeversferme",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_routeversferme.mp3",
+      "subtitleCueIndex": 12
+    },
+    {
+      "id": "narrateur_arriveferme",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_arrivéferme.mp3",
+      "subtitleCueIndex": 13
+    },
+    {
+      "id": "narrateur_fouillelecentre",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_fouillelecentre.mp3",
+      "subtitleCueIndex": 14
+    },
+    {
+      "id": "narrateur_interactiontuyauxlac",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_interactiontuyauxlac.mp3",
+      "subtitleCueIndex": 15
+    },
+    {
+      "id": "narrateur_interactionrefroidisseur",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_interactionrefroidisseur.mp3",
+      "subtitleCueIndex": 16
+    },
+    {
+      "id": "narrateur_refroidisseurcasse",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_refroidisseurcassé.mp3",
+      "subtitleCueIndex": 17
+    },
+    {
+      "id": "narrateur_createurdepluiecree",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_createurdepluiecréé.mp3",
+      "subtitleCueIndex": 18
+    },
+    {
+      "id": "narrateur_remerciement",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_remerciement.mp3",
+      "subtitleCueIndex": 19
+    },
+    {
+      "id": "narrateur_bonnechance",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_bonnechance.mp3",
+      "subtitleCueIndex": 20
+    },
+    {
+      "id": "narrateur_presentationatelier",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_présentationatelier.mp3",
+      "subtitleCueIndex": 21
+    },
+    {
+      "id": "narrateur_presentationoutils",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_présentationoutils.mp3",
+      "subtitleCueIndex": 22
+    },
+    {
+      "id": "narrateur_histoireelectricienne",
+      "voice": "narrateur",
+      "audio": "/sounds/dialogue/narrateur_histoireelectricienne.mp3",
+      "subtitleCueIndex": 23
+    },
+    {
+      "id": "fermier_coupdemain",
+      "voice": "fermier",
+      "audio": "/sounds/dialogue/fermier_coupdemain.mp3",
+      "subtitleCueIndex": 1
+    },
+    {
+      "id": "fermier_coupdemain_2",
+      "voice": "fermier",
+      "audio": "/sounds/dialogue/fermier_coupdemain_2.mp3",
+      "subtitleCueIndex": 2
+    },
+    {
+      "id": "fermier_findemission",
+      "voice": "fermier",
+      "audio": "/sounds/dialogue/fermier_findemission.mp3",
+      "subtitleCueIndex": 3
+    }
+  ]
+}

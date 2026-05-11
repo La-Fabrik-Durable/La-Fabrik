@@ -1,0 +1,11 @@
+1
+00:00:00,000 --> 00:00:08,000
+Hey!! How are you? Do you need help placing the rollers?
+
+2
+00:00:00,000 --> 00:00:08,000
+Don't hesitate if you need anything else!
+
+3
+00:00:00,000 --> 00:00:08,000
+See you next time!
