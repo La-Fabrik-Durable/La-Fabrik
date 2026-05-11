@@ -71,6 +71,7 @@ export function RepairGame({
 
   useRepairFragmentationInput({
     enabled: mainState === mission && readyForFragmentation,
+    keyboardEnabled: false,
     onFragment: () => setMissionStep(mission, "fragmented"),
   });
 
@@ -143,6 +144,11 @@ export function RepairGame({
             open={step === "repairing"}
             zoomed={step === "repairing"}
             showFragmentationPrompt={readyForFragmentation}
+            onInteract={
+              readyForFragmentation
+                ? () => setMissionStep(mission, "fragmented")
+                : undefined
+            }
           />
         ) : null}
       </Suspense>

@@ -30,6 +30,9 @@ const BROKEN_PART_START_OFFSETS: Vector3Tuple[] = [
   [1.35, 0.55, -0.85],
 ];
 const REPAIR_INSTALL_RADIUS = 1.1;
+const VALID_PART_COLOR = "#22c55e";
+const INVALID_PART_COLOR = "#ef4444";
+const STORED_BROKEN_PART_COLOR = "#38bdf8";
 
 interface RepairRepairingStepProps {
   brokenParts: readonly RepairScannedBrokenPart[];
@@ -48,6 +51,10 @@ interface RepairInstallTargetProps {
 
 interface RepairPlaceholderMarkersProps {
   positions: readonly Vector3Tuple[];
+}
+
+interface RepairPartPlacementFeedbackProps {
+  state: "valid" | "invalid" | "stored" | null;
 }
 
 export function RepairRepairingStep({
@@ -167,6 +174,12 @@ export function RepairRepairingStep({
         const placeholderPosition =
           placeholderPositions[index % placeholderPositions.length] ??
           placeholderPositions[0]!;
+        const isPlaced = Boolean(placedPartIds[part.id]);
+        const feedbackState = getReplacementFeedbackState(
+          part.id,
+          config.requiredReplacementPartId,
+          isPlaced,
+        );
 
         return (
           <GrabbableObject
@@ -185,11 +198,14 @@ export function RepairRepairingStep({
             snapRadius={REPAIR_CASE_PLACEHOLDER_SNAP_RADIUS}
             snapTargets={placeholderPositions}
           >
-            <RepairObjectModel
-              label={part.label}
-              modelPath={part.modelPath ?? config.modelPath}
-              scale={0.36}
-            />
+            <group>
+              <RepairObjectModel
+                label={part.label}
+                modelPath={part.modelPath ?? config.modelPath}
+                scale={0.36}
+              />
+              <RepairPartPlacementFeedback state={feedbackState} />
+            </group>
           </GrabbableObject>
         );
       })}
@@ -207,6 +223,7 @@ export function RepairRepairingStep({
           part,
           placeholderTargets,
         );
+        const isDeposited = Boolean(depositedBrokenPartIds[part.id]);
 
         return (
           <GrabbableObject
@@ -235,6 +252,9 @@ export function RepairRepairingStep({
                 <sphereGeometry args={[0.11, 16, 16]} />
                 <meshBasicMaterial color="#ef4444" transparent opacity={0.85} />
               </mesh>
+              <RepairPartPlacementFeedback
+                state={isDeposited ? "stored" : null}
+              />
             </group>
           </GrabbableObject>
         );
@@ -294,6 +314,46 @@ function RepairPlaceholderMarkers({
       ))}
     </>
   );
+}
+
+function RepairPartPlacementFeedback({
+  state,
+}: RepairPartPlacementFeedbackProps): React.JSX.Element | null {
+  if (!state) return null;
+
+  const color = getPlacementFeedbackColor(state);
+
+  return (
+    <group position={[0, 0.72, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.48, 0.035, 12, 64]} />
+        <meshBasicMaterial color={color} transparent opacity={0.85} />
+      </mesh>
+      <mesh position={[0, 0.08, 0]}>
+        <sphereGeometry args={[0.1, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function getPlacementFeedbackColor(
+  state: NonNullable<RepairPartPlacementFeedbackProps["state"]>,
+): string {
+  if (state === "valid") return VALID_PART_COLOR;
+  if (state === "stored") return STORED_BROKEN_PART_COLOR;
+
+  return INVALID_PART_COLOR;
+}
+
+function getReplacementFeedbackState(
+  partId: string,
+  requiredPartId: string,
+  isPlaced: boolean,
+): RepairPartPlacementFeedbackProps["state"] {
+  if (!isPlaced) return null;
+
+  return partId === requiredPartId ? "valid" : "invalid";
 }
 
 function getPlaceholderTargets(
