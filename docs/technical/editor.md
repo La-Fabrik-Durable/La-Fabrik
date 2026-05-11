@@ -23,6 +23,7 @@ src/
 ├── components/
 │   └── editor/
 │       ├── EditorControls.tsx
+│       ├── EditorSrtPanel.tsx
 │       └── scene/
 │           ├── EditorMap.tsx
 │           └── EditorScene.tsx
@@ -37,10 +38,14 @@ src/
 │   └── editor/
 │       └── editor.ts
 └── utils/
+    ├── dialogues/
+    │   └── loadDialogueManifest.ts
     ├── editor/
     │   └── loadEditorScene.ts
-    └── map/
-        └── loadMapSceneData.ts
+    ├── map/
+    │   └── loadMapSceneData.ts
+    └── subtitles/
+        └── parseSrt.ts
 ```
 
 ## Responsibilities
@@ -56,6 +61,8 @@ src/
 `src/components/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls.
 
 `src/components/editor/EditorControls.tsx` renders the HTML control panel outside the canvas.
+
+`src/components/editor/EditorSrtPanel.tsx` renders the dialogue subtitle editor inside the control panel. It loads the dialogue manifest, loads one SRT file per voice/language, validates cue structure, previews dialogue audio, and can save SRT files through a dev-server endpoint.
 
 `src/controls/editor/FlyController.tsx` provides editor movement controls for player-style navigation.
 
@@ -134,6 +141,39 @@ The editor supports two output paths:
 
 The dev-only `/api/save-map` endpoint is implemented by the Vite plugin in `vite.config.ts`. It writes to `public/map.json` and enforces a maximum payload size.
 
+## Dialogue SRT Editing
+
+Dialogue subtitle editing is part of the `/editor` side panel.
+
+Runtime dialogue files are grouped under `public/sounds/dialogue/`:
+
+```txt
+public/
+└── sounds/
+    └── dialogue/
+        ├── dialogues.json
+        └── subtitles/
+            ├── fr/
+            │   ├── narrateur.srt
+            │   ├── fermier.srt
+            │   └── electricienne.srt
+            └── en/
+                └── ...
+```
+
+The current model is one SRT file per voice and language. A dialogue entry references the cue it needs through `subtitleCueIndex`; it does not own a dedicated SRT file.
+
+`EditorSrtPanel` uses:
+
+- `loadDialogueManifest()` to read `/sounds/dialogue/dialogues.json`
+- `parseSrt()` to validate local textarea content and find active cues during audio preview
+- `/api/save-srt` to write edited SRT files during local development
+- `/api/validate-dialogues` to validate the manifest, linked audio, French SRT files, and referenced cue indexes
+
+SRT timecodes are relative to the dialogue audio file being previewed, not to the global game timeline.
+
+Missing English SRT files are warnings because runtime loading falls back to French subtitles when the selected language is not available.
+
 ## Styling
 
 Editor styles are in `src/index.css` under the `/* Editor page */` section. Classes are prefixed with `editor-` to avoid collisions with the game UI.
@@ -144,3 +184,5 @@ Editor styles are in `src/index.css` under the `/* Editor page */` section. Clas
 - Large `map.json` files are not virtualized, culled, or LOD-managed.
 - There is no snap-to-grid, duplication, material editing, or object creation workflow.
 - Save to Server is a Vite dev-server helper, not a production backend API.
+- SRT Save is also a Vite dev-server helper, not a production backend API.
+- The editor validates dialogue assets but does not yet create, delete, or reorder dialogue manifest entries.
