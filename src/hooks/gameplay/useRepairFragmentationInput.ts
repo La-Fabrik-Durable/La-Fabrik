@@ -5,11 +5,13 @@ import { useBothFistsHold } from "@/hooks/handTracking/useBothFistsHold";
 
 interface UseRepairFragmentationInputOptions {
   enabled: boolean;
+  keyboardEnabled?: boolean;
   onFragment: () => void;
 }
 
 export function useRepairFragmentationInput({
   enabled,
+  keyboardEnabled = true,
   onFragment,
 }: UseRepairFragmentationInputOptions): void {
   const completedRef = useRef(false);
@@ -29,7 +31,7 @@ export function useRepairFragmentationInput({
   }, [enabled, onFragment]);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled || !keyboardEnabled) return undefined;
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key.toLowerCase() !== INTERACT_KEY) return;
@@ -43,7 +45,7 @@ export function useRepairFragmentationInput({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [enabled, fragment]);
+  }, [enabled, fragment, keyboardEnabled]);
 
   useBothFistsHold({
     enabled,
