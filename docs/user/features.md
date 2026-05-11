@@ -6,6 +6,7 @@ This document lists features that are implemented in the current codebase.
 
 - Fullscreen React Three Fiber scene
 - Main map scene loaded from `public/map.json` and matching `public/models/{name}/model.glb` or `model.gltf` assets
+- Minimal fullscreen scene loading overlay for 3D scenes, with a global progress bar used by the production map, debug physics scene, and editor scene
 - Debug physics test scene selectable from the debug panel, including grab/trigger tests, an animated model preview, and separate repair playground zones for `bike`, `pylone`, and `ferme`
 - Rapier physics context available for production stage gameplay objects
 - Ambient and directional lighting
@@ -17,7 +18,7 @@ This document lists features that are implemented in the current codebase.
 - Pointer lock mouse look
 - Movement with `ZQSD`
 - Jumping
-- Octree-based collision against the loaded map
+- Octree-based collision against dedicated map collision nodes, currently scoped to `terrain`
 
 ## Interactions
 
@@ -68,7 +69,6 @@ This document lists features that are implemented in the current codebase.
 - zone system
 - cinematic system
 - dialogue system
-- loading flow
 - minimap and mission HUD
 - full production separation between gameplay and debug scenes
 - production backend persistence for editor saves

@@ -8,6 +8,7 @@ export function useOctreeGraphNode(
   graphNodeRef: RefObject<Object3D | null>,
   onOctreeReady: OctreeReadyHandler,
   rebuildKey: string | number = 0,
+  enabled = true,
 ): void {
   const octreeBuilt = useRef(false);
 
@@ -17,7 +18,7 @@ export function useOctreeGraphNode(
 
   useEffect(() => {
     const graphNode = graphNodeRef.current;
-    if (octreeBuilt.current || !graphNode) return;
+    if (!enabled || octreeBuilt.current || !graphNode) return;
     octreeBuilt.current = true;
 
     graphNode.updateMatrixWorld(true);
@@ -25,5 +26,5 @@ export function useOctreeGraphNode(
     const octree = new Octree();
     octree.fromGraphNode(graphNode);
     onOctreeReady(octree);
-  }, [graphNodeRef, onOctreeReady, rebuildKey]);
+  }, [enabled, graphNodeRef, onOctreeReady, rebuildKey]);
 }

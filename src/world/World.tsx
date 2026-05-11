@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { Physics } from "@react-three/rapier";
-import type { Octree } from "three/addons/math/Octree.js";
 import {
   PLAYER_SPAWN_POSITION_GAME,
   PLAYER_SPAWN_POSITION_PHYSICS,
@@ -8,6 +6,7 @@ import {
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { useHandTrackingSnapshot } from "@/hooks/handTracking/useHandTrackingSnapshot";
+import { useWorldSceneLoading } from "@/hooks/world/useWorldSceneLoading";
 import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
 import { HandTrackingGlove } from "@/components/three/handTracking/HandTrackingGlove";
@@ -18,12 +17,18 @@ import { GameMap } from "@/world/GameMap";
 import { GameStageContent } from "@/world/GameStageContent";
 import { Player } from "@/world/player/Player";
 import { TestMap } from "@/world/debug/TestMap";
+import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 
-export function World(): React.JSX.Element {
+interface WorldProps {
+  onLoadingStateChange?: SceneLoadingChangeHandler | undefined;
+}
+
+export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const { status, usageStatus } = useHandTrackingSnapshot();
-  const [octree, setOctree] = useState<Octree | null>(null);
+  const { octree, showGameStage, handleGameMapLoaded, handleOctreeReady } =
+    useWorldSceneLoading({ sceneMode, onLoadingStateChange });
   const playerSpawnPosition =
     sceneMode === "game"
       ? PLAYER_SPAWN_POSITION_GAME
@@ -47,13 +52,19 @@ export function World(): React.JSX.Element {
       {sceneMode === "game" ? (
         <>
           <GameMusic />
-          <GameMap onOctreeReady={setOctree} />
-          <Physics>
-            <GameStageContent />
-          </Physics>
+          <GameMap
+            onLoaded={handleGameMapLoaded}
+            onLoadingStateChange={onLoadingStateChange}
+            onOctreeReady={handleOctreeReady}
+          />
+          {showGameStage ? (
+            <Physics>
+              <GameStageContent />
+            </Physics>
+          ) : null}
         </>
       ) : (
-        <TestMap onOctreeReady={setOctree} />
+        <TestMap onOctreeReady={handleOctreeReady} />
       )}
       {cameraMode !== "debug" ? (
         <Player octree={octree} spawnPosition={playerSpawnPosition} />
