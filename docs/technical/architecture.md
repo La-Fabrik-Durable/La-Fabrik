@@ -30,8 +30,44 @@ This document describes the code that exists today in the repository.
 
 ## Audio
 
-- `src/managers/AudioManager.ts` currently provides pooled one-shot sound playback and looped music playback.
-- Trigger interactions may play audio directly through `AudioManager`.
+- `src/managers/AudioManager.ts` provides pooled one-shot playback, looped music playback, category volumes, and optional stereo pan for one-shot sounds.
+- Supported audio categories are `music`, `sfx`, and `dialogue`.
+- Trigger interactions may play SFX directly through `AudioManager`.
+
+## Settings Menu
+
+- `src/managers/stores/useSettingsStore.ts` stores settings for music volume, SFX volume, dialogue volume, subtitle visibility, subtitle language, repair runtime, and menu visibility.
+- `src/components/ui/GameSettingsMenu.tsx` renders the in-game options menu.
+- `src/components/ui/GameUI.tsx` mounts the settings menu as an HTML overlay outside the canvas.
+- `Esc` opens and closes the menu, and `src/world/player/PlayerController.tsx` ignores player input while the menu is open.
+- Volume changes are forwarded to `AudioManager` by category.
+
+## Dialogues And Subtitles
+
+- `public/sounds/dialogue/dialogues.json` is the runtime dialogue manifest.
+- Dialogue audio files live under `public/sounds/dialogue/`.
+- Subtitle files live under `public/sounds/dialogue/subtitles/{fr|en}/`.
+- The current subtitle model is one SRT file per voice and language.
+- `src/types/dialogues/dialogues.ts` contains the dialogue manifest types.
+- `src/utils/dialogues/dialogueManifestValidation.ts` validates manifest shape at runtime.
+- `src/utils/dialogues/loadDialogueManifest.ts` loads the manifest and SRT cues, with French fallback when the selected language is missing.
+- `src/utils/subtitles/parseSrt.ts` parses SRT blocks and timecodes.
+- `src/utils/dialogues/playDialogue.ts` plays dialogue audio and synchronizes the active subtitle against the audio element time.
+- `src/managers/stores/useSubtitleStore.ts` stores the currently displayed subtitle cue.
+- `src/components/ui/Subtitles.tsx` renders the subtitle overlay.
+- `src/world/GameDialogues.tsx` currently triggers dialogue entries that define a `timecode`.
+- Dialogue playback is queued so multiple dialogue requests do not overlap.
+
+## Cinematics
+
+- `public/cinematics.json` is the runtime cinematic manifest.
+- `src/types/cinematics/cinematics.ts` contains cinematic manifest types.
+- `src/utils/cinematics/cinematicManifestValidation.ts` validates manifest shape at runtime.
+- `src/utils/cinematics/loadCinematicManifest.ts` loads `/cinematics.json`.
+- `src/world/GameCinematics.tsx` triggers cinematics that define a global `timecode`.
+- Cinematics use GSAP timelines to animate the active camera position and look target.
+- `dialogueCues` on a cinematic trigger dialogue IDs at times relative to the cinematic start.
+- `src/managers/stores/useGameStore.ts` exposes `isCinematicPlaying`, used to lock player input during cinematics.
 
 ## Debug System
 
@@ -59,6 +95,9 @@ This document describes the code that exists today in the repository.
 
 - `src/pages/editor/page.tsx` is the route-level editor page for `/editor`.
 - `src/components/editor/EditorControls.tsx` renders the HTML editor control panel.
+- `src/components/editor/EditorDialogueManifestPanel.tsx` edits `public/sounds/dialogue/dialogues.json`.
+- `src/components/editor/EditorCinematicManifestPanel.tsx` edits `public/cinematics.json`.
+- `src/components/editor/EditorSrtPanel.tsx` renders the dialogue SRT editor inside the editor control panel.
 - `src/components/editor/scene/EditorScene.tsx` composes the editor canvas scene, camera controls, lights, shortcuts, and map rendering.
 - `src/components/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls.
 - `src/controls/editor/FlyController.tsx` provides player-style editor navigation.
@@ -80,6 +119,7 @@ This document describes the code that exists today in the repository.
 - The repository is a prototype, not the full intended game runtime.
 - `src/world/debug/TestMap.tsx` is part of the active scene composition.
 - There is no central gameplay orchestrator such as `GameManager`.
-- Missions, zones, cinematics, and dialogue systems are not implemented.
+- Missions and zones are not implemented.
+- Dialogue branching and gameplay-triggered orchestration are still limited.
 - The player uses octree collision and simple movement rules, not a complete gameplay physics stack.
 - Editor save-to-server is implemented as a Vite dev-server plugin, not a production backend API.

@@ -10,6 +10,8 @@ import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControl
 import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
 import { HandTrackingGlove } from "@/components/three/handTracking/HandTrackingGlove";
 import { Environment } from "@/world/Environment";
+import { GameCinematics } from "@/world/GameCinematics";
+import { GameDialogues } from "@/world/GameDialogues";
 import { GameMusic } from "@/world/GameMusic";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";
@@ -17,10 +19,21 @@ import { GameStageContent } from "@/world/GameStageContent";
 import { Player } from "@/world/player/Player";
 import { TestMap } from "@/world/debug/TestMap";
 
+function hasBootFlag(name: string): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has(name);
+}
+
 export function World(): React.JSX.Element {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const [octree, setOctree] = useState<Octree | null>(null);
+  const noCinematics = hasBootFlag("noCinematics");
+  const noDialogues = hasBootFlag("noDialogues");
+  const noMap = hasBootFlag("noMap");
+  const noMusic = hasBootFlag("noMusic");
+  const noOctree = hasBootFlag("noOctree");
+  const noPlayer = hasBootFlag("noPlayer");
   const playerSpawnPosition =
     sceneMode === "game"
       ? PLAYER_SPAWN_POSITION_GAME
@@ -41,15 +54,19 @@ export function World(): React.JSX.Element {
 
       {sceneMode === "game" ? (
         <>
-          <GameMusic />
-          <GameMap onOctreeReady={setOctree} />
+          {noMusic ? null : <GameMusic />}
+          {noCinematics ? null : <GameCinematics />}
+          {noDialogues ? null : <GameDialogues />}
+          {noMap ? null : (
+            <GameMap onOctreeReady={setOctree} buildOctree={!noOctree} />
+          )}
           <GameStageContent />
         </>
       ) : (
         <TestMap onOctreeReady={setOctree} />
       )}
 
-      {cameraMode !== "debug" ? (
+      {cameraMode !== "debug" && !noPlayer ? (
         <Player octree={octree} spawnPosition={playerSpawnPosition} />
       ) : null}
     </>

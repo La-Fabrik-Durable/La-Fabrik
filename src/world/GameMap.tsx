@@ -62,13 +62,17 @@ class ModelErrorBoundary extends Component<
 
 interface GameMapProps {
   onOctreeReady: OctreeReadyHandler;
+  buildOctree?: boolean;
 }
 
-export function GameMap({ onOctreeReady }: GameMapProps): React.JSX.Element {
+export function GameMap({
+  onOctreeReady,
+  buildOctree = true,
+}: GameMapProps): React.JSX.Element {
   const [mapNodes, setMapNodes] = useState<LoadedMapNode[]>([]);
   const groupRef = useRef<THREE.Group>(null);
 
-  useOctreeGraphNode(groupRef, onOctreeReady, mapNodes.length);
+  useOctreeGraphNode(groupRef, onOctreeReady, mapNodes.length, buildOctree);
 
   useEffect(() => {
     const loadMap = async () => {

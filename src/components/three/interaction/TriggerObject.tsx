@@ -69,7 +69,9 @@ export function TriggerObject({
           position={position}
           onPress={() => {
             if (soundPath) {
-              AudioManager.getInstance().playSound(soundPath, soundVolume);
+              AudioManager.getInstance().playSound(soundPath, soundVolume, {
+                category: "sfx",
+              });
             }
 
             onTrigger?.();
