@@ -10,6 +10,7 @@ import { DebugCameraControls } from "@/components/debug/scene/DebugCameraControl
 import { DebugHelpers } from "@/components/debug/scene/DebugHelpers";
 import { HandTrackingGlove } from "@/components/three/handTracking/HandTrackingGlove";
 import { Environment } from "@/world/Environment";
+import { GameCinematics } from "@/world/GameCinematics";
 import { GameDialogues } from "@/world/GameDialogues";
 import { GameMusic } from "@/world/GameMusic";
 import { Lighting } from "@/world/Lighting";
@@ -43,6 +44,7 @@ export function World(): React.JSX.Element {
       {sceneMode === "game" ? (
         <>
           <GameMusic />
+          <GameCinematics />
           <GameDialogues />
           <GameMap onOctreeReady={setOctree} />
           <GameStageContent />

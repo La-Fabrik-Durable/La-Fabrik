@@ -24,6 +24,7 @@ import {
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
 import { InteractionManager } from "@/managers/InteractionManager";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
 import type { Vector3Tuple } from "@/types/three/three";
 
@@ -54,6 +55,13 @@ const _wishDir = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
 const _collisionCorrection = new THREE.Vector3();
+
+function isPlayerInputLocked(): boolean {
+  return (
+    useSettingsStore.getState().isSettingsMenuOpen ||
+    useGameStore.getState().isCinematicPlaying
+  );
+}
 
 function setMovementKey(keys: Keys, key: string, pressed: boolean): boolean {
   switch (key.toLowerCase()) {
@@ -109,7 +117,7 @@ export function PlayerController({
     const interaction = InteractionManager.getInstance();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (useSettingsStore.getState().isSettingsMenuOpen) return;
+      if (isPlayerInputLocked()) return;
 
       if (setMovementKey(keys.current, event.key, true)) {
         event.preventDefault();
@@ -131,7 +139,7 @@ export function PlayerController({
     };
 
     const handleKeyUp = (event: KeyboardEvent): void => {
-      if (useSettingsStore.getState().isSettingsMenuOpen) return;
+      if (isPlayerInputLocked()) return;
 
       if (setMovementKey(keys.current, event.key, false)) {
         event.preventDefault();
@@ -139,7 +147,7 @@ export function PlayerController({
     };
 
     const handleMouseDown = (event: MouseEvent): void => {
-      if (useSettingsStore.getState().isSettingsMenuOpen) return;
+      if (isPlayerInputLocked()) return;
       if (event.button !== PRIMARY_INTERACT_MOUSE_BUTTON) return;
       if (interaction.getState().focused?.kind === "grab") {
         interaction.pressInteract();
@@ -147,7 +155,7 @@ export function PlayerController({
     };
 
     const handleMouseUp = (event: MouseEvent): void => {
-      if (useSettingsStore.getState().isSettingsMenuOpen) return;
+      if (isPlayerInputLocked()) return;
       if (event.button !== PRIMARY_INTERACT_MOUSE_BUTTON) return;
       if (interaction.getState().holding) {
         interaction.releaseInteract();
@@ -169,7 +177,7 @@ export function PlayerController({
   }, []);
 
   useFrame((_, delta) => {
-    if (useSettingsStore.getState().isSettingsMenuOpen) {
+    if (isPlayerInputLocked()) {
       keys.current = { ...DEFAULT_KEYS };
       velocity.current.set(0, 0, 0);
       wantsJump.current = false;
