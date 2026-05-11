@@ -24,7 +24,7 @@ export function ZoneDetection(): null {
     const playerPos = { x: 0, y: 0, z: 0 };
 
     folder
-      .add(gameState, "step", ["intro", "outOfFabrik"])
+      .add(gameState, "step", ["intro", "bike"])
       .name("Game Step")
       .disable();
 

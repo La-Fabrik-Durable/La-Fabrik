@@ -7,6 +7,6 @@ export const ZONES: Zone[] = [
     position: [-5, 25, -15] as Vector3Tuple,
     radius: 10,
     height: 20,
-    targetStep: "outOfFabrik",
+    targetStep: "bike",
   },
 ];

@@ -3,7 +3,7 @@
 ## Étapes du jeu
 
 ```
-intro → start-intro → naming → bienvenue → star-move → outOfFabrik
+intro → start-intro → naming → bienvenue → star-move → bike
 ```
 
 ---
@@ -45,7 +45,7 @@ intro → start-intro → naming → bienvenue → star-move → outOfFabrik
 - **État** : Le joueur peut maintenant se déplacer librement
 - **Zone** : La détection de zone devient active (ZoneDetection)
 
-### 6. `outOfFabrik`
+### 6. `bike`
 
 - **Déclenchement** : Quand le joueur entre dans la zone de sortie
 - **Action** : Transition vers l'étape finale
@@ -89,7 +89,7 @@ export const ZONES: Zone[] = [
     position: [50, 0, 50], // Position de la zone de sortie
     radius: 10, // Rayon de détection
     height: 20, // Hauteur de la zone (pour la visualisation)
-    targetStep: "outOfFabrik", // Étape cible quand on entre dans la zone
+    targetStep: "bike", // Étape cible quand on entre dans la zone
   },
 ];
 ```
