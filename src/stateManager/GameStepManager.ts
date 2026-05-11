@@ -1,10 +1,13 @@
-import type { GameStep } from "@/types/game";
+import type { GameStep, GameStepSnapshot } from "@/types/game";
 
 export class GameStepManager {
   private static _instance: GameStepManager | null = null;
 
   private _currentStep: GameStep = "intro";
+  private _playerName = "";
+  private _canMove = false;
   private readonly _listeners = new Set<() => void>();
+  private _cachedSnapshot: GameStepSnapshot | null = null;
 
   static getInstance(): GameStepManager {
     if (!GameStepManager._instance) {
@@ -20,10 +23,48 @@ export class GameStepManager {
     return this._currentStep;
   }
 
+  getPlayerName(): string {
+    return this._playerName;
+  }
+
+  canMove(): boolean {
+    return this._canMove;
+  }
+
+  getSnapshot(): GameStepSnapshot {
+    if (!this._cachedSnapshot) {
+      this._cachedSnapshot = {
+        step: this._currentStep,
+        playerName: this._playerName,
+        canMove: this._canMove,
+        transitionTo: this.transitionTo.bind(this),
+        setPlayerName: this.setPlayerName.bind(this),
+      };
+    }
+    return this._cachedSnapshot;
+  }
+
   transitionTo(step: GameStep): void {
     if (this._currentStep === step) return;
 
     this._currentStep = step;
+    this._cachedSnapshot = null;
+    this._emit();
+  }
+
+  setPlayerName(name: string): void {
+    if (this._playerName === name) return;
+
+    this._playerName = name;
+    this._cachedSnapshot = null;
+    this._emit();
+  }
+
+  setCanMove(canMove: boolean): void {
+    if (this._canMove === canMove) return;
+
+    this._canMove = canMove;
+    this._cachedSnapshot = null;
     this._emit();
   }
 
@@ -37,7 +78,10 @@ export class GameStepManager {
 
   destroy(): void {
     this._currentStep = "intro";
+    this._playerName = "";
+    this._canMove = false;
     this._listeners.clear();
+    this._cachedSnapshot = null;
     GameStepManager._instance = null;
   }
 

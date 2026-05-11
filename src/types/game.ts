@@ -1,6 +1,12 @@
 import type { Vector3Tuple } from "@/types/3d";
 
-export type GameStep = "intro" | "outOfFabrik";
+export type GameStep =
+  | "intro"
+  | "start-intro"
+  | "naming"
+  | "bienvenue"
+  | "star-move"
+  | "outOfFabrik";
 
 export interface Zone {
   id: string;
@@ -16,5 +22,8 @@ export interface GameState {
 
 export interface GameStepSnapshot {
   step: GameStep;
+  playerName: string;
+  canMove: boolean;
   transitionTo: (step: GameStep) => void;
+  setPlayerName: (name: string) => void;
 }

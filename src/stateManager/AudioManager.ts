@@ -40,6 +40,46 @@ export class AudioManager {
     });
   }
 
+  playSoundWithCallback(
+    path: string,
+    volume: number,
+    onEnded: () => void,
+  ): void {
+    console.log("[AudioManager] playSoundWithCallback:", path);
+    const audio = new Audio(path);
+    audio.volume = Math.max(0, Math.min(1, volume));
+    audio.currentTime = 0;
+
+    audio.addEventListener("ended", () => {
+      console.log("[AudioManager] Audio ended:", path);
+      onEnded();
+    });
+
+    audio.addEventListener("error", (e) => {
+      console.error("[AudioManager] Audio error:", path, e);
+    });
+
+    audio
+      .play()
+      .then(() => {
+        console.log("[AudioManager] Audio playing:", path);
+      })
+      .catch((error: unknown) => {
+        console.error("[AudioManager] Play failed:", path, error);
+        if (
+          error instanceof DOMException &&
+          AudioManager.IGNORED_PLAYBACK_ERRORS.has(error.name)
+        ) {
+          return;
+        }
+
+        logger.error("AudioManager", "Failed to play sound", {
+          path,
+          error: AudioManager._toLogValue(error),
+        });
+      });
+  }
+
   destroy(): void {
     this._audioPools.forEach((pool) => {
       pool.forEach((audio) => {

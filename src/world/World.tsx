@@ -10,6 +10,7 @@ import {
   ZoneDebugVisuals,
   ZoneDetection,
 } from "@/components/zone/ZoneDetection";
+import { GameFlow } from "@/components/game/GameFlow";
 import { DebugCameraControls } from "@/utils/debug/scene/DebugCameraControls";
 import { DebugHelpers } from "@/utils/debug/scene/DebugHelpers";
 import { Environment } from "@/world/Environment";
@@ -34,6 +35,7 @@ export function World(): React.JSX.Element {
       <DebugHelpers />
       <ZoneDetection />
       <ZoneDebugVisuals />
+      <GameFlow />
       {cameraMode === "debug" ? <DebugCameraControls /> : null}
 
       {sceneMode === "game" ? (
