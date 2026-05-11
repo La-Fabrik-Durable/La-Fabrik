@@ -74,6 +74,16 @@ function getManifestErrors(manifest: CinematicManifest | null): string[] {
         errors.push(`${label}: les temps des keyframes doivent augmenter.`);
       }
     });
+
+    cinematic.dialogueCues?.forEach((cue, cueIndex) => {
+      if (!Number.isFinite(cue.time) || cue.time < 0) {
+        errors.push(`${label}: dialogue cue ${cueIndex + 1} time invalide.`);
+      }
+
+      if (!cue.dialogueId.trim()) {
+        errors.push(`${label}: dialogue cue ${cueIndex + 1} id obligatoire.`);
+      }
+    });
   });
 
   return errors;
@@ -104,6 +114,11 @@ function getPatchedCinematic(
     id: patch.id ?? cinematic.id,
     cameraKeyframes: patch.cameraKeyframes ?? cinematic.cameraKeyframes,
   };
+
+  const dialogueCues = patch.dialogueCues ?? cinematic.dialogueCues;
+  if (dialogueCues) {
+    nextCinematic.dialogueCues = dialogueCues;
+  }
 
   if ("timecode" in patch) {
     if (patch.timecode !== undefined) nextCinematic.timecode = patch.timecode;

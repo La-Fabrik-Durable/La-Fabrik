@@ -1,6 +1,7 @@
 import type {
   CinematicCameraKeyframe,
   CinematicDefinition,
+  CinematicDialogueCue,
   CinematicManifest,
 } from "@/types/cinematics/cinematics";
 import type { Vector3Tuple } from "@/types/three/three";
@@ -50,7 +51,26 @@ function parseCinematicDefinition(data: unknown): CinematicDefinition {
     cinematic.timecode = data.timecode;
   }
 
+  if (Array.isArray(data.dialogueCues)) {
+    cinematic.dialogueCues = data.dialogueCues.map(parseDialogueCue);
+  }
+
   return cinematic;
+}
+
+function parseDialogueCue(data: unknown): CinematicDialogueCue {
+  if (
+    !isRecord(data) ||
+    typeof data.time !== "number" ||
+    typeof data.dialogueId !== "string"
+  ) {
+    throw new Error("Invalid cinematic dialogue cue");
+  }
+
+  return {
+    time: data.time,
+    dialogueId: data.dialogueId,
+  };
 }
 
 function parseCameraKeyframe(data: unknown): CinematicCameraKeyframe {

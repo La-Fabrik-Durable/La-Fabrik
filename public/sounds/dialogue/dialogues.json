@@ -31,8 +31,7 @@
       "id": "narrateur_bienvenueaaltera",
       "voice": "narrateur",
       "audio": "/sounds/dialogue/narrateur_bienvenueaaltera.mp3",
-      "subtitleCueIndex": 1,
-      "timecode": 0
+      "subtitleCueIndex": 1
     },
     {
       "id": "narrateur_intro_prenom",

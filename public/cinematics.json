@@ -4,6 +4,12 @@
     {
       "id": "intro_overview",
       "timecode": 0,
+      "dialogueCues": [
+        {
+          "time": 0,
+          "dialogueId": "narrateur_bienvenueaaltera"
+        }
+      ],
       "cameraKeyframes": [
         {
           "time": 0,

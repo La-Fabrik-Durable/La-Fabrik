@@ -8,17 +8,24 @@ import type {
   CinematicDefinition,
   CinematicManifest,
 } from "@/types/cinematics/cinematics";
+import type { DialogueManifest } from "@/types/dialogues/dialogues";
 import { logger } from "@/utils/core/logger";
 import { loadCinematicManifest } from "@/utils/cinematics/loadCinematicManifest";
+import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
+import { queueDialogueById } from "@/utils/dialogues/playDialogue";
 
 export function GameCinematics(): null {
   const camera = useThree((state) => state.camera);
   const [manifest, setManifest] = useState<CinematicManifest | null>(null);
+  const [dialogueManifest, setDialogueManifest] =
+    useState<DialogueManifest | null>(null);
   const playedCinematicsRef = useRef(new Set<string>());
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const activeAudiosRef = useRef(new Set<HTMLAudioElement>());
 
   useEffect(() => {
     let mounted = true;
+    const activeAudios = activeAudiosRef.current;
 
     void loadCinematicManifest()
       .then((loadedManifest) => {
@@ -30,9 +37,21 @@ export function GameCinematics(): null {
         });
       });
 
+    void loadDialogueManifest()
+      .then((loadedManifest) => {
+        if (mounted) setDialogueManifest(loadedManifest);
+      })
+      .catch((error: unknown) => {
+        logger.error("GameCinematics", "Failed to load dialogue manifest", {
+          error: error instanceof Error ? error : String(error),
+        });
+      });
+
     return () => {
       mounted = false;
       stopActiveCinematic(timelineRef);
+      activeAudios.forEach((audio) => audio.pause());
+      activeAudios.clear();
       useGameStore.getState().setCinematicPlaying(false);
     };
   }, []);
@@ -45,10 +64,14 @@ export function GameCinematics(): null {
     manifest.cinematics.forEach((cinematic) => {
       if (cinematic.timecode === undefined) return;
       if (cinematic.timecode > elapsedTime) return;
+      if (cinematic.dialogueCues && !dialogueManifest) return;
       if (playedCinematicsRef.current.has(cinematic.id)) return;
 
       playedCinematicsRef.current.add(cinematic.id);
-      playCinematic(camera, cinematic, timelineRef);
+      playCinematic(camera, cinematic, timelineRef, {
+        dialogueManifest,
+        activeAudiosRef,
+      });
     });
   });
 
@@ -66,6 +89,10 @@ function playCinematic(
   camera: THREE.Camera,
   cinematic: CinematicDefinition,
   timelineRef: MutableRefObject<gsap.core.Timeline | null>,
+  dialogueOptions: {
+    dialogueManifest: DialogueManifest | null;
+    activeAudiosRef: MutableRefObject<Set<HTMLAudioElement>>;
+  },
 ): void {
   const firstKeyframe = cinematic.cameraKeyframes[0];
   if (!firstKeyframe) return;
@@ -112,6 +139,30 @@ function playCinematic(
         ease: "power2.inOut",
       },
       previousKeyframe.time,
+    );
+  });
+
+  cinematic.dialogueCues?.forEach((cue) => {
+    timeline.call(
+      () => {
+        if (!dialogueOptions.dialogueManifest) return;
+
+        void queueDialogueById(
+          dialogueOptions.dialogueManifest,
+          cue.dialogueId,
+        ).then((audio) => {
+          if (!audio) return;
+
+          dialogueOptions.activeAudiosRef.current.add(audio);
+          audio.addEventListener(
+            "ended",
+            () => dialogueOptions.activeAudiosRef.current.delete(audio),
+            { once: true },
+          );
+        });
+      },
+      undefined,
+      cue.time,
     );
   });
 
