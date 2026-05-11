@@ -13,6 +13,8 @@ import {
   REPAIR_CASE_FLOAT_UP_SPEED,
   REPAIR_CASE_LID_NODE_NAME,
   REPAIR_CASE_OPEN_ROTATION_OFFSET_DEGREES,
+  REPAIR_CASE_CLOSE_SOUND_PATH,
+  REPAIR_CASE_OPEN_SOUND_PATH,
   REPAIR_CASE_PLACEHOLDER_NAME_PREFIX,
   REPAIR_CASE_POP_DURATION,
   REPAIR_CASE_POP_Y_OFFSET,
@@ -21,6 +23,7 @@ import {
 } from "@/data/gameplay/repairCaseConfig";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
+import { AudioManager } from "@/managers/AudioManager";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
 import { toVector3Scale } from "@/utils/three/scale";
 
@@ -79,6 +82,7 @@ export function RepairCaseModel({
   const onExitCompleteRef = useRef(onExitComplete);
   const onPlaceholdersChangeRef = useRef(onPlaceholdersChange);
   const initialOpen = useRef(open);
+  const previousOpen = useRef(open);
   const openedRotationZ = useRef(0);
   const parsedScale = toVector3Scale(scale);
   const placeholderNodes = useRef<THREE.Object3D[]>([]);
@@ -175,6 +179,16 @@ export function RepairCaseModel({
     return () => {
       gsap.killTweensOf(lid.rotation);
     };
+  }, [open]);
+
+  useEffect(() => {
+    if (previousOpen.current === open) return;
+
+    previousOpen.current = open;
+    AudioManager.getInstance().playSound(
+      open ? REPAIR_CASE_OPEN_SOUND_PATH : REPAIR_CASE_CLOSE_SOUND_PATH,
+      0.85,
+    );
   }, [open]);
 
   useFrame(({ clock }, delta) => {
