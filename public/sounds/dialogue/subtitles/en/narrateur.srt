@@ -1,0 +1,91 @@
+1
+00:00:00,000 --> 00:00:02,760
+Hello there, future resident of Altera! Today, you are going to discover the technician role at La Fabrik, which handles Low-Tech technologies and repairs.
+
+2
+00:00:00,000 --> 00:00:11,592
+Before we start, what's your name?
+
+3
+00:00:00,000 --> 00:00:10,824
+Very good! We'll begin step by step to show you how the workshop works. Then you'll start your day and see the positive impact La Fabrik has on the community and the neighborhood.
+
+4
+00:00:00,000 --> 00:00:06,072
+Let's go! You need to head to the farm, we're looking to improve something! Hop on your E-Bike.
+
+5
+00:00:00,000 --> 00:00:12,720
+What? Your E-Bike is broken? Well, that's not too serious, it happens! Use the two rollers on your gloves. They're real technological gems. Place one under the bike, and one above it.
+
+6
+00:00:00,000 --> 00:00:08,064
+So? Pretty amazing, right? Anyway, these rollers will scan the components to find out what we need to repair and/or replace.
+
+7
+00:00:00,000 --> 00:00:04,992
+Perfect! The cooler gave out, you can replace it with one of the components from your pack. Aaaand there we go! It runs like clockwork! Go on, hurry!
+
+8
+00:00:00,000 --> 00:00:04,512
+Don't hesitate to ask for help if you need it, everyone is super welcoming here.
+
+9
+00:00:00,000 --> 00:00:08,880
+Oh woooow!! Did you see that???? All the traffic lights, computers and lights went out!! Hurry to the Energy Center, we can't even send repaired devices back out!
+
+10
+00:00:00,000 --> 00:00:09,840
+Ah! A power pole fell down! Damn! Aaah, those little moles, they cause so much trouble... But they're so cuuuute!
+
+11
+00:00:00,000 --> 00:00:07,632
+Woohoo! Great! Power is back across the whole neighborhood! Well done! Now head to the farm.
+
+12
+00:00:00,000 --> 00:00:05,352
+Well, thanks to you I was able to finish my emergency! Oh, you're almost at the farm!
+
+13
+00:00:00,000 --> 00:00:11,760
+Okay, enough of the emotional moment haha! For the farm, as I told you, we need to change the irrigation here. During drought periods, residents complain about an issue. See what you can do.
+
+14
+00:00:00,000 --> 00:00:04,560
+Okay, perfect, you're there! Search the Center to find where the problem is coming from.
+
+15
+00:00:00,000 --> 00:00:06,864
+Yeees! That's it! We'd like to stop pumping water from the lake, otherwise we'll drain all its reserves. What do you suggest?
+
+16
+00:00:00,000 --> 00:00:10,944
+The old cooler from your E-Bike?? Yes!! Hahaha, great idea! Combined with the old lake pipes, we'll be able to make something cool! Put all that between your pads!
+
+17
+00:00:00,000 --> 00:00:05,712
+The cooler from your E-Bike is broken, but we can still make something useful out of it.
+
+18
+00:00:00,000 --> 00:00:10,032
+Ma-gni-fi-cent! I can see Gilbert helped you haha, he's such a sweetheart! You did a great job! And thanks to you, the neighborhood has been improved.
+
+19
+00:00:00,000 --> 00:00:11,520
+Thank you so much for what you've brought to the community. The electrician and Gilbert really enjoyed helping you and told me they're looking forward to the next village party to get to know you better.
+
+20
+00:00:00,000 --> 00:00:02,352
+Good luck! I've got work to do!
+
+21
+00:00:00,000 --> 00:00:33,600
+Welcome to your workshop!! So? Pretty impressive, right? Okay, quick tour of what's here: this is your workbench. In the pipes are items from neighborhood residents that broke down and are waiting to be repaired. Once repaired, you put the item in this pipe and it goes back to the right person.
+
+22
+00:00:00,000 --> 00:00:14,760
+Here, this is a dashboard. You can imagine that if your fridge or oven breaks down, you won't be able to put it in the pipe haha! So here, it tells you when residents have a bulky item that broke down, or when there's a problem in the city. Uh oh... I've got an emergency, I'll have to leave you soon! So here, take your tools to repair most things: a mini 3D printer powered by electronic waste, Push-Parts gloves to disassemble objects, and a Relaunch pack!
+
+23
+00:00:00,000 --> 00:00:54,000
+The electrician helped you at the Power Plant? Aaaaah, that's what I love here: everyone helps each other, nobody judges anyone, it's like a real little family. You should know the electrician has quite a special story. She was born in the north of the continent, in the city of Kalska. She grew up happily with her mother Edith, her father Jordan, and her two little brothers, Malo and Justin. A few years ago, as you know, the northern countries were, quite unexpectedly, the first ones forced to migrate. So they began their journey, country by country, city by city, village by village. On a day of walking like so many others after several months, a climate storm caught them off guard. Having split up to find food in the village, her father and one of her two brothers sadly disappeared. It's tragic. But one day, they happened upon this place during their journey. We welcomed them with open arms, and they were slowly able to rebuild their lives among us. Today, they are an integral part of the community.
