@@ -113,8 +113,32 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 
 ## Audio
 
-- \`src/managers/AudioManager.ts\` fournit actuellement une lecture de sons one-shot avec pool.
-- Les interactions trigger peuvent lancer directement un son via \`AudioManager\`.
+- \`src/managers/AudioManager.ts\` fournit la lecture de sons one-shot avec pool, la musique en boucle, les volumes par catégorie et un pan stéréo optionnel pour les sons one-shot.
+- Les catégories audio supportées sont \`music\`, \`sfx\` et \`dialogue\`.
+- Les interactions trigger peuvent lancer directement des SFX via \`AudioManager\`.
+
+## Menu options
+
+- \`src/managers/stores/useSettingsStore.ts\` stocke les réglages de volume musique, volume SFX, volume dialogue, sous-titres, langue des sous-titres, runtime de réparation et visibilité du menu.
+- \`src/components/ui/GameSettingsMenu.tsx\` rend le menu options en jeu.
+- \`src/components/ui/GameUI.tsx\` monte le menu comme overlay HTML hors canvas.
+- \`Esc\` ouvre et ferme le menu, et \`src/world/player/PlayerController.tsx\` ignore les inputs joueur pendant son ouverture.
+- Les changements de volume sont transmis à \`AudioManager\` par catégorie.
+
+## Dialogues et sous-titres
+
+- \`public/sounds/dialogue/dialogues.json\` est le manifeste runtime des dialogues.
+- Les fichiers audio de dialogue vivent dans \`public/sounds/dialogue/\`.
+- Les fichiers de sous-titres vivent dans \`public/sounds/dialogue/subtitles/{fr|en}/\`.
+- Le modèle actuel utilise un fichier SRT par voix et par langue.
+- \`src/types/dialogues/dialogues.ts\` contient les types du manifeste.
+- \`src/utils/dialogues/dialogueManifestValidation.ts\` valide la forme du manifeste au runtime.
+- \`src/utils/dialogues/loadDialogueManifest.ts\` charge le manifeste et les cues SRT, avec fallback français si la langue sélectionnée manque.
+- \`src/utils/subtitles/parseSrt.ts\` parse les blocs et timecodes SRT.
+- \`src/utils/dialogues/playDialogue.ts\` joue l'audio de dialogue et synchronise le sous-titre actif avec le temps de l'élément audio.
+- \`src/managers/stores/useSubtitleStore.ts\` stocke la cue de sous-titre affichée.
+- \`src/components/ui/Subtitles.tsx\` rend l'overlay de sous-titres.
+- \`src/world/GameDialogues.tsx\` déclenche actuellement les dialogues qui définissent un \`timecode\`.
 
 ## Système debug
 
@@ -135,7 +159,8 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - Le dépôt est encore un prototype, pas le runtime complet du jeu.
 - \`src/world/debug/TestMap.tsx\` fait encore partie de la composition active.
 - Il n'existe pas encore d'orchestrateur gameplay central comme \`GameManager\`.
-- Les systèmes de missions, zones, cinématiques et dialogues ne sont pas implémentés.
+- Les systèmes de missions, zones et cinématiques ne sont pas implémentés.
+- La lecture de dialogues existe, mais la file d'attente, les branches et l'orchestration par gameplay restent limitées.
 - Le joueur utilise une collision octree et des règles simples, pas une pile physique gameplay complète.
 `;
 
@@ -400,8 +425,28 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 
 ## Audio
 
-- Lecture de sons one-shot pour les interactions trigger
-- Pool simple par son via \`AudioManager\`
+- Volumes par catégorie pour la musique, les SFX et les dialogues
+- Lecture de musique en boucle via \`AudioManager\`
+- Lecture de sons one-shot pour les SFX et les dialogues, avec pool simple par son
+- Pan stéréo optionnel pour les sons one-shot
+
+## Dialogues et sous-titres
+
+- Manifeste de dialogues dans \`public/sounds/dialogue/dialogues.json\`
+- Audios de dialogue chargés depuis \`public/sounds/dialogue/\`
+- Un fichier SRT par voix et par langue
+- Fallback vers les sous-titres français quand le fichier de langue sélectionné manque
+- Overlay de sous-titres runtime avec couleurs par speaker
+- Déclenchement timecodé pour les dialogues qui définissent \`timecode\`
+
+## Menu options
+
+- \`Esc\` ouvre et ferme le menu options en jeu
+- Sliders de volume musique, SFX et dialogue
+- Toggle d'affichage des sous-titres
+- Choix de langue des sous-titres entre français et anglais
+- Choix du runtime de réparation entre JavaScript local et serveur Python
+- Action quitter qui nettoie les cookies accessibles au navigateur et retourne vers \`/\`
 
 ## Outils debug
 
@@ -412,12 +457,27 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Caméra libre debug
 - Overlay \`r3f-perf\`
 
+## Éditeur de carte
+
+- Route \`/editor\` pour inspecter et éditer \`public/map.json\`
+- Chargement automatique de \`public/map.json\` quand il existe
+- Rendu des modèles disponibles depuis \`public/models/{name}/model.glb\` ou \`model.gltf\`
+- Cubes de fallback pour les nodes dont le modèle manque
+- Sélection d'objet au clic
+- Modes de transformation translation, rotation et scale
+- Export JSON pour télécharger la carte modifiée
+- Endpoint de sauvegarde dev-server pour écrire \`public/map.json\`
+- Éditeur SRT pour les sous-titres de dialogue
+- Preview audio et outils de timing pour les cues SRT
+- Endpoint de sauvegarde dev-server pour les fichiers SRT
+- Validation du manifeste de dialogues depuis l'UI de l'éditeur
+
 ## Pas encore implémenté
 
 - système de missions
 - système de zones
 - système de cinématiques
-- système de dialogues
+- file d'attente de dialogues et branches déclenchées par gameplay
 - flow de chargement
 - minimap et HUD de mission
 - séparation complète production / debug pour les scènes gameplay
@@ -476,6 +536,32 @@ Les modèles sont chargés depuis "/public/models". Si un modèle manque, l'édi
 
 Cette action est masquée dans les builds de production car il n'existe pas encore d'API de persistance production.
 
+## Éditer les sous-titres de dialogue
+
+Le panneau latéral contient aussi un éditeur SRT pour les sous-titres de dialogue.
+
+1. Choisir une voix : \`narrateur\`, \`fermier\` ou \`electricienne\`.
+2. Choisir une langue : \`FR\` ou \`EN\`.
+3. Modifier le texte SRT directement dans la textarea.
+4. Utiliser la preview audio pour vérifier le dialogue sélectionné.
+5. Utiliser \`Set start\`, \`Set end\`, \`-100ms\` et \`+100ms\` pour ajuster le timing de la cue sélectionnée avec l'audio.
+6. Utiliser \`Save SRT\` en développement local, ou \`Export SRT\` pour télécharger le fichier manuellement.
+
+Chaque fichier SRT appartient à une voix, pas à un dialogue. Les indexes de cue doivent correspondre aux valeurs \`subtitleCueIndex\` référencées par le manifeste de dialogues.
+
+## Valider les assets de dialogue
+
+Utilise \`Validate\` dans le panneau SRT pour vérifier le manifeste et les assets liés.
+
+La validation vérifie :
+
+- \`public/sounds/dialogue/dialogues.json\`
+- les fichiers audio de dialogue référencés
+- les fichiers SRT français
+- les indexes de cue référencés par le manifeste
+
+Les fichiers SRT anglais manquants sont des warnings parce que le runtime retombe sur les sous-titres français.
+
 ## Inspecteur JSON
 
 Le panneau latéral affiche le JSON brut de la carte :
@@ -491,4 +577,5 @@ Utilise-le pour vérifier les valeurs numériques exactes avant export ou sauveg
 - Il n'y a pas encore d'interface pour créer ou supprimer des objets.
 - La sauvegarde production n'est pas implémentée.
 - Les modèles manquants s'affichent comme cubes de fallback au lieu de bloquer tout l'éditeur.
+- La sauvegarde SRT est un helper local du serveur Vite, pas une API backend de production.
 `;

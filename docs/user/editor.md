@@ -74,6 +74,32 @@ This is useful for checking numeric transform values before saving or exporting.
 
 The button is hidden in production builds because production persistence is not implemented.
 
+## Editing Dialogue Subtitles
+
+The side panel also includes an SRT editor for dialogue subtitles.
+
+1. Choose a voice: `narrateur`, `fermier`, or `electricienne`.
+2. Choose a language: `FR` or `EN`.
+3. Edit the SRT text directly in the textarea.
+4. Use the audio preview to check the selected dialogue.
+5. Use `Set start`, `Set end`, `-100ms`, and `+100ms` to adjust the selected cue timing against the audio.
+6. Use `Save SRT` during local development, or `Export SRT` to download the file manually.
+
+Each SRT file belongs to one voice, not one dialogue. Cue indexes must match the `subtitleCueIndex` values referenced by the dialogue manifest.
+
+## Validating Dialogue Assets
+
+Use `Validate` in the SRT panel to check the dialogue manifest and linked assets.
+
+The validation checks:
+
+- `public/sounds/dialogue/dialogues.json`
+- referenced dialogue audio files
+- French SRT files
+- subtitle cue indexes referenced by the manifest
+
+Missing English SRT files are warnings because the runtime falls back to French subtitles.
+
 ## Current Limitations
 
 - The editor only modifies existing nodes.
@@ -81,3 +107,4 @@ The button is hidden in production builds because production persistence is not 
 - It does not edit model files or textures.
 - It does not provide production persistence.
 - Fallback cubes indicate missing models; they are editor placeholders, not exported assets.
+- SRT saving is a local Vite dev-server helper, not a production backend feature.
