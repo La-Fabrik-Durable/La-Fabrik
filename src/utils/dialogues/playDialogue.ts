@@ -4,6 +4,32 @@ import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type { DialogueManifest } from "@/types/dialogues/dialogues";
 import { loadDialogueSubtitleCue } from "@/utils/dialogues/loadDialogueManifest";
 
+interface QueuedDialogueRequest {
+  manifest: DialogueManifest;
+  dialogueId: string;
+  resolve: (audio: HTMLAudioElement | null) => void;
+}
+
+const DIALOGUE_PLAY_START_TIMEOUT_MS = 800;
+const dialogueQueue: QueuedDialogueRequest[] = [];
+let isDialogueQueuePlaying = false;
+
+export function queueDialogueById(
+  manifest: DialogueManifest,
+  dialogueId: string,
+): Promise<HTMLAudioElement | null> {
+  return new Promise((resolve) => {
+    dialogueQueue.push({ manifest, dialogueId, resolve });
+    void playNextQueuedDialogue();
+  });
+}
+
+export function clearQueuedDialogues(): void {
+  while (dialogueQueue.length > 0) {
+    dialogueQueue.shift()?.resolve(null);
+  }
+}
+
 export async function playDialogueById(
   manifest: DialogueManifest,
   dialogueId: string,
@@ -28,6 +54,7 @@ export async function playDialogueById(
   };
 
   const cleanup = (): void => {
+    audio.removeEventListener("play", syncSubtitle);
     audio.removeEventListener("timeupdate", syncSubtitle);
     audio.removeEventListener("ended", cleanup);
     audio.removeEventListener("pause", cleanup);
@@ -51,10 +78,70 @@ export async function playDialogueById(
     clearSubtitle();
   };
 
+  audio.addEventListener("play", syncSubtitle);
   audio.addEventListener("timeupdate", syncSubtitle);
   audio.addEventListener("ended", cleanup);
   audio.addEventListener("pause", cleanup);
-  syncSubtitle();
 
   return audio;
+}
+
+async function playNextQueuedDialogue(): Promise<void> {
+  if (isDialogueQueuePlaying) return;
+
+  isDialogueQueuePlaying = true;
+
+  while (dialogueQueue.length > 0) {
+    const request = dialogueQueue.shift();
+    if (!request) continue;
+
+    try {
+      const audio = await playDialogueById(
+        request.manifest,
+        request.dialogueId,
+      );
+      request.resolve(audio);
+      if (audio) await waitForDialogueToFinish(audio);
+    } catch {
+      request.resolve(null);
+    }
+  }
+
+  isDialogueQueuePlaying = false;
+}
+
+function waitForDialogueToFinish(audio: HTMLAudioElement): Promise<void> {
+  if (audio.ended) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    let hasStarted = !audio.paused;
+    let startTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    function cleanup(): void {
+      if (startTimeout) clearTimeout(startTimeout);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("ended", finish);
+      audio.removeEventListener("pause", finish);
+      audio.removeEventListener("error", finish);
+    }
+
+    function finish(): void {
+      cleanup();
+      resolve();
+    }
+
+    function handlePlay(): void {
+      hasStarted = true;
+      if (startTimeout) clearTimeout(startTimeout);
+    }
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("ended", finish);
+    audio.addEventListener("pause", finish);
+    audio.addEventListener("error", finish);
+
+    startTimeout = setTimeout(() => {
+      if (!hasStarted && audio.paused) finish();
+    }, DIALOGUE_PLAY_START_TIMEOUT_MS);
+  });
 }
