@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZONES } from "@/data/zones";
-import { GameStepManager } from "@/stateManager/GameStepManager";
-import { useGameStore } from "@/stores/gameStore";
+import { GameStepManager } from "@/managers/GameStepManager";
+import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
 import { Debug } from "@/utils/debug/Debug";
 import type { GameStep } from "@/types/game";
 
@@ -17,8 +17,9 @@ const GAME_STEPS: GameStep[] = [
   "bienvenue",
   "star-move",
   "mission2",
-  "searching_problem",
-  "preparation",
+  "searching",
+  "helped",
+  "manipulation",
   "outOfFabrik",
 ];
 
@@ -27,7 +28,7 @@ export function ZoneDetection(): null {
   const manager = GameStepManager.getInstance();
   const triggeredZones = useRef<Set<string>>(new Set());
   const debug = Debug.getInstance();
-  const step = useGameStore((state) => state.step);
+  const step = useMissionFlowStore((state) => state.step);
 
   useEffect(() => {
     if (!debug.active) return;
@@ -44,7 +45,7 @@ export function ZoneDetection(): null {
     folder.add(playerPos, "y").name("Player Y").listen().disable();
     folder.add(playerPos, "z").name("Player Z").listen().disable();
 
-    const unsubStore = useGameStore.subscribe((state) => {
+    const unsubStore = useMissionFlowStore.subscribe((state) => {
       gameState.step = state.step;
       folder.controllersRecursive().forEach((c) => c.updateDisplay());
     });

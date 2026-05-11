@@ -1,5 +1,5 @@
-import { useGameStore } from "@/stores/gameStore";
+import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
 
 export function useActivityCity(): boolean {
-  return useGameStore((state) => state.activityCity);
+  return useMissionFlowStore((state) => state.activityCity);
 }

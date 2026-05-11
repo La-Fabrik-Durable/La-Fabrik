@@ -1,5 +1,5 @@
 import type { Zone } from "@/types/game";
-import type { Vector3Tuple } from "@/types/3d";
+import type { Vector3Tuple } from "@/types/three/three";
 
 export const ZONES: Zone[] = [
   {

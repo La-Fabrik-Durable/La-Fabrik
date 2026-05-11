@@ -1,23 +1,69 @@
 import GUI from "lil-gui";
-import type { CameraMode, SceneMode } from "@/types/debug";
+import type { CameraMode, SceneMode } from "@/types/debug/debug";
+import type { HandTrackingSource } from "@/types/handTracking/handTracking";
+import { EventEmitter } from "@/utils/core/EventEmitter";
 import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
+
+const DEBUG_CONTROLS_STORAGE_KEY = "la-fabrik-debug-controls";
+
+interface StoredDebugControls {
+  cameraMode: CameraMode;
+  sceneMode: SceneMode;
+}
+
+interface DebugEvents {
+  change: void;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isCameraMode(value: unknown): value is CameraMode {
+  return value === "player" || value === "debug";
+}
+
+function isSceneMode(value: unknown): value is SceneMode {
+  return value === "game" || value === "physics";
+}
+
+function getStoredDebugControls(): Partial<StoredDebugControls> {
+  try {
+    const rawValue = window.localStorage.getItem(DEBUG_CONTROLS_STORAGE_KEY);
+    if (!rawValue) return {};
+
+    const parsedValue: unknown = JSON.parse(rawValue);
+    if (!isRecord(parsedValue)) return {};
+
+    return {
+      ...(isCameraMode(parsedValue.cameraMode)
+        ? { cameraMode: parsedValue.cameraMode }
+        : {}),
+      ...(isSceneMode(parsedValue.sceneMode)
+        ? { sceneMode: parsedValue.sceneMode }
+        : {}),
+    };
+  } catch {
+    return {};
+  }
+}
 
 export class Debug {
   private static instance: Debug | null = null;
 
   public readonly active: boolean;
   private readonly gui: GUI | null;
+  private readonly events = new EventEmitter<DebugEvents>();
   private readonly folders = new Map<string, GUI>();
   private readonly folderRefCounts = new Map<string, number>();
-  private readonly listeners = new Set<() => void>();
   private readonly controls: {
     cameraMode: CameraMode;
+    handTrackingSource: HandTrackingSource;
+    showDebugOverlay: boolean;
+    showHandTrackingSvg: boolean;
     showInteractionSpheres: boolean;
+    showPerf: boolean;
     sceneMode: SceneMode;
-  } = {
-    cameraMode: "player",
-    showInteractionSpheres: false,
-    sceneMode: "game",
   };
 
   static getInstance(): Debug {
@@ -30,6 +76,18 @@ export class Debug {
 
   private constructor() {
     this.active = isDebugEnabled();
+    const storedControls = getStoredDebugControls();
+
+    this.controls = {
+      cameraMode: storedControls.cameraMode ?? "player",
+      handTrackingSource: "backend",
+      showDebugOverlay: true,
+      showHandTrackingSvg: false,
+      showInteractionSpheres: false,
+      showPerf: true,
+      sceneMode: storedControls.sceneMode ?? "game",
+    };
+
     this.gui = this.active ? new GUI({ title: "La-Fabrik Debug" }) : null;
 
     if (this.gui) {
@@ -42,7 +100,7 @@ export class Debug {
         .name("Camera Mode")
         .onChange((value: CameraMode) => {
           this.controls.cameraMode = value;
-          this.emit();
+          this.saveAndEmit();
         });
 
       folder
@@ -50,14 +108,43 @@ export class Debug {
         .name("Scene")
         .onChange((value: SceneMode) => {
           this.controls.sceneMode = value;
+          this.saveAndEmit();
+        });
+
+      folder
+        .add(this.controls, "showPerf")
+        .name("R3F Perf")
+        .onChange((value: boolean) => {
+          this.controls.showPerf = value;
           this.emit();
         });
 
       folder
-        .add(this.controls, "showInteractionSpheres")
-        .name("Interaction Spheres")
+        .add(this.controls, "showDebugOverlay")
+        .name("Debug Overlay")
         .onChange((value: boolean) => {
-          this.controls.showInteractionSpheres = value;
+          this.controls.showDebugOverlay = value;
+          this.emit();
+        });
+
+      const handTrackingFolder = this.createFolder("Hand Tracking");
+
+      handTrackingFolder
+        ?.add(this.controls, "showHandTrackingSvg")
+        .name("Show SVG")
+        .onChange((value: boolean) => {
+          this.controls.showHandTrackingSvg = value;
+          this.emit();
+        });
+
+      handTrackingFolder
+        ?.add(this.controls, "handTrackingSource", {
+          Backend: "backend",
+          "Browser JS": "browser",
+        })
+        .name("Source")
+        .onChange((value: HandTrackingSource) => {
+          this.controls.handTrackingSource = value;
           this.emit();
         });
     }
@@ -100,11 +187,7 @@ export class Debug {
   }
 
   subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.events.on("change", listener);
   }
 
   getCameraMode(): CameraMode {
@@ -115,11 +198,53 @@ export class Debug {
     return this.controls.sceneMode;
   }
 
+  getShowDebugOverlay(): boolean {
+    return this.active && this.controls.showDebugOverlay;
+  }
+
+  getHandTrackingSource(): HandTrackingSource {
+    return this.controls.handTrackingSource;
+  }
+
   getShowInteractionSpheres(): boolean {
     return this.controls.showInteractionSpheres;
   }
 
+  getShowHandTrackingSvg(): boolean {
+    return this.controls.showHandTrackingSvg;
+  }
+
+  setShowHandTrackingSvg(value: boolean): void {
+    this.controls.showHandTrackingSvg = value;
+    this.emit();
+  }
+
+  setShowInteractionSpheres(value: boolean): void {
+    this.controls.showInteractionSpheres = value;
+    this.emit();
+  }
+
+  getShowPerf(): boolean {
+    return this.active && this.controls.showPerf;
+  }
+
   private emit(): void {
-    this.listeners.forEach((listener) => listener());
+    this.events.emit("change", undefined);
+  }
+
+  private saveAndEmit(): void {
+    try {
+      window.localStorage.setItem(
+        DEBUG_CONTROLS_STORAGE_KEY,
+        JSON.stringify({
+          cameraMode: this.controls.cameraMode,
+          sceneMode: this.controls.sceneMode,
+        }),
+      );
+    } catch {
+      // Debug persistence is optional; controls still work if storage is blocked.
+    }
+
+    this.emit();
   }
 }

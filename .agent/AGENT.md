@@ -11,7 +11,7 @@ You are working on **La Fabrik**, an interactive 3D web experience built with Re
 ## Current Implementation
 
 - Stack: React 19, Three.js, `@react-three/fiber`, `@react-three/drei`, `@react-three/rapier`, TypeScript, Vite
-- No external global state library is used.
+- Zustand is used for shared game progression state.
 - Current singleton-style services are limited to:
   - `InteractionManager`
   - `AudioManager`
@@ -24,7 +24,8 @@ You are working on **La Fabrik**, an interactive 3D web experience built with Re
 
 ## Current Architecture Rules
 
-- Scene objects live in `src/world/` and `src/components/3d/`.
+- Scene objects live in `src/world/` and `src/components/three/`.
+- Shared 3D components are grouped by domain under `src/components/three/models/`, `src/components/three/interaction/`, `src/components/three/gameplay/`, and `src/components/three/world/`.
 - HTML overlays live in `src/components/ui/`.
 - Shared static config lives in `src/data/`.
 - Debug tooling lives in `src/utils/debug/` and `src/hooks/debug/`.

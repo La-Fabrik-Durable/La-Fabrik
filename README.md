@@ -24,7 +24,6 @@ Built with React, Three.js, and Vite. Runs in the browser, no installation requi
 | [@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) |
 | [@react-three/drei](https://pmndrs.github.io/drei)                                        |
 | [@react-three/rapier](https://rapier.rs/docs/)                                            |
-| [@react-three/postprocessing](https://github.com/pmndrs/postprocessing)                   |
 | [GSAP](https://gsap.com/docs/v3/Installation/)                                            |
 
 ### Performance & Effects
@@ -48,75 +47,63 @@ la-fabrik/
 │   └── sounds/
 │
 └── src/
-    ├── world/                              # Single persistent 3D world
-    │   ├── World.tsx                       # Main scene composition
-    │   ├── Map.tsx                         # Base map, always mounted
+    ├── world/                              # Persistent 3D world composition
+    │   ├── World.tsx                       # Active scene composition
+    │   ├── GameMap.tsx                     # Map loading and progressive rendering
+    │   ├── GameMapCollision.tsx            # Collision-only octree source
     │   ├── Lighting.tsx                    # Ambient, directional, point lights
-    │   ├── Environment.tsx                 # HDRI, fog, sky
-    │   ├── PostFX.tsx                      # Bloom, SSAO, chromatic aberration
-    │   ├── zones/                          # Spatial zones — LOD per zone
-    │   │   ├── WorkshopZone.tsx
-    │   │   ├── PowerGridZone.tsx
-    │   │   ├── FarmZone.tsx
-    │   │   ├── SchoolZone.tsx
-    │   │   └── ResidentialZone.tsx
+    │   ├── Environment.tsx                 # Scene background / sky model
+    │   ├── GameMusic.tsx                   # Game scene music lifecycle
+    │   ├── debug/                          # Debug-only test scene
+    │   │   └── TestMap.tsx
     │   └── player/
-    │       ├── FPSController.tsx           # PointerLockControls + Rapier movement
-    │       └── Crosshair.tsx
+    │       ├── Player.tsx                  # Player rig composition
+    │       ├── PlayerCamera.tsx            # Player camera mount
+    │       └── PlayerController.tsx        # Pointer lock movement and inputs
     │
     ├── components/
-    │   ├── 3d/                             # Shared reusable 3D elements
-    │   │   └── InteractiveObject.tsx       # Raycasting + outline wrapper
+    │   ├── three/                          # Shared R3F components by domain
+    │   │   ├── gameplay/                   # Core repair gameplay prototype
+    │   │   ├── handTracking/               # R3F hand tracking debug models
+    │   │   ├── interaction/                # Trigger, grab, focus wrappers
+    │   │   ├── models/                     # GLTF model components
+    │   │   └── world/                      # Environment-specific 3D objects
     │   └── ui/                             # HTML overlays — outside Canvas
-    │       ├── NarrativeOverlay.tsx        # Floating dialogues
-    │       ├── MissionHUD.tsx              # Current objective
-    │       ├── MapHUD.tsx                  # Minimap
-    │       ├── CinematicBars.tsx           # GSAP black bars
-    │       └── LoadingScreen.tsx           # Asset progress
+    │       ├── Crosshair.tsx
+    │       ├── debug/                       # Debug-only HTML overlay panels
+    │       │   ├── DebugOverlayLayout.tsx
+    │       │   ├── GameStateDebugPanel.tsx
+    │       │   └── HandTrackingDebugPanel.tsx
+    │       ├── HandTrackingVisualizer.tsx
+    │       └── InteractPrompt.tsx
     │
-    ├── stateManager/                       # All logic, state, orchestration
-    │   ├── GameManager.ts                  # Single source of truth: phase, zone, mission
-    │   ├── CinematicManager.ts             # GSAP timelines, camera lock/unlock
-    │   ├── AudioManager.ts                 # Music, SFX, spatial audio
-    │   └── ZoneManager.ts                  # Zone detection, LOD triggers
+    ├── managers/                           # Current singleton-style services
+    │   ├── AudioManager.ts                 # Music and SFX playback
+    │   └── InteractionManager.ts           # Focus, nearby, grab state
     │
-    ├── hooks/                              # React hooks — thin wrappers on managers
-    │   ├── useGameState.ts                 # Subscribes to GameManager
-    │   ├── useZoneDetection.ts
-    │   ├── useInteraction.ts
-    │   ├── useCinematic.ts
-    │   ├── useAudio.ts
-    │   └── useLOD.ts
+    ├── hooks/                              # React hooks by domain
+    │   ├── debug/                          # Debug state and GUI folders
+    │   ├── docs/                           # Docs language context access
+    │   ├── editor/                         # Editor loading and history
+    │   ├── gameplay/                       # Repair gameplay helpers
+    │   ├── handTracking/                   # Webcam/WebSocket hand tracking
+    │   ├── interaction/                    # Interaction manager subscriptions
+    │   └── three/                          # Three.js/R3F helpers
     │
     ├── data/
-    │   ├── zones.ts                        # { id, position, radius, missionId }
-    │   ├── dialogues.ts                    # Narrative scripts, PNJ states
-    │   └── missions.ts                     # Mission definitions, steps
-    │
-    ├── shaders/
-    │   └── hologram/
-    │       ├── vertex.glsl
-    │       └── fragment.glsl
+    │   ├── interaction/                    # Interaction tuning
+    │   ├── player/                         # Player tuning
+    │   ├── gameplay/                       # Repair gameplay static config
+    │   └── world/                          # Environment and lighting config
     │
     ├── utils/
-    │   ├── EventEmitter.ts                 # Simple typed pub/sub utility
-    │   ├── Sizes.ts                        # Viewport size tracking
-    │   ├── Time.ts                         # Animation frame timing utility
-    │   └── debug/                          # Dev-only tools and scene inspection
-    │       ├── Debug.ts                    # Global lil-gui manager
-    │       ├── DebugPerf.tsx               # r3f-perf overlay mounted in Canvas
-    │       ├── isDebugEnabled.ts           # Debug query-string helper
-    │       └── scene/
-    │           ├── DebugHelpers.tsx        # Grid + axes helpers shown in debug mode
-    │           └── DebugCameraControls.tsx # Free debug camera for map inspection
-    ├── hooks/
-    │   └── debug/
-    │       ├── useCameraMode.ts
-    │       ├── useDebugFolder.ts
-    │       ├── useDebugStore.ts
-    │       └── useSceneMode.ts
-    │
-    ├── App.tsx                             # Canvas bootstrap
+    │   ├── core/                           # Logger and generic utilities
+    │   ├── debug/                          # Dev-only tools and scene inspection
+    │   ├── editor/                         # Editor-only parsing utilities
+    │   ├── map/                            # Map loading and validation
+    │   └── three/                          # Three.js helpers
+    ├── types/                              # Shared TypeScript domain types
+    ├── App.tsx                             # App bootstrap and route switch
     └── main.tsx
 ```
 

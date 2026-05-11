@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
-import { useGameStore } from "@/stores/gameStore";
-import { AudioManager } from "@/stateManager/AudioManager";
+import { AudioManager } from "@/managers/AudioManager";
+import { useMissionFlowStore } from "@/managers/stores/useMissionFlowStore";
 import { AUDIO_PATHS } from "@/data/audioConfig";
 
 export function GameFlow(): null {
-  const step = useGameStore((state) => state.step);
-  const setStep = useGameStore((state) => state.setStep);
-  const setActivityCity = useGameStore((state) => state.setActivityCity);
-  const setCanMove = useGameStore((state) => state.setCanMove);
+  const step = useMissionFlowStore((state) => state.step);
+  const setStep = useMissionFlowStore((state) => state.setStep);
+  const setActivityCity = useMissionFlowStore((state) => state.setActivityCity);
+  const setCanMove = useMissionFlowStore((state) => state.setCanMove);
   const hasInitialized = useRef(false);
 
   useEffect(() => {

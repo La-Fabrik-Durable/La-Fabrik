@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { GameStepManager } from "@/stateManager/GameStepManager";
+import { GameStepManager } from "@/managers/GameStepManager";
 import type { GameStepSnapshot } from "@/types/game";
 
 const manager = GameStepManager.getInstance();

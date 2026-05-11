@@ -1,9 +1,14 @@
 # Dependencies
 node_modules/
+.venv/
+backend/.venv/
+__pycache__/
+*.pyc
 
 # Build
 dist/
 dist-ssr/
+.vite/
 *.local
 
 # Environment
