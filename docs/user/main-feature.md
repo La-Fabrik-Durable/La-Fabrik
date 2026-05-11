@@ -31,7 +31,7 @@ This feature validates the repair loop before a full mission system exists. It t
 
 In `waiting`, the active mission renders its repair object and the `interagir.webm` prompt in the game scene. The interaction uses the shared focus/raycast interaction system, so the player still gets the normal `E` prompt.
 
-When the player inspects the object, `RepairGame` writes `inspected` through the generic mission store action. The repair case then appears from the mission config with a small pop animation, and player movement is locked while the repair sequence is active. When the player is close enough, the existing case model floats upward and rotates gently to signal interactivity.
+When the player inspects the object, `RepairGame` writes `inspected` through the generic mission store action. The repair case then appears from the mission config with a small pop animation, player movement is locked while the repair sequence is active, and a small HTML indicator confirms that movement is temporarily unavailable. When the player is close enough, the existing case model floats upward and rotates gently to signal interactivity.
 
 In `inspected`, `RepairGame` can also move to `fragmented`. Keyboard input goes through the shared focus/raycast interaction system on the repair case, so the player must be close enough and aim at the case before pressing `E`. The hand-tracking path still uses a two-fists hold gesture and is state-based, so it does not depend on being inside a local object interaction radius.
 
@@ -54,8 +54,10 @@ The mission config now carries the mission-specific variations. `bike` repairs o
 - `src/components/three/gameplay/RepairPromptVideo.tsx` renders `.webm` prompts inside the 3D scene.
 - `src/components/three/gameplay/RepairScanSequence.tsx` keeps the exploded model visible and advances the scan from part to part.
 - `src/components/three/gameplay/RepairScanVisual.tsx` renders the scan halo and scan line around the active part.
+- `src/components/ui/RepairMovementLockIndicator.tsx` renders the HTML indicator shown while repair movement is locked.
 - `src/hooks/gameplay/useRepairFragmentationInput.ts` handles the `inspected -> fragmented` two-fists input and can optionally bind keyboard input for non-trigger flows.
 - `src/hooks/gameplay/useRepairMissionStep.ts` reads the active mission step from the game store.
+- `src/hooks/gameplay/useRepairMovementLocked.ts` exposes the shared repair movement-lock rule used by the player controller and UI indicator.
 - `src/hooks/handTracking/useBothFistsHold.ts` detects the reusable two-fists hold gesture.
 - `src/components/three/gameplay/RepairCaseModel.tsx` renders and animates the case model, and exposes `placeholder_*` transforms when the GLTF provides them.
 - `src/components/three/models/ExplodableModel.tsx` renders selectable models with split/exploded visualization.

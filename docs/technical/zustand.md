@@ -170,6 +170,7 @@ Current overlays:
 - `GameStateDebugPanel`: compact debug UI for viewing and switching main/sub states, stepping backward or forward, and resetting the store
 - `Crosshair`: player aiming helper
 - `InteractPrompt`: interaction prompt
+- `RepairMovementLockIndicator`: player-facing indicator shown while repair steps temporarily disable movement
 
 `src/pages/page.tsx` should stay thin and mount only the canvas and `GameUI`.
 
