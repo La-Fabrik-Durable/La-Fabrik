@@ -101,7 +101,7 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - \`src/world/GameStageContent.tsx\` est enveloppé dans le contexte Rapier \`Physics\` dans la scène de jeu de production afin que les objets gameplay de stage puissent utiliser la physique sans migrer la carte ou le joueur vers Rapier. Il monte maintenant des instances réutilisables de \`RepairGame\` pour les états de mission \`bike\`, \`pylone\` et \`ferme\`.
 - \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique, avec les objets existants de grab, trigger et preview de modèle, plus des zones playground de réparation séparées \`Bike\`, \`Pylone\` et \`Farm\`.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
-- \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
+- \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut, le verrouillage de déplacement pendant les étapes repair et les inputs d'interaction.
 
 ## Frontières physiques
 
@@ -393,6 +393,7 @@ Overlays actuels :
 - \`GameStateDebugPanel\` : panneau de progression debug pour consulter/changer le main state, le sub state, avancer/reculer et reset le store
 - \`Crosshair\` : aide de visée joueur
 - \`InteractPrompt\` : prompt d'interaction
+- \`RepairMovementLockIndicator\` : indicateur joueur affiché quand les étapes repair désactivent temporairement le déplacement
 
 \`src/pages/page.tsx\` doit rester fin et monter seulement le canvas et \`GameUI\`.
 
@@ -429,6 +430,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Orientation souris avec pointer lock
 - Déplacement avec \`ZQSD\`
 - Saut
+- Verrouillage du déplacement pendant les étapes repair actives, avec indicateur à l'écran tout en gardant les interactions trigger disponibles
 - Collision basée sur une octree contre la carte chargée
 
 ## Interactions
@@ -444,7 +446,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - \`RepairGame\` de production réutilisable monté pour les états de mission \`bike\`, \`pylone\` et \`ferme\`
 - Le playground physics debug monte le même \`RepairGame\` réutilisable dans des zones \`Bike\`, \`Pylone\` et \`Farm\`, afin de peaufiner chaque state avec un placement isolé avant déplacement vers la carte de production
 - Configuration de mission partagée via \`src/data/gameplay/repairMissions.ts\`, avec nodes cassés, placeholders cibles, timing de scan et timing de réassemblage propres à chaque mission
-- Flow repair-game avec \`waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission\`, prompts \`.webm\`, apparition/ouverture/sortie de la mallette, vue focalisée de la mallette, traverse des placeholders de mallette, placement avec snap vers placeholder, dépôt des pièces cassées, touche \`E\`, hold deux poings, transition de modèle explosé, réassemblage inverse avec particules, scan visuel par pièce, marqueur rouge persistant et vidéo UI centrée sur les pièces cassées, plusieurs choix de pièces grabbables, validation de la bonne pièce et complétion de mission
+- Flow repair-game avec \`waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission\`, prompts \`.webm\`, apparition/ouverture/sortie de la mallette, vue focalisée de la mallette, indicateur de verrouillage de déplacement pendant la réparation active, interaction trigger sur la mallette, traverse des placeholders de mallette, placement avec snap vers placeholder, feedback de dépôt des pièces cassées, touche \`E\`, hold deux poings, transition de modèle explosé, réassemblage inverse avec particules, scan visuel par pièce, marqueur rouge persistant et vidéo UI centrée sur les pièces cassées, plusieurs choix de pièces grabbables, feedback de validation de la bonne pièce et complétion de mission
 
 ## Audio
 
@@ -456,6 +458,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Le paramètre \`?debug\` active le panneau debug
 - Contrôles \`lil-gui\` pour le mode caméra, le mode scène, \`R3F Perf\`, \`Debug Overlay\` et le tuning d'interaction
 - Overlay debug compact pour les contrôles de game state et le statut hand tracking
+- Le changement de mission dans le panneau game-state debug déverrouille les missions repair encore \`locked\` à \`waiting\` pour accélérer les tests
 - Helpers de scène debug
 - Caméra libre debug
 - Overlay \`r3f-perf\`
