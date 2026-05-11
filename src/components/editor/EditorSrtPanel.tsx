@@ -26,6 +26,12 @@ interface TextRange {
   end: number;
 }
 
+interface DialogueValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
 type CueTimeEdge = "start" | "end";
 const CUE_NUDGE_SECONDS = 0.1;
 
@@ -301,6 +307,37 @@ async function saveSrtFile(
   }
 }
 
+async function validateDialogueAssets(): Promise<DialogueValidationResult> {
+  const response = await fetch("/api/validate-dialogues");
+  const body = (await response.json().catch(() => null)) as
+    | Partial<DialogueValidationResult>
+    | { error?: string }
+    | null;
+
+  if (!body) {
+    throw new Error("Validation dialogues impossible");
+  }
+
+  if (
+    "valid" in body &&
+    typeof body.valid === "boolean" &&
+    Array.isArray(body.errors) &&
+    Array.isArray(body.warnings)
+  ) {
+    return {
+      valid: body.valid,
+      errors: body.errors.filter((item) => typeof item === "string"),
+      warnings: body.warnings.filter((item) => typeof item === "string"),
+    };
+  }
+
+  throw new Error(
+    "error" in body && body.error
+      ? body.error
+      : "Validation dialogues impossible",
+  );
+}
+
 export function EditorSrtPanel(): React.JSX.Element {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [voice, setVoice] = useState<DialogueVoiceId>("narrateur");
@@ -308,6 +345,9 @@ export function EditorSrtPanel(): React.JSX.Element {
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("Chargement du SRT...");
   const [isSaving, setIsSaving] = useState(false);
+  const [isValidatingDialogues, setIsValidatingDialogues] = useState(false);
+  const [dialogueValidationResult, setDialogueValidationResult] =
+    useState<DialogueValidationResult | null>(null);
   const [manifest, setManifest] = useState<DialogueManifest | null>(null);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [selectedDialogueId, setSelectedDialogueId] = useState("");
@@ -323,6 +363,11 @@ export function EditorSrtPanel(): React.JSX.Element {
     ) ?? null;
   const diagnostic = getSrtDiagnostic(content, expectedCueIndexes);
   const isSrtValid = diagnostic.errors.length === 0;
+  const dialogueValidationClass = dialogueValidationResult
+    ? dialogueValidationResult.valid
+      ? "is-valid"
+      : "is-invalid"
+    : "is-idle";
   const srtTemplate = createSrtTemplate(
     selectedVoice.label,
     expectedCueIndexes,
@@ -349,6 +394,26 @@ export function EditorSrtPanel(): React.JSX.Element {
       setStatus(`${message}. Utilise Export SRT si le serveur dev est absent.`);
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleValidateDialogues(): Promise<void> {
+    setIsValidatingDialogues(true);
+    setDialogueValidationResult(null);
+
+    try {
+      const result = await validateDialogueAssets();
+      setDialogueValidationResult(result);
+      setStatus(
+        result.valid
+          ? "Validation dialogues terminee."
+          : "Validation dialogues terminee avec erreurs.",
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setStatus(`${message}. Verifie que le serveur Vite est lance.`);
+    } finally {
+      setIsValidatingDialogues(false);
     }
   }
 
@@ -615,6 +680,48 @@ export function EditorSrtPanel(): React.JSX.Element {
       </div>
 
       <p className="editor-srt-status">{status}</p>
+      <div className={`editor-dialogue-validation ${dialogueValidationClass}`}>
+        <div className="editor-dialogue-validation__heading">
+          <div>
+            <strong>Manifeste dialogues</strong>
+            <span>Audio, SRT FR et cues references</span>
+          </div>
+          <button
+            type="button"
+            disabled={isValidatingDialogues}
+            onClick={() => void handleValidateDialogues()}
+          >
+            <RefreshCw size={14} aria-hidden="true" />
+            {isValidatingDialogues ? "Validation..." : "Validate"}
+          </button>
+        </div>
+
+        {dialogueValidationResult && (
+          <div className="editor-dialogue-validation__result">
+            <p>
+              {dialogueValidationResult.valid
+                ? "Manifeste valide."
+                : `${dialogueValidationResult.errors.length} erreur${dialogueValidationResult.errors.length > 1 ? "s" : ""} detectee${dialogueValidationResult.errors.length > 1 ? "s" : ""}.`}
+              {dialogueValidationResult.warnings.length > 0 &&
+                ` ${dialogueValidationResult.warnings.length} warning${dialogueValidationResult.warnings.length > 1 ? "s" : ""}.`}
+            </p>
+            {dialogueValidationResult.errors.length > 0 && (
+              <ul className="editor-dialogue-validation__errors">
+                {dialogueValidationResult.errors.map((error, index) => (
+                  <li key={`${error}-${index}`}>{error}</li>
+                ))}
+              </ul>
+            )}
+            {dialogueValidationResult.warnings.length > 0 && (
+              <ul className="editor-dialogue-validation__warnings">
+                {dialogueValidationResult.warnings.map((warning, index) => (
+                  <li key={`${warning}-${index}`}>{warning}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
       <div
         className={`editor-srt-diagnostic ${isSrtValid ? "is-valid" : "is-invalid"}`}
       >
