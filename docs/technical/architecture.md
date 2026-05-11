@@ -14,7 +14,9 @@ This document describes the code that exists today in the repository.
   - debug helpers and debug camera mode
   - either the map scene or the debug physics test scene
   - the player rig when the active camera mode is `player`
-- `src/world/GameMap.tsx` loads map nodes from `public/map.json`, resolves available models, and builds the collision octree.
+- `src/hooks/world/useWorldSceneLoading.ts` owns the production scene loading state shared by `World`, `GameMap`, and the player octree readiness.
+- `src/world/GameMap.tsx` loads map nodes from `public/map.json`, resolves available models, renders them progressively, and shows fallback cubes for missing models.
+- `src/world/GameMapCollision.tsx` builds the player collision octree from dedicated collision nodes only.
 - `src/world/GameStageContent.tsx` is wrapped in Rapier `Physics` in the production game scene so stage gameplay objects can use physics without moving the map or player to Rapier. It now mounts reusable `RepairGame` instances for `bike`, `pylone`, and `ferme` mission states.
 - `src/world/debug/TestMap.tsx` provides a debug-oriented interaction and physics map with the existing grab/trigger/model-preview objects plus separate `Bike`, `Pylone`, and `Farm` repair playground zones.
 - `src/world/player/Player.tsx` mounts the camera and controller.
@@ -24,7 +26,8 @@ This document describes the code that exists today in the repository.
 
 The project currently uses two collision layers with separate responsibilities:
 
-- `GameMap` builds an octree used by the player controller for map collision.
+- `GameMapCollision` builds an octree used by the player controller for map collision.
+- The player octree must be built from a small collision-only subset of map nodes. It currently uses the `terrain` node only instead of traversing the full visible map, because building an octree from all rendered props can overload the browser renderer.
 - `GameStageContent` is wrapped in Rapier `Physics` for gameplay objects such as repair triggers, cases, grabbables, and future mission-specific objects.
 - `TestMap` owns its own Rapier `Physics` playground so repair gameplay can be tuned per mission state without depending on the production map layout.
 
@@ -53,6 +56,7 @@ Keep the player and map octree outside the Rapier provider until there is a deli
 - `src/components/ui/debug/DebugOverlayLayout.tsx` mounts the compact HTML debug overlay when enabled from `lil-gui`.
 - `src/components/ui/debug/GameStateDebugPanel.tsx` exposes current game state, main/sub-state switching, previous/next step controls, and reset.
 - `src/components/ui/debug/HandTrackingDebugPanel.tsx` shows hand tracking status, usage, loaded glove model, hand count, and fist state while hand tracking is active.
+- `src/components/ui/SceneLoadingOverlay.tsx` displays the fullscreen loading state for 3D scenes, including the production game scene, debug physics scene, and editor scene.
 - `src/components/three/handTracking/HandTrackingGlove.tsx` places the rigged `gant_l` and `gant_r` models on detected hands in the debug physics scene.
 - `src/components/debug/scene/DebugHelpers.tsx` mounts debug helpers.
 - `src/components/debug/scene/DebugCameraControls.tsx` mounts the free debug camera.
@@ -85,7 +89,8 @@ Keep the player and map octree outside the Rapier provider until there is a deli
 - `public/map.json` is expected to be a `MapNode[]`.
 - Each map node `name` maps to `public/models/{name}/model.glb` when available, with `public/models/{name}/model.gltf` kept as fallback.
 - The editor renders a fallback cube for missing models.
-- The game scene filters out nodes whose model cannot be resolved.
+- The game scene renders fallback cubes for nodes whose model cannot be resolved.
+- The game scene currently uses `terrain` as the collision source for the player octree. Additional collision nodes should be explicit lightweight collision assets, not arbitrary visible decoration models.
 
 ## Current Limitations
 

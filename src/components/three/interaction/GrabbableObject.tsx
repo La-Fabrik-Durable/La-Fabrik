@@ -66,7 +66,6 @@ const _snapTargetWorldPosition = new THREE.Vector3();
 const _handRaycaster = new THREE.Raycaster();
 
 const HAND_GRAB_SCREEN_RADIUS = 0.04;
-const HAND_DEPTH_SENSITIVITY = 4;
 const HAND_HIT_OFFSETS: Array<[number, number]> = [
   [0, 0],
   [HAND_GRAB_SCREEN_RADIUS, 0],
@@ -144,8 +143,6 @@ export function GrabbableObject({
   const rbRef = useRef<RapierRigidBody>(null);
   const isHolding = useRef(false);
   const isHandHolding = useRef(false);
-  const handHoldDistance = useRef<number | null>(null);
-  const handHoldStartZ = useRef<number | null>(null);
   const snapTween = useRef<gsap.core.Tween | null>(null);
 
   useEffect(() => {
@@ -270,8 +267,6 @@ export function GrabbableObject({
           : null;
 
         isHandHolding.current = Boolean(hit);
-        handHoldDistance.current = hit ? GRAB_HOLD_DISTANCE_DEFAULT : null;
-        handHoldStartZ.current = hit ? fistHand.z : null;
         InteractionManager.getInstance().setHandHolding(isHandHolding.current);
       }
     } else {
@@ -279,28 +274,15 @@ export function GrabbableObject({
         snapToNearestTarget();
       }
       isHandHolding.current = false;
-      handHoldDistance.current = null;
-      handHoldStartZ.current = null;
       InteractionManager.getInstance().setHandHolding(false);
     }
 
     if (!isHolding.current && !isHandHolding.current) return;
 
     if (fistHand && isHandHolding.current) {
-      const depthOffset =
-        handHoldStartZ.current === null
-          ? 0
-          : (fistHand.z - handHoldStartZ.current) * HAND_DEPTH_SENSITIVITY;
-      const holdDistance = THREE.MathUtils.clamp(
-        (handHoldDistance.current ?? grabDebugParams.holdDistance) +
-          depthOffset,
-        GRAB_HOLD_DISTANCE_MIN,
-        GRAB_HOLD_DISTANCE_MAX,
-      );
-
       _holdTarget
         .copy(_cameraPos)
-        .addScaledVector(_handDirection, holdDistance);
+        .addScaledVector(_handDirection, grabDebugParams.holdDistance);
     } else {
       camera.getWorldDirection(_holdTarget);
       _holdTarget
