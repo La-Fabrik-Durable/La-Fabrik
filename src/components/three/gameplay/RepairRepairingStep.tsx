@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { RepairCasePlaceholder } from "@/components/three/gameplay/RepairCaseModel";
 import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
@@ -42,10 +42,12 @@ interface RepairRepairingStepProps {
 }
 
 interface RepairInstallTargetProps {
+  blockedFeedback: boolean;
   fillColor: string;
   isReadyToInstall: boolean;
   label: string;
   ringColor: string;
+  onBlocked: () => void;
   onRepair: () => void;
 }
 
@@ -71,6 +73,8 @@ export function RepairRepairingStep({
   const [depositedBrokenPartIds, setDepositedBrokenPartIds] = useState<
     Record<string, boolean>
   >({});
+  const [showBlockedInstallFeedback, setShowBlockedInstallFeedback] =
+    useState(false);
   const replacementParts = getReplacementParts(config);
   const brokenPartsToDeposit = getBrokenPartsToDeposit(config, brokenParts);
   const requiredReplacementPart = replacementParts.find(
@@ -110,6 +114,18 @@ export function RepairRepairingStep({
       : hasCorrectPartPlaced
         ? `Ranger pièce cassée`
         : `Approcher ${requiredReplacementLabel}`;
+
+  useEffect(() => {
+    if (!showBlockedInstallFeedback) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowBlockedInstallFeedback(false);
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [showBlockedInstallFeedback]);
 
   function handleReplacementPosition(
     partId: string,
@@ -161,10 +177,12 @@ export function RepairRepairingStep({
   return (
     <group ref={groupRef}>
       <RepairInstallTarget
+        blockedFeedback={showBlockedInstallFeedback}
         fillColor={installFillColor}
         isReadyToInstall={isReadyToInstall}
         label={installLabel}
         ringColor={installColor}
+        onBlocked={() => setShowBlockedInstallFeedback(true)}
         onRepair={onRepair}
       />
 
@@ -268,10 +286,12 @@ export function RepairRepairingStep({
 }
 
 function RepairInstallTarget({
+  blockedFeedback,
   fillColor,
   isReadyToInstall,
   label,
   ringColor,
+  onBlocked,
   onRepair,
 }: RepairInstallTargetProps): React.JSX.Element {
   return (
@@ -280,7 +300,10 @@ function RepairInstallTarget({
       colliders="ball"
       label={label}
       onTrigger={() => {
-        if (!isReadyToInstall) return;
+        if (!isReadyToInstall) {
+          onBlocked();
+          return;
+        }
 
         onRepair();
       }}
@@ -293,6 +316,18 @@ function RepairInstallTarget({
         <ringGeometry args={[0.15, 0.9, 96]} />
         <meshBasicMaterial color={fillColor} transparent opacity={0.35} />
       </mesh>
+      {blockedFeedback ? (
+        <group position={[0, 0.28, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.08, 0.035, 12, 96]} />
+            <meshBasicMaterial color={ringColor} transparent opacity={0.95} />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial color={ringColor} transparent opacity={0.95} />
+          </mesh>
+        </group>
+      ) : null}
     </TriggerObject>
   );
 }
