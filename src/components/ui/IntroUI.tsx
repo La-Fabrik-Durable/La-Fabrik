@@ -12,11 +12,8 @@ export function IntroUI(): React.JSX.Element | null {
   const handleSubmit = (): void => {
     if (inputValue.trim() === "") return;
 
-    console.log("[IntroUI] Submitting, name:", inputValue.trim());
     setPlayerName(inputValue.trim());
-    console.log("[IntroUI] Calling transitionTo('bienvenue')");
     setStep("bienvenue");
-    console.log("[IntroUI] After transitionTo, step should be:", step);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
@@ -59,14 +56,14 @@ export function IntroUI(): React.JSX.Element | null {
             textAlign: "center",
           }}
         >
-          Quel est votre prénom ?
+          Quel est votre prenom ?
         </h2>
         <input
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Votre prénom"
+          placeholder="Votre prenom"
           autoFocus
           style={{
             padding: "0.75rem",

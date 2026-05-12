@@ -2,6 +2,8 @@ import { create } from "zustand";
 import type { GameStep } from "@/types/game";
 import {
   isRepairMissionId,
+  getNextMissionStep,
+  getPreviousMissionStep,
   type MissionStep,
   type RepairMissionId,
 } from "@/types/gameplay/repairMission";
@@ -76,46 +78,6 @@ interface GameActions {
 
 type GameStore = GameState & GameActions;
 type GameStateUpdate = Partial<GameState>;
-
-function getNextMissionStep(step: MissionStep): MissionStep {
-  switch (step) {
-    case "locked":
-      return "waiting";
-    case "waiting":
-      return "inspected";
-    case "inspected":
-      return "fragmented";
-    case "fragmented":
-      return "scanning";
-    case "scanning":
-      return "repairing";
-    case "repairing":
-      return "reassembling";
-    case "reassembling":
-    case "done":
-      return "done";
-  }
-}
-
-function getPreviousMissionStep(step: MissionStep): MissionStep {
-  switch (step) {
-    case "locked":
-    case "waiting":
-      return "locked";
-    case "inspected":
-      return "waiting";
-    case "fragmented":
-      return "inspected";
-    case "scanning":
-      return "fragmented";
-    case "repairing":
-      return "scanning";
-    case "reassembling":
-      return "repairing";
-    case "done":
-      return "reassembling";
-  }
-}
 
 function completeIntroState(state: GameState): GameStateUpdate {
   return {

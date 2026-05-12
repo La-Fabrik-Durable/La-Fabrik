@@ -4,20 +4,7 @@ import {
   useGameStore,
 } from "@/managers/stores/useGameStore";
 import { isMissionStep, MISSION_STEPS } from "@/types/gameplay/repairMission";
-import { type GameStep } from "@/types/game";
-
-const GAME_STEPS: GameStep[] = [
-  "intro",
-  "start-intro",
-  "naming",
-  "bienvenue",
-  "star-move",
-  "mission2",
-  "searching",
-  "helped",
-  "manipulation",
-  "outOfFabrik",
-];
+import { GAME_STEPS, type GameStep } from "@/types/game";
 
 const MAIN_STATES: MainGameState[] = [
   "intro",

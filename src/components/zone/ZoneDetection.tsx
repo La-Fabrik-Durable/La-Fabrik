@@ -4,23 +4,10 @@ import * as THREE from "three";
 import { ZONES } from "@/data/zones";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { Debug } from "@/utils/debug/Debug";
-import type { GameStep } from "@/types/game";
+import { GAME_STEPS } from "@/types/game";
 
 const _playerPos = new THREE.Vector3();
 const _zonePos = new THREE.Vector3();
-
-const GAME_STEPS: GameStep[] = [
-  "intro",
-  "start-intro",
-  "naming",
-  "bienvenue",
-  "star-move",
-  "mission2",
-  "searching",
-  "helped",
-  "manipulation",
-  "outOfFabrik",
-];
 
 export function ZoneDetection(): null {
   const camera = useThree((state) => state.camera);
@@ -88,41 +75,6 @@ export function ZoneDetection(): null {
   return null;
 }
 
-interface ZoneVisualProps {
-  position: [number, number, number];
-  radius: number;
-  height: number;
-  triggered: boolean;
-}
-
-function ZoneVisual({
-  position,
-  radius,
-  height,
-  triggered,
-}: ZoneVisualProps): React.JSX.Element {
-  const color = triggered ? "#00ff00" : "#ff0000";
-
-  return (
-    <group position={position}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[radius - 0.3, radius, 32]} />
-        <meshBasicMaterial color={color} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, height / 2, 0]}>
-        <cylinderGeometry args={[radius, radius, height, 32, 1, true]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.15}
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
-      </mesh>
-    </group>
-  );
-}
-
 export function ZoneDebugVisuals(): React.JSX.Element | null {
   const debug = Debug.getInstance();
   const camera = useThree((state) => state.camera);
@@ -159,5 +111,38 @@ export function ZoneDebugVisuals(): React.JSX.Element | null {
         />
       ))}
     </>
+  );
+}
+
+function ZoneVisual({
+  position,
+  radius,
+  height,
+  triggered,
+}: {
+  position: [number, number, number];
+  radius: number;
+  height: number;
+  triggered: boolean;
+}): React.JSX.Element {
+  const color = triggered ? "#00ff00" : "#ff0000";
+
+  return (
+    <group position={position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[radius - 0.3, radius, 32]} />
+        <meshBasicMaterial color={color} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, height / 2, 0]}>
+        <cylinderGeometry args={[radius, radius, height, 32, 1, true]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.15}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 }

@@ -12,14 +12,23 @@ export type GameStep =
   | "manipulation"
   | "outOfFabrik";
 
+export const GAME_STEPS: readonly GameStep[] = [
+  "intro",
+  "start-intro",
+  "naming",
+  "bienvenue",
+  "star-move",
+  "mission2",
+  "searching",
+  "helped",
+  "manipulation",
+  "outOfFabrik",
+] as const;
+
 export interface Zone {
   id: string;
   position: Vector3Tuple;
   radius: number;
   height: number;
   targetStep: GameStep;
-}
-
-export interface GameState {
-  step: GameStep;
 }
