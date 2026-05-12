@@ -114,6 +114,18 @@ export class AudioManager {
     return audio;
   }
 
+  playSoundWithCallback(
+    path: string,
+    volume: number,
+    onEnded: () => void,
+    options: PlaySoundOptions = {},
+  ): HTMLAudioElement {
+    const audio = this.playSound(path, volume, options);
+    audio.addEventListener("ended", onEnded, { once: true });
+
+    return audio;
+  }
+
   playMusic(path: string, volume = 1): void {
     this._musicVolume = AudioManager._clampVolume(volume);
 

@@ -71,10 +71,6 @@ const LazyDocsZustandPage = lazyNamed(
   () => import("@/pages/docs/zustand/page"),
   "DocsZustandPage",
 );
-const LazyDocsThreeDebuggingPage = lazyNamed(
-  () => import("@/pages/docs/three-debugging/page"),
-  "DocsThreeDebuggingPage",
-);
 const LazyDocsFeaturesPage = lazyNamed(
   () => import("@/pages/docs/features/page"),
   "DocsFeaturesPage",
@@ -95,6 +91,14 @@ const LazyDocsCodeReviewPage = lazyNamed(
   () => import("@/pages/docs/code-review/page"),
   "DocsCodeReviewPage",
 );
+const LazyDocsMissionFlowPage = lazyNamed(
+  () => import("@/pages/docs/mission-flow/page"),
+  "DocsMissionFlowPage",
+);
+const LazyDocsThreeDebuggingPage = lazyNamed(
+  () => import("@/pages/docs/three-debugging/page"),
+  "DocsThreeDebuggingPage",
+);
 
 export const DocsLayoutRoute = createDocsRoute(LazyDocsLayout);
 export const DocsReadmeRoute = createDocsRoute(LazyDocsReadmePage);
@@ -111,11 +115,12 @@ export const DocsTechnicalEditorRoute = createDocsRoute(
 export const DocsAudioRoute = createDocsRoute(LazyDocsAudioPage);
 export const DocsHandTrackingRoute = createDocsRoute(LazyDocsHandTrackingPage);
 export const DocsZustandRoute = createDocsRoute(LazyDocsZustandPage);
-export const DocsThreeDebuggingRoute = createDocsRoute(
-  LazyDocsThreeDebuggingPage,
-);
 export const DocsFeaturesRoute = createDocsRoute(LazyDocsFeaturesPage);
 export const DocsMainFeatureRoute = createDocsRoute(LazyDocsMainFeaturePage);
 export const DocsEditorRoute = createDocsRoute(LazyDocsEditorPage);
 export const DocsAnimationRoute = createDocsRoute(LazyDocsAnimationPage);
 export const DocsCodeReviewRoute = createDocsRoute(LazyDocsCodeReviewPage);
+export const DocsMissionFlowRoute = createDocsRoute(LazyDocsMissionFlowPage);
+export const DocsThreeDebuggingRoute = createDocsRoute(
+  LazyDocsThreeDebuggingPage,
+);

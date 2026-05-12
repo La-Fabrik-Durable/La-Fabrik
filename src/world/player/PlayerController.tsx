@@ -106,7 +106,8 @@ export function PlayerController({
   const velocity = useRef(new THREE.Vector3());
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
-  const initializedRef = useRef(false);
+  const initializedRef = useRef(false);  const canMove = useGameStore((state) => state.missionFlow.canMove);
+
   const capsule = useRef(createSpawnCapsule(spawnPosition));
 
   useLayoutEffect(() => {
@@ -209,7 +210,7 @@ export function PlayerController({
   useFrame((_, delta) => {
     if (!initializedRef.current) return;
 
-    if (isPlayerInputLocked()) {
+    if (isPlayerInputLocked() || !canMove) {
       keys.current = { ...DEFAULT_KEYS };
       velocity.current.set(0, 0, 0);
       wantsJump.current = false;

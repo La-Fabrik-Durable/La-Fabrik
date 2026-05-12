@@ -17,6 +17,7 @@ import {
   DocsInteractionRoute,
   DocsLayoutRoute,
   DocsMainFeatureRoute,
+  DocsMissionFlowRoute,
   DocsReadmeRoute,
   DocsRepairGameRoute,
   DocsSceneRuntimeRoute,
