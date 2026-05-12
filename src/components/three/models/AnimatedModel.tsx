@@ -1,21 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAnimations } from "@react-three/drei";
 import type { AnimationAction } from "three";
-import * as THREE from "three";
 import {
   AnimatedModelContext,
   type AnimatedModelContextValue,
 } from "@/components/three/models/useAnimatedModel";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
-import type { Vector3Tuple } from "@/types/three/three";
+import type { ModelTransformProps } from "@/types/three/three";
 
-export interface AnimatedModelConfig {
+export interface AnimatedModelConfig extends ModelTransformProps {
   modelPath: string;
   animations?: string[];
   defaultAnimation?: string;
-  position?: Vector3Tuple;
-  rotation?: Vector3Tuple;
-  scale?: Vector3Tuple | number;
   fadeDuration?: number;
   speed?: number;
   autoPlay?: boolean;
@@ -40,15 +36,13 @@ export function AnimatedModel({
   onAnimationEnd,
   children,
 }: AnimatedModelProps): React.JSX.Element {
-  const groupRef = useRef<THREE.Group>(null);
   const { scene, animations } = useLoggedGLTF(modelPath, {
     scope: "AnimatedModel",
     position,
     rotation,
     scale,
   });
-  const model = useMemo(() => scene.clone(true), [scene]);
-  const { actions, names, mixer } = useAnimations(animations, groupRef);
+  const { actions, names, mixer } = useAnimations(animations, scene);
 
   const [currentAnim, setCurrentAnim] = useState(defaultAnimation);
   const isReady = names.length > 0;
@@ -149,19 +143,22 @@ export function AnimatedModel({
     names,
   };
 
-  const parsedScale =
-    typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
+  useEffect(() => {
+    scene.position.set(...position);
+    scene.rotation.set(rotation[0], rotation[1], rotation[2]);
+
+    const parsedScale =
+      typeof scale === "number" ? [scale, scale, scale] : (scale ?? [1, 1, 1]);
+    scene.scale.set(
+      parsedScale[0] ?? 1,
+      parsedScale[1] ?? 1,
+      parsedScale[2] ?? 1,
+    );
+  }, [scene, position, rotation, scale]);
 
   return (
     <AnimatedModelContext.Provider value={contextValue}>
-      <group
-        ref={groupRef}
-        position={position}
-        rotation={rotation}
-        scale={parsedScale}
-      >
-        <primitive object={model} />
-      </group>
+      <primitive object={scene} />
       {children}
     </AnimatedModelContext.Provider>
   );

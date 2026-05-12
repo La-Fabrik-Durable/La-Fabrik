@@ -98,9 +98,20 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
   - soit la carte principale, soit la scène de test physique debug
   - le rig joueur quand le mode caméra actif est \`player\`
 - \`src/world/GameMap.tsx\` charge les modèles de carte disponibles et construit l'octree de collision.
-- \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique.
+- \`src/world/GameStageContent.tsx\` est enveloppé dans le contexte Rapier \`Physics\` dans la scène de jeu de production afin que les objets gameplay de stage puissent utiliser la physique sans migrer la carte ou le joueur vers Rapier. Il monte maintenant des instances réutilisables de \`RepairGame\` pour les états de mission \`bike\`, \`pylone\` et \`ferme\`.
+- \`src/world/debug/TestMap.tsx\` fournit une carte orientée debug pour les interactions et la physique, avec les objets existants de grab, trigger et preview de modèle, plus des zones playground de réparation séparées \`Bike\`, \`Pylone\` et \`Farm\`.
 - \`src/world/player/Player.tsx\` monte la caméra et le contrôleur.
-- \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut et les inputs d'interaction.
+- \`src/world/player/PlayerController.tsx\` gère le mouvement pointer lock, le saut, le verrouillage de déplacement pendant les étapes repair et les inputs d'interaction.
+
+## Frontières physiques
+
+Le projet utilise actuellement deux couches de collision avec des responsabilités séparées :
+
+- \`GameMap\` construit une octree utilisée par le contrôleur joueur pour les collisions avec la carte.
+- \`GameStageContent\` est enveloppé dans Rapier \`Physics\` pour les objets gameplay comme les triggers de réparation, les mallettes, les objets saisissables et les futurs objets spécifiques aux missions.
+- \`TestMap\` possède son propre playground Rapier \`Physics\` afin de peaufiner le gameplay de réparation par state de mission sans dépendre du placement de la carte de production.
+
+Le joueur et l'octree de carte doivent rester hors du provider Rapier tant qu'il n'existe pas de plan de migration volontaire. Cela évite de mélanger les règles de déplacement joueur avec la physique d'objets avant que les systèmes gameplay en aient besoin.
 
 ## Modèle d'interaction
 
@@ -166,13 +177,21 @@ Ce document décrit le code réellement présent aujourd'hui dans le dépôt.
 - \`src/components/debug/scene/DebugCameraControls.tsx\` monte la caméra libre debug.
 - Les contrôles globaux \`lil-gui\` incluent camera mode, scene mode, \`R3F Perf\` et \`Debug Overlay\`; les contrôles d'interaction vivent dans le dossier \`Interaction\`.
 
+## Domaines de composants 3D
+
+- \`src/components/three/models/\` contient les helpers de modèles réutilisables comme \`ExplodableModel\`.
+- \`src/components/three/interaction/\` contient les wrappers d'interaction réutilisables comme \`InteractableObject\`, \`TriggerObject\` et \`GrabbableObject\`.
+- \`src/components/three/handTracking/\` contient les modèles debug R3F liés au hand tracking, comme les gants.
+- \`src/components/three/gameplay/\` contient les composants de gameplay de réparation : le flow de production réutilisable \`RepairGame\`, la mallette, les étapes de réparation et les prompts.
+- \`src/components/three/world/\` contient les objets world/environnement réutilisables comme \`SkyModel\`.
+
 ## Limites actuelles
 
 - Le dépôt est encore un prototype, pas le runtime complet du jeu.
 - \`src/world/debug/TestMap.tsx\` fait encore partie de la composition active.
 - Il n'existe pas encore d'orchestrateur gameplay central comme \`GameManager\`.
-- Les systèmes de missions et zones ne sont pas implémentés.
-- Les branches de dialogue et l'orchestration gameplay restent limitées.
+- L'état de mission existe dans Zustand et le flow de réparation est implémenté comme prototype pour les missions de réparation actuelles.
+- Les cinématiques et dialogues existent comme systèmes prototype pilotés par timecode; les branches de dialogue et l'orchestration gameplay globale restent limitées.
 - Le joueur utilise une collision octree et des règles simples, pas une pile physique gameplay complète.
 `;
 
@@ -319,7 +338,7 @@ Le store expose :
 Les étapes de mission utilisent actuellement cette séquence :
 
 \`\`\`ts
-"locked" | "waiting" | "inspected" | "fragmented" | "scanning" | "repairing" | "done"
+"locked" | "waiting" | "inspected" | "fragmented" | "scanning" | "repairing" | "reassembling" | "done"
 \`\`\`
 
 ## Lire le state dans un composant
@@ -358,9 +377,29 @@ setMainState("bike");
 
 Les setters directs sont pratiques pour les panneaux debug, mais le gameplay de production devrait préférer les actions métier comme \`advanceGameState\`, \`completeBike\` ou \`completePylone\`.
 
+Le gameplay de mission qui peut cibler \`bike\`, \`pylone\` ou \`ferme\` doit préférer les actions génériques de mission :
+
+\`\`\`ts
+const setMissionStep = useGameStore((state) => state.setMissionStep);
+const completeMission = useGameStore((state) => state.completeMission);
+
+setMissionStep("bike", "inspected");
+completeMission("bike");
+\`\`\`
+
+Cela évite aux composants gameplay réutilisables, comme les flows de réparation, de dupliquer des branches spécifiques à chaque mission avec \`setBikeState\`, \`setPyloneState\` et \`setFermeState\`.
+
 ## Intégration avec le World
 
 \`src/world/GameStageContent.tsx\` s'abonne à \`mainState\` et monte le contenu spécifique au state courant.
+
+Pour les missions de réparation, il monte le composant réutilisable \`RepairGame\` avec un id de mission :
+
+\`\`\`tsx
+<RepairGame mission="bike" position={[8, 0, -6]} />
+\`\`\`
+
+\`RepairGame\` lit l'étape de mission active depuis le store et écrit les transitions via des actions génériques comme \`setMissionStep\` et \`completeMission\`. Les ids de mission, étapes de mission et guards partagés vivent dans \`src/types/gameplay/repairMission.ts\`, ce qui évite à la configuration statique des missions de dépendre du store Zustand. Le flow de réparation de production supporte actuellement les transitions \`waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission\`.
 
 La scène peut donc évoluer progressivement vers ce pattern :
 
@@ -391,6 +430,7 @@ Overlays actuels :
 - \`GameStateDebugPanel\` : panneau de progression debug pour consulter/changer le main state, le sub state, avancer/reculer et reset le store
 - \`Crosshair\` : aide de visée joueur
 - \`InteractPrompt\` : prompt d'interaction
+- \`RepairMovementLockIndicator\` : indicateur joueur affiché quand les étapes repair désactivent temporairement le déplacement
 
 \`src/pages/page.tsx\` doit rester fin et monter seulement le canvas et \`GameUI\`.
 
@@ -405,7 +445,7 @@ Overlays actuels :
 
 ## Prochaines étapes
 
-La prochaine étape naturelle est de remplacer les ancres temporaires de \`GameStageContent\` par de vrais composants de phase, par exemple \`IntroContent\`, \`BikeContent\`, \`PyloneContent\`, \`FermeContent\` et \`OutroContent\`.
+Déplacer la validation de réparation dans les données de mission lorsque chaque mission aura ses propres nodes de modules cassés, assets de remplacement et événements de complétion.
 `;
 
 export const featuresFr = `# Fonctionnalités implémentées
@@ -416,7 +456,8 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 
 - Scène React Three Fiber plein écran
 - Carte principale chargée depuis \`public/models/{name}/model.glb\`, avec fallback vers \`model.gltf\`
-- Scène de test physique debug sélectionnable depuis le panneau debug
+- Scène de test physique debug sélectionnable depuis le panneau debug, avec tests grab/trigger, preview de modèle animé et zones playground de réparation séparées pour \`bike\`, \`pylone\` et \`ferme\`
+- Contexte physique Rapier disponible pour les objets gameplay de stage en production
 - Éclairage ambiant et directionnel
 - Configuration de l'environnement de fond
 
@@ -426,6 +467,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Orientation souris avec pointer lock
 - Déplacement avec \`ZQSD\`
 - Saut
+- Verrouillage du déplacement pendant les étapes repair actives, avec indicateur à l'écran tout en gardant les interactions trigger disponibles
 - Collision basée sur une octree contre la carte chargée
 
 ## Interactions
@@ -433,7 +475,15 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Détection de focus par distance et raycast
 - Interactions trigger activées avec \`E\`
 - Interactions grab activées avec le bouton principal de la souris
+- Les objets gameplay avec physique peuvent être montés dans le contenu de stage sans remplacer la collision octree du joueur
 - Prompt d'interaction affiché pour les interactions trigger
+
+## Gameplay de réparation
+
+- \`RepairGame\` de production réutilisable monté pour les états de mission \`bike\`, \`pylone\` et \`ferme\`
+- Le playground physics debug monte le même \`RepairGame\` réutilisable dans des zones \`Bike\`, \`Pylone\` et \`Farm\`, afin de peaufiner chaque state avec un placement isolé avant déplacement vers la carte de production
+- Configuration de mission partagée via \`src/data/gameplay/repairMissions.ts\`, avec nodes cassés, placeholders cibles, timing de scan et timing de réassemblage propres à chaque mission
+- Flow repair-game avec \`waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done -> next mission\`, prompts \`.webm\`, apparition/ouverture/sortie de la mallette, vue focalisée de la mallette, indicateur de verrouillage de déplacement pendant la réparation active, interaction trigger sur la mallette, traverse des placeholders de mallette, placement avec snap vers placeholder, feedback de dépôt des pièces cassées, touche \`E\`, hold deux poings, transition de modèle explosé, réassemblage inverse avec particules, scan visuel par pièce, marqueur rouge persistant et vidéo UI centrée sur les pièces cassées, plusieurs choix de pièces grabbables, feedback de validation de la bonne pièce et complétion de mission
 
 ## Audio
 
@@ -474,6 +524,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - Le paramètre \`?debug\` active le panneau debug
 - Contrôles \`lil-gui\` pour le mode caméra, le mode scène, \`R3F Perf\`, \`Debug Overlay\` et le tuning d'interaction
 - Overlay debug compact pour les contrôles de game state et le statut hand tracking
+- Le changement de mission dans le panneau game-state debug déverrouille les missions repair encore \`locked\` à \`waiting\` pour accélérer les tests
 - Helpers de scène debug
 - Caméra libre debug
 - Overlay \`r3f-perf\`
@@ -497,7 +548,7 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 
 ## Pas encore implémenté
 
-- système de missions
+- système de missions complet
 - système de zones
 - branches de dialogues gameplay au-delà des déclencheurs prototype actuels
 - flow de chargement
@@ -505,142 +556,145 @@ Ce document liste les fonctionnalités présentes dans le code actuel.
 - séparation complète production / debug pour les scènes gameplay
 `;
 
-export const editorFr = `# Éditeur de carte
+export const editorFr = `# Guide utilisateur de l'éditeur
 
-L'éditeur de carte est disponible sur "/editor". Il permet d'inspecter et d'ajuster les objets déclarés dans "/public/map.json" directement depuis le navigateur.
+L'éditeur est disponible sur \`/editor\`. Il sert à modifier la carte runtime, les cinématiques, le manifeste de dialogues et les sous-titres SRT sans éditer tous les fichiers à la main.
 
-## Ce qui est édité
+## À quoi il sert
 
-L'éditeur travaille sur la liste de nodes stockée dans "/public/map.json".
+Utilise l'éditeur pour :
 
-Chaque node décrit un objet de la scène :
+- déplacer, tourner ou scaler les objets de \`public/map.json\`
+- inspecter le JSON généré avant export ou sauvegarde
+- prévisualiser et modifier \`public/cinematics.json\`
+- créer, prévisualiser et valider les dialogues de \`public/sounds/dialogue/dialogues.json\`
+- modifier les fichiers SRT FR/EN par voix
 
-- "name" : nom du dossier modèle dans "/public/models/{name}/model.glb", avec fallback vers "model.gltf"
-- "type" : catégorie de l'objet
-- "position" : "[x, y, z]"
-- "rotation" : "[x, y, z]"
-- "scale" : "[x, y, z]"
+## Organisation du panneau
 
-Les modèles sont chargés depuis "/public/models". Si un modèle manque, l'éditeur affiche un cube gris de remplacement pour que le node reste sélectionnable et déplaçable.
+Le panneau latéral est divisé en groupes repliables :
 
-## Workflow de base
+- \`Editor\` : transforms, raccourcis, sélection, vue, JSON et actions fichier.
+- \`Cinematics\` : cinématiques et keyframes caméra.
+- \`Dialogues\` : manifeste des dialogues.
+- \`SRT\` : fichiers de sous-titres par voix et langue.
 
-1. Ouvrir "/editor".
-2. Sélectionner un objet dans la vue 3D.
-3. Choisir un mode de transformation : translation, rotation ou scale.
-4. Déplacer la gizmo de transformation.
-5. Utiliser undo ou redo si nécessaire.
-6. Exporter le JSON mis à jour ou le sauvegarder sur le serveur de dev.
+## Carte et transforms
 
-## Contrôles
+1. Ouvre \`/editor\`.
+2. Clique un objet pour le sélectionner.
+3. Choisis \`Translate\`, \`Rotate\` ou \`Scale\`.
+4. Déplace la gizmo dans la vue 3D.
+5. Vérifie le bloc \`JSON\` si tu veux contrôler les valeurs exactes.
+6. Utilise \`Undo\` ou \`Redo\` si besoin.
+7. Utilise \`Export JSON\` ou \`Save to server\`.
+
+Contrôles utiles :
 
 | Action | Input |
 | --- | --- |
-| Sélectionner un objet | Clic sur l'objet |
-| Désélectionner | "Esc" ou clic dans le vide |
-| Mode translation | "T" |
-| Mode rotation | "R" |
-| Mode scale | "S" |
-| Undo | "Ctrl+Z" |
-| Redo | "Ctrl+Y" |
-| Déplacement en vue verrouillée | "WASD", "ZQSD", flèches |
-| Monter / descendre | "Space", "Shift" |
+| Sélectionner | Clic objet |
+| Désélectionner | \`Esc\` ou clic vide |
+| Verrouiller la sélection | bouton lock |
+| Vider la sélection | bouton \`X\` |
+| Translate | \`T\` |
+| Rotate | \`R\` |
+| Scale | \`S\` |
+| Undo / redo | \`Ctrl+Z\` / \`Ctrl+Y\` |
+| Déplacement vue verrouillée | \`WASD\`, \`ZQSD\`, flèches |
 
-## Actions fichier
+Quand la sélection est verrouillée, cliquer un autre objet, cliquer dans le vide ou appuyer sur \`Esc\` ne change pas la sélection. Le bouton \`X\` reste le moyen volontaire de la vider.
 
-### Export JSON
+## Inspecteur JSON
 
-"Export JSON" télécharge la liste actuelle des nodes sous le nom "map.json". À utiliser pour remplacer manuellement "/public/map.json".
+Le bloc \`JSON\` affiche le JSON qui sera exporté ou sauvegardé :
 
-### Save to server
+- sans sélection, il affiche toute la liste de nodes
+- avec une sélection, il affiche les lignes du node sélectionné
 
-"Save to server" est disponible uniquement en développement local. L'action écrit la carte modifiée dans "/public/map.json" via l'endpoint du serveur de dev Vite.
+Cet inspecteur est en lecture seule. Les valeurs changent via la gizmo de transformation.
 
-Cette action est masquée dans les builds de production car il n'existe pas encore d'API de persistance production.
+## Sauvegarde
 
-## Éditer les dialogues et sous-titres
+- \`Export JSON\` télécharge un \`map.json\` local.
+- \`Save to server\` écrit directement \`public/map.json\` via le serveur Vite local.
 
-Le panneau latéral contient aussi des outils pour les dialogues et les sous-titres.
+Les sauvegardes serveur sont des helpers de développement, pas des APIs de production.
 
-### Manifeste dialogues
+## Cinématiques
 
-Le panneau \`Dialogues\` permet d'éditer \`public/sounds/dialogue/dialogues.json\` sans ouvrir le JSON à la main.
+Le groupe \`Cinematics\` édite \`public/cinematics.json\`.
 
-- \`Reload\` recharge le manifeste depuis le disque.
-- \`Add\` crée un dialogue local pour la voix courante et assigne le prochain index SRT disponible.
-- \`Save\` écrit le manifeste via le serveur Vite local.
-- \`Preview dialogue\` joue le dialogue sélectionné avec les sous-titres dans l'éditeur.
-- \`Create FR SRT cue\` crée la cue française si elle manque.
-- \`Delete dialogue\` supprime localement l'entrée sélectionnée.
-
-Après \`Add\`, il faut cliquer \`Save\` pour conserver le dialogue dans le manifeste. La cue SRT FR est écrite directement, mais le manifeste reste local tant qu'il n'est pas sauvegardé.
-
-Les nouveaux dialogues utilisent un chemin audio placeholder comme \`/sounds/dialogue/new_dialogue_24.mp3\`. Remplace-le par un vrai MP3 avant validation finale.
-
-### Éditeur SRT
-
-1. Choisir une voix : \`narrateur\`, \`fermier\` ou \`electricienne\`.
-2. Choisir une langue : \`FR\` ou \`EN\`.
-3. Modifier le texte SRT directement dans la textarea.
-4. Utiliser la preview audio pour vérifier le dialogue sélectionné.
-5. Utiliser \`Set start\`, \`Set end\`, \`-100ms\` et \`+100ms\` pour ajuster le timing de la cue sélectionnée avec l'audio.
-6. Utiliser \`Save SRT\` en développement local, ou \`Export SRT\` pour télécharger le fichier manuellement.
-
-Chaque fichier SRT appartient à une voix, pas à un dialogue. Les indexes de cue doivent correspondre aux valeurs \`subtitleCueIndex\` référencées par le manifeste de dialogues.
-
-## Valider les assets de dialogue
-
-Utilise \`Validate\` dans le panneau SRT pour vérifier le manifeste et les assets liés.
-
-La validation vérifie :
-
-- \`public/sounds/dialogue/dialogues.json\`
-- les fichiers audio de dialogue référencés
-- les fichiers SRT français
-- les indexes de cue référencés par le manifeste
-
-Les fichiers SRT anglais manquants sont des warnings parce que le runtime retombe sur les sous-titres français.
-
-## Éditer les cinématiques
-
-Le panneau \`Cinematics\` permet d'éditer \`public/cinematics.json\`.
-
-Chaque cinématique contient :
+Une cinématique contient :
 
 - un \`id\`
 - un \`timecode\` global optionnel
 - au moins deux keyframes caméra
-- des dialogue cues optionnelles synchronisées avec la timeline
+- des \`dialogueCues\` optionnelles
 
-Les keyframes caméra définissent un temps relatif, une position caméra et une cible de regard. Les dialogue cues définissent un temps relatif et un \`dialogueId\` issu de \`dialogues.json\`.
+Workflow conseillé :
 
-Actions disponibles :
+1. Sélectionne une cinématique ou clique \`Add\`.
+2. Donne un \`id\` stable.
+3. Ajoute ou ajuste les keyframes caméra.
+4. Garde les temps de keyframes dans l'ordre croissant.
+5. Ajoute des \`dialogueCues\` si un dialogue doit démarrer pendant la cinématique.
+6. Clique \`Preview cinematic\` pour tester la caméra.
+7. Clique \`Save\`.
 
-- \`Reload\` recharge le manifeste.
-- \`Add\` crée une cinématique locale avec deux keyframes.
-- \`Save\` écrit \`public/cinematics.json\` via le serveur Vite local.
-- \`Preview cinematic\` joue l'animation caméra dans le canvas éditeur.
-- \`Add keyframe\` et \`Remove\` modifient le chemin caméra.
-- \`Add dialogue\` et \`Remove\` modifient les dialogues synchronisés.
-- \`Delete cinematic\` supprime localement la cinématique sélectionnée.
+Les temps de keyframes et de dialogue cues sont relatifs au début de la cinématique.
 
-Les dialogue cues sont la manière recommandée de synchroniser un dialogue avec une cinématique. Évite de donner aussi un \`timecode\` global au même dialogue dans \`dialogues.json\`, sinon il peut être lancé deux fois.
+## Dialogues
 
-## Inspecteur JSON
+Le groupe \`Dialogues\` édite \`public/sounds/dialogue/dialogues.json\`.
 
-Le panneau latéral affiche le JSON brut de la carte :
+Chaque dialogue contient :
 
-- sans sélection, il affiche toute la liste des nodes
-- avec un objet sélectionné, il met en évidence les lignes du node sélectionné
+- \`id\` : identifiant stable utilisé par les cinématiques et le runtime
+- \`voice\` : \`narrateur\`, \`fermier\` ou \`electricienne\`
+- \`audio\` : chemin MP3 runtime
+- \`subtitleCueIndex\` : numéro de cue dans le SRT de la voix
+- \`timecode\` : déclenchement global optionnel
 
-Utilise-le pour vérifier les valeurs numériques exactes avant export ou sauvegarde.
+Workflow conseillé pour créer un dialogue :
+
+1. Clique \`Add\`.
+2. Choisis la bonne voix.
+3. Remplace l'\`id\` généré par un ID lisible.
+4. Remplace le chemin audio placeholder par le vrai MP3.
+5. Vérifie le \`subtitleCueIndex\`.
+6. Clique \`Create FR SRT cue\` si la cue manque.
+7. Clique \`Save\`.
+8. Passe dans \`SRT\` pour écrire le texte et régler les timings.
+9. Lance \`Validate\`.
+
+## SRT
+
+Le groupe \`SRT\` édite un fichier de sous-titres à la fois.
+
+1. Choisis une voix.
+2. Choisis \`FR\` ou \`EN\`.
+3. Écris le texte SRT.
+4. Prévisualise l'audio.
+5. Utilise \`Set start\`, \`Set end\`, \`-100ms\` et \`+100ms\` pour ajuster les timings.
+6. Clique \`Save SRT\` ou \`Export SRT\`.
+
+Il y a un fichier SRT par voix et par langue, pas un fichier par dialogue. Les timings SRT sont relatifs au fichier audio du dialogue.
+
+## Validation
+
+\`Validate\` vérifie :
+
+- le manifeste \`dialogues.json\`
+- les fichiers audio référencés
+- les fichiers SRT français
+- les indexes de cues référencés
+- les SRT anglais en warning si manquants
 
 ## Limites actuelles
 
-- L'éditeur modifie uniquement les nodes existants.
-- Il n'y a pas encore d'interface pour créer ou supprimer des objets.
-- La sauvegarde production n'est pas implémentée.
-- Les modèles manquants s'affichent comme cubes de fallback au lieu de bloquer tout l'éditeur.
-- La sauvegarde SRT est un helper local du serveur Vite, pas une API backend de production.
-- Les sauvegardes dialogues et cinématiques sont aussi des helpers locaux du serveur Vite.
+- L'éditeur modifie les nodes existants mais ne crée pas encore d'objet de carte.
+- Les sauvegardes serveur sont limitées au développement local.
+- L'éditeur SRT reste textuel, sans waveform.
+- Les modèles manquants sont représentés par des cubes de fallback.
 `;

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { Capsule } from "three/addons/math/Capsule.js";
@@ -23,6 +23,7 @@ import {
   PLAYER_WALK_SPEED,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
+import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
 import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
@@ -56,6 +57,18 @@ const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
 const _collisionCorrection = new THREE.Vector3();
 
+function createSpawnCapsule(spawnPosition: Vector3Tuple): Capsule {
+  return new Capsule(
+    new THREE.Vector3(
+      spawnPosition[0],
+      spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
+      spawnPosition[2],
+    ),
+    new THREE.Vector3(...spawnPosition),
+    PLAYER_CAPSULE_RADIUS,
+  );
+}
+
 function isPlayerInputLocked(): boolean {
   return (
     useSettingsStore.getState().isSettingsMenuOpen ||
@@ -87,20 +100,16 @@ export function PlayerController({
   spawnPosition,
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
+  const movementLocked = useRepairMovementLocked();
+  const movementLockedRef = useRef(movementLocked);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
+  const initializedRef = useRef(false);
+  const capsule = useRef(createSpawnCapsule(spawnPosition));
 
-  const capsule = useRef(
-    new Capsule(
-      new THREE.Vector3(0, PLAYER_CAPSULE_RADIUS, 0),
-      new THREE.Vector3(0, PLAYER_EYE_HEIGHT - PLAYER_CAPSULE_RADIUS, 0),
-      PLAYER_CAPSULE_RADIUS,
-    ),
-  );
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     capsule.current.start.set(
       spawnPosition[0],
       spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
@@ -111,7 +120,19 @@ export function PlayerController({
     onFloor.current = false;
     wantsJump.current = false;
     camera.position.copy(capsule.current.end);
+    initializedRef.current = true;
   }, [camera, spawnPosition]);
+
+  useEffect(() => {
+    movementLockedRef.current = movementLocked;
+
+    if (!movementLocked) return;
+
+    keys.current = { ...DEFAULT_KEYS };
+    wantsJump.current = false;
+    velocity.current.setX(0);
+    velocity.current.setZ(0);
+  }, [movementLocked]);
 
   useEffect(() => {
     const interaction = InteractionManager.getInstance();
@@ -120,11 +141,20 @@ export function PlayerController({
       if (isPlayerInputLocked()) return;
 
       if (setMovementKey(keys.current, event.key, true)) {
+        if (movementLockedRef.current) {
+          keys.current = { ...DEFAULT_KEYS };
+        }
         event.preventDefault();
         return;
       }
 
       if (event.key === JUMP_KEY) {
+        if (movementLockedRef.current) {
+          wantsJump.current = false;
+          event.preventDefault();
+          return;
+        }
+
         wantsJump.current = true;
         event.preventDefault();
         return;
@@ -177,6 +207,8 @@ export function PlayerController({
   }, []);
 
   useFrame((_, delta) => {
+    if (!initializedRef.current) return;
+
     if (isPlayerInputLocked()) {
       keys.current = { ...DEFAULT_KEYS };
       velocity.current.set(0, 0, 0);
@@ -194,10 +226,12 @@ export function PlayerController({
     }
 
     _wishDir.set(0, 0, 0);
-    if (keys.current.forward) _wishDir.add(_forward);
-    if (keys.current.backward) _wishDir.sub(_forward);
-    if (keys.current.left) _wishDir.sub(_right);
-    if (keys.current.right) _wishDir.add(_right);
+    if (!movementLocked) {
+      if (keys.current.forward) _wishDir.add(_forward);
+      if (keys.current.backward) _wishDir.sub(_forward);
+      if (keys.current.left) _wishDir.sub(_right);
+      if (keys.current.right) _wishDir.add(_right);
+    }
     if (_wishDir.lengthSq() > 0) _wishDir.normalize();
 
     const accel = onFloor.current

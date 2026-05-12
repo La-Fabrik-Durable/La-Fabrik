@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
-import { Component, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
-import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
-import { logger } from "@/utils/core/logger";
+import { GameMapCollision } from "@/world/GameMapCollision";
+import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
+import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 import type { MapNode } from "@/types/editor/editor";
@@ -12,13 +19,15 @@ import type { OctreeReadyHandler } from "@/types/three/three";
 
 interface LoadedMapNode {
   node: MapNode;
-  modelUrl: string;
+  modelUrl: string | null;
 }
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  modelUrl: string;
+  fallback: ReactNode;
+  modelUrl: string | null;
   node: MapNode;
+  onSettled: () => void;
 }
 
 interface ErrorBoundaryState {
@@ -41,7 +50,7 @@ class ModelErrorBoundary extends Component<
   componentDidCatch(error: Error): void {
     logModelLoadError(
       {
-        modelPath: this.props.modelUrl,
+        modelPath: this.props.modelUrl ?? `missing:${this.props.node.name}`,
         scope: "GameMap.ModelInstance",
         position: this.props.node.position,
         rotation: this.props.node.rotation,
@@ -49,11 +58,12 @@ class ModelErrorBoundary extends Component<
       },
       error,
     );
+    this.props.onSettled();
   }
 
   render(): ReactNode {
     if (this.state.hasError) {
-      return null;
+      return this.props.fallback;
     }
 
     return this.props.children;
@@ -61,39 +71,80 @@ class ModelErrorBoundary extends Component<
 }
 
 interface GameMapProps {
+  onLoaded?: (() => void) | undefined;
+  onLoadingStateChange?: SceneLoadingChangeHandler | undefined;
   onOctreeReady: OctreeReadyHandler;
   buildOctree?: boolean;
 }
 
 export function GameMap({
-  onOctreeReady,
   buildOctree = true,
+  onLoaded,
+  onLoadingStateChange,
+  onOctreeReady,
 }: GameMapProps): React.JSX.Element {
+  const settledMapNodesRef = useRef(new Set<number>());
   const [mapNodes, setMapNodes] = useState<LoadedMapNode[]>([]);
-  const groupRef = useRef<THREE.Group>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [settledMapNodeCount, setSettledMapNodeCount] = useState(0);
+  const mapReady = mapLoaded && settledMapNodeCount >= mapNodes.length;
 
-  useOctreeGraphNode(groupRef, onOctreeReady, mapNodes.length, buildOctree);
+  const handleMapNodeSettled = useCallback((index: number) => {
+    if (settledMapNodesRef.current.has(index)) return;
+
+    settledMapNodesRef.current.add(index);
+    setSettledMapNodeCount(settledMapNodesRef.current.size);
+  }, []);
+
+  const showEmptyMap = useCallback(
+    (currentStep: string) => {
+      setMapNodes([]);
+      setMapLoaded(true);
+      settledMapNodesRef.current.clear();
+      setSettledMapNodeCount(0);
+      onLoadingStateChange?.({
+        currentStep,
+        progress: 0.7,
+        status: "loading",
+      });
+    },
+    [onLoadingStateChange],
+  );
 
   useEffect(() => {
+    onLoadingStateChange?.({
+      currentStep: "Récupération blocking",
+      progress: 0.05,
+      status: "loading",
+    });
+
     const loadMap = async () => {
       try {
         const sceneData = await loadMapSceneData();
         if (!sceneData) {
           logger.warn("GameMap", "map.json not found");
+          showEmptyMap("Map introuvable");
           return;
         }
 
-        const loadedMapNodes = sceneData.mapNodes.flatMap((node) => {
-          const modelUrl = sceneData.models.get(node.name);
-          return modelUrl ? [{ node, modelUrl }] : [];
+        onLoadingStateChange?.({
+          currentStep: "Importation des models",
+          progress: 0.18,
+          status: "loading",
         });
-        const missingModelCount =
-          sceneData.mapNodes.length - loadedMapNodes.length;
+
+        const loadedMapNodes = sceneData.mapNodes.map((node) => {
+          const modelUrl = sceneData.models.get(node.name);
+          return { node, modelUrl: modelUrl ?? null };
+        });
+        const missingModelCount = loadedMapNodes.filter(
+          (mapNode) => mapNode.modelUrl === null,
+        ).length;
 
         if (missingModelCount > 0) {
           logger.warn(
             "GameMap",
-            "Map nodes skipped because model files are missing",
+            "Map nodes rendered as fallback cubes because model files are missing",
             {
               missingModelCount,
             },
@@ -101,37 +152,102 @@ export function GameMap({
         }
 
         setMapNodes(loadedMapNodes);
+        setMapLoaded(true);
+        settledMapNodesRef.current.clear();
+        setSettledMapNodeCount(0);
+        onLoadingStateChange?.({
+          currentStep: "Chargement des modèles de la map",
+          progress: 0.25,
+          status: "loading",
+        });
       } catch (error) {
         logger.error("GameMap", "Error loading map", {
           error: error instanceof Error ? error : new Error(String(error)),
         });
+        showEmptyMap("Erreur de chargement de la map");
       }
     };
 
     loadMap();
-  }, []);
+  }, [onLoadingStateChange, showEmptyMap]);
+
+  useEffect(() => {
+    if (mapNodes.length === 0) return;
+
+    const renderProgress =
+      mapNodes.length === 0 ? 1 : settledMapNodeCount / mapNodes.length;
+    onLoadingStateChange?.({
+      currentStep: "Chargement des modèles de la map",
+      progress: 0.25 + renderProgress * 0.45,
+      status: "loading",
+    });
+  }, [mapNodes.length, onLoadingStateChange, settledMapNodeCount]);
 
   return (
-    <group ref={groupRef}>
-      {mapNodes.map((mapNode, index) => (
-        <ModelErrorBoundary
-          key={index}
-          modelUrl={mapNode.modelUrl}
-          node={mapNode.node}
-        >
-          <ModelInstance node={mapNode.node} modelUrl={mapNode.modelUrl} />
-        </ModelErrorBoundary>
-      ))}
-    </group>
+    <>
+      <group>
+        {mapNodes.map((mapNode, index) => (
+          <ModelErrorBoundary
+            key={index}
+            fallback={<FallbackMapNode node={mapNode.node} />}
+            modelUrl={mapNode.modelUrl}
+            node={mapNode.node}
+            onSettled={() => handleMapNodeSettled(index)}
+          >
+            <MapNodeInstance
+              node={mapNode.node}
+              modelUrl={mapNode.modelUrl}
+              onSettled={() => handleMapNodeSettled(index)}
+            />
+          </ModelErrorBoundary>
+        ))}
+      </group>
+      <GameMapCollision
+        buildOctree={buildOctree}
+        mapReady={mapReady}
+        nodes={mapNodes}
+        onLoaded={onLoaded}
+        onLoadingStateChange={onLoadingStateChange}
+        onOctreeReady={onOctreeReady}
+      />
+    </>
+  );
+}
+
+function MapNodeInstance({
+  node,
+  modelUrl,
+  onSettled,
+}: {
+  node: MapNode;
+  modelUrl: string | null;
+  onSettled: () => void;
+}): React.JSX.Element {
+  useEffect(() => {
+    if (modelUrl !== null) return;
+
+    onSettled();
+  }, [modelUrl, onSettled]);
+
+  if (!modelUrl) {
+    return <FallbackMapNode node={node} />;
+  }
+
+  return (
+    <Suspense fallback={<FallbackMapNode node={node} />}>
+      <ModelInstance node={node} modelUrl={modelUrl} onLoaded={onSettled} />
+    </Suspense>
   );
 }
 
 function ModelInstance({
   node,
   modelUrl,
+  onLoaded,
 }: {
   node: MapNode;
   modelUrl: string;
+  onLoaded: () => void;
 }): React.JSX.Element {
   const { position, rotation, scale } = node;
   const { scene } = useLoggedGLTF(modelUrl, {
@@ -142,6 +258,10 @@ function ModelInstance({
   });
   const sceneInstance = useClonedObject(scene);
 
+  useEffect(() => {
+    onLoaded();
+  }, [onLoaded]);
+
   return (
     <primitive
       object={sceneInstance}
@@ -149,5 +269,16 @@ function ModelInstance({
       rotation={rotation}
       scale={scale}
     />
+  );
+}
+
+function FallbackMapNode({ node }: { node: MapNode }): React.JSX.Element {
+  const { position, rotation, scale } = node;
+
+  return (
+    <mesh position={position} rotation={rotation} scale={scale}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color="#64748b" wireframe />
+    </mesh>
   );
 }
