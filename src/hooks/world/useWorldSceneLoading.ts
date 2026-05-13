@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { Octree } from "three/addons/math/Octree.js";
 import type { SceneMode } from "@/types/debug/debug";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
-import { logger } from "@/utils/core/Logger";
 
 interface UseWorldSceneLoadingOptions {
   onLoadingStateChange?: SceneLoadingChangeHandler | undefined;
@@ -32,12 +31,10 @@ export function useWorldSceneLoading({
     (sceneMode === "physics" && octree !== null);
 
   const handleGameMapLoaded = useCallback(() => {
-    logger.info("WorldSceneLoading", "GameMap loaded");
     setGameMapLoaded(true);
   }, []);
 
   const handleGameStageLoaded = useCallback(() => {
-    logger.info("WorldSceneLoading", "GameStage loaded");
     setGameStageLoaded(true);
     onLoadingStateChange?.({
       currentStep: "Initialisation gameplay",
@@ -48,7 +45,6 @@ export function useWorldSceneLoading({
 
   const handleOctreeReady = useCallback(
     (nextOctree: Octree) => {
-      logger.info("WorldSceneLoading", "Octree ready");
       setOctree(nextOctree);
       onLoadingStateChange?.({
         currentStep: "Collision prête",

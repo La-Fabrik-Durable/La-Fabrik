@@ -14,7 +14,6 @@ import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
 import type { MapNode } from "@/types/editor/editor";
 import type { OctreeReadyHandler } from "@/types/three/three";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
-import { logger } from "@/utils/core/Logger";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
 export interface GameMapCollisionNode {
@@ -109,14 +108,6 @@ export function GameMapCollision({
   const collisionReady =
     mapReady && settledCollisionNodeCount >= collisionNodes.length;
 
-  logger.debug("GameMapCollision", "State", {
-    mapReady,
-    collisionNodesCount: collisionNodes.length,
-    settledCollisionNodeCount,
-    collisionReady,
-    buildOctree,
-  });
-
   const notifyLoaded = useCallback(() => {
     if (loadedNotifiedRef.current) return;
 
@@ -133,7 +124,6 @@ export function GameMapCollision({
 
   const handleOctreeReady = useCallback<OctreeReadyHandler>(
     (octree) => {
-      logger.info("GameMapCollision", "Octree built, calling onOctreeReady");
       onLoadingStateChange?.({
         currentStep: "Collision prête",
         progress: 0.92,

@@ -4,7 +4,7 @@ export const VEGETATION_LOD = {
   windFadeEnd: 70,
 };
 
-export const VEGETATION_MAX_INSTANCES = 500;
+export const VEGETATION_MAX_INSTANCES = 2000;
 
 export const VEGETATION_TYPES = {
   buissons: {
@@ -12,7 +12,7 @@ export const VEGETATION_TYPES = {
     modelPath: "/models/buisson/model.gltf",
     castShadow: true,
     receiveShadow: true,
-    enabled: false,
+    enabled: true,
     windEnabled: false,
     windIntensity: 1.2,
   },
@@ -39,7 +39,7 @@ export const VEGETATION_TYPES = {
     modelPath: "/models/champdeble/model.gltf",
     castShadow: true,
     receiveShadow: true,
-    enabled: false,
+    enabled: true,
     windEnabled: false,
     windIntensity: 1.0,
   },
@@ -48,7 +48,7 @@ export const VEGETATION_TYPES = {
     modelPath: "/models/champdesoja/model.gltf",
     castShadow: true,
     receiveShadow: true,
-    enabled: false,
+    enabled: true,
     windEnabled: false,
     windIntensity: 1.0,
   },
@@ -57,7 +57,7 @@ export const VEGETATION_TYPES = {
     modelPath: "/models/champsdetournesol/model.gltf",
     castShadow: true,
     receiveShadow: true,
-    enabled: false,
+    enabled: true,
     windEnabled: false,
     windIntensity: 0.9,
   },
