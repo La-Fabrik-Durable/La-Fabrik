@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
+import { disposeObject3D } from "@/utils/three/dispose";
 
 export interface SimpleModelConfig extends ModelTransformProps {
   modelPath: string;
@@ -28,6 +29,12 @@ export function SimpleModel({
     scale,
   });
   const model = useMemo(() => scene.clone(true), [scene]);
+
+  useEffect(() => {
+    return () => {
+      disposeObject3D(model);
+    };
+  }, [model]);
 
   const parsedScale =
     typeof scale === "number" ? ([scale, scale, scale] as Vector3Tuple) : scale;
