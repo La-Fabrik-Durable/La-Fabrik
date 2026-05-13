@@ -1,59 +1,58 @@
-name: 🔁 Weekly Branch Promotions
+name: 🔁 Branch Promotions
 
 on:
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: "0 6 * * 1,4" # Lundi et Jeudi à 6h UTC (design → develop)
+    - cron: "0 6 * * 1"   # Lundi à 6h UTC (develop → main)
   workflow_dispatch:
+    inputs:
+      promotion:
+        description: "Which promotion to run"
+        required: true
+        type: choice
+        options:
+          - design-to-develop
+          - develop-to-main
+          - both
 
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  group: weekly-branch-promotions
+  group: branch-promotions
   cancel-in-progress: false
 
 jobs:
-  open-promotion-pr:
-    name: Open ${{ matrix.head }} → ${{ matrix.base }}
+  design-to-develop:
+    name: Open design → develop
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - head: develop
-            base: design
-            title: "chore: merge develop into design"
-          - head: design
-            base: main
-            title: "chore: merge design into main"
-
+    if: |
+      (github.event_name == 'schedule') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.promotion == 'design-to-develop' || github.event.inputs.promotion == 'both'))
     steps:
       - name: ⬇️ Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: 🔁 Open promotion PR
         env:
           GH_TOKEN: ${{ github.token }}
-          BASE_BRANCH: ${{ matrix.base }}
-          HEAD_BRANCH: ${{ matrix.head }}
-          PR_TITLE: ${{ matrix.title }}
         run: |
           set -euo pipefail
 
-          git fetch origin "$BASE_BRANCH" "$HEAD_BRANCH"
+          git fetch origin develop design
 
-          if git merge-base --is-ancestor "origin/$HEAD_BRANCH" "origin/$BASE_BRANCH"; then
-            echo "No promotion needed: $BASE_BRANCH already contains $HEAD_BRANCH."
+          if git merge-base --is-ancestor origin/design origin/develop; then
+            echo "No promotion needed: develop already contains design."
             exit 0
           fi
 
           existing_pr="$(gh pr list \
             --state open \
-            --base "$BASE_BRANCH" \
-            --head "$GITHUB_REPOSITORY_OWNER:$HEAD_BRANCH" \
+            --base develop \
+            --head "$GITHUB_REPOSITORY_OWNER:design" \
             --json number \
             --jq '.[0].number // empty')"
 
@@ -63,7 +62,50 @@ jobs:
           fi
 
           gh pr create \
-            --base "$BASE_BRANCH" \
-            --head "$HEAD_BRANCH" \
-            --title "$PR_TITLE" \
-            --body "Automated weekly promotion PR from \`$HEAD_BRANCH\` to \`$BASE_BRANCH\`."
+            --base develop \
+            --head design \
+            --title "chore: merge design into develop" \
+            --body "Automated promotion PR from \`design\` to \`develop\`."
+
+  develop-to-main:
+    name: Open develop → main
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 6 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.promotion == 'develop-to-main' || github.event.inputs.promotion == 'both'))
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔁 Open promotion PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin main develop
+
+          if git merge-base --is-ancestor origin/develop origin/main; then
+            echo "No promotion needed: main already contains develop."
+            exit 0
+          fi
+
+          existing_pr="$(gh pr list \
+            --state open \
+            --base main \
+            --head "$GITHUB_REPOSITORY_OWNER:develop" \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [ -n "$existing_pr" ]; then
+            echo "Promotion PR already open: #$existing_pr."
+            exit 0
+          fi
+
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "chore: merge develop into main" \
+            --body "Automated weekly promotion PR from \`develop\` to \`main\`."
