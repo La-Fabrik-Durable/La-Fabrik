@@ -7,7 +7,36 @@ const HTML_CONTENT_TYPE = "text/html";
 const MAP_STRUCTURE_NODE_NAMES = new Set(["Scene", "blocking"]);
 type ModelEntry = [modelName: string, modelUrl: string];
 
+let cachedSceneData: SceneData | null = null;
+let loadingPromise: Promise<SceneData | null> | null = null;
+
 export async function loadMapSceneData(): Promise<SceneData | null> {
+  if (cachedSceneData) {
+    return cachedSceneData;
+  }
+
+  if (loadingPromise) {
+    return loadingPromise;
+  }
+
+  loadingPromise = loadMapSceneDataInternal();
+  cachedSceneData = await loadingPromise;
+  loadingPromise = null;
+
+  return cachedSceneData;
+}
+
+export function getMapNodes(): MapNode[] | null {
+  return cachedSceneData?.mapNodes ?? null;
+}
+
+export function getMapNodesByName(name: string): MapNode[] {
+  const nodes = cachedSceneData?.mapNodes;
+  if (!nodes) return [];
+  return nodes.filter((node) => node.name === name);
+}
+
+async function loadMapSceneDataInternal(): Promise<SceneData | null> {
   const response = await fetch(MAP_JSON_PATH);
 
   if (!response.ok) {
