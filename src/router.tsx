@@ -54,6 +54,7 @@ const docsChildRoutes = [
   { path: "architecture", component: DocsArchitectureRoute },
   { path: "scene-runtime", component: DocsSceneRuntimeRoute },
   { path: "repair-game", component: DocsRepairGameRoute },
+  { path: "mission-flow", component: DocsMissionFlowRoute },
   { path: "interaction", component: DocsInteractionRoute },
   { path: "target-architecture", component: DocsTargetArchitectureRoute },
   { path: "technical-editor", component: DocsTechnicalEditorRoute },
