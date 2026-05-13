@@ -1,6 +1,15 @@
-import { useMemo } from "react";
-import type * as THREE from "three";
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
+import { disposeObject3D } from "@/utils/three/dispose";
 
 export function useClonedObject<T extends THREE.Object3D>(object: T): T {
-  return useMemo(() => object.clone(true) as T, [object]);
+  const clone = useMemo(() => object.clone(true) as T, [object]);
+
+  useEffect(() => {
+    return () => {
+      disposeObject3D(clone);
+    };
+  }, [clone]);
+
+  return clone;
 }
