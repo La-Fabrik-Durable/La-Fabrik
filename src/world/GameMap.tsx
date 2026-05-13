@@ -7,9 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
+import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
+import { TerrainModel } from "@/components/three/world/TerrainModel";
 import { GameMapCollision } from "@/world/GameMapCollision";
+import { VegetationSystem } from "@/world/vegetation/VegetationSystem";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
@@ -222,6 +225,8 @@ export function GameMap({
           </ModelErrorBoundary>
         ))}
       </group>
+      <VegetationSystem />
+      <TerrainModel />
       <GameMapCollision
         buildOctree={buildOctree}
         mapReady={mapReady}
@@ -299,8 +304,14 @@ function ModelInstance({
   const sceneInstance = useClonedObject(scene);
 
   useEffect(() => {
+    sceneInstance.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
     onLoaded();
-  }, [onLoaded]);
+  }, [onLoaded, sceneInstance]);
 
   return (
     <primitive
