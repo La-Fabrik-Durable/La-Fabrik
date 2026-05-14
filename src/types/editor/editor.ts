@@ -9,6 +9,7 @@ export interface MapNode {
 }
 
 export interface HierarchicalMapNode extends MapNode {
+  role?: "group";
   children?: HierarchicalMapNode[];
 }
 

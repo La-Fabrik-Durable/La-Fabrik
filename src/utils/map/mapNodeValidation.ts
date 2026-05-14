@@ -31,6 +31,10 @@ function isHierarchicalMapNode(value: unknown): value is HierarchicalMapNode {
     return false;
   }
 
+  if ("role" in value && value.role !== undefined && value.role !== "group") {
+    return false;
+  }
+
   if (!("children" in value)) {
     return true;
   }
@@ -51,6 +55,10 @@ function flattenMapNode(node: HierarchicalMapNode): MapNode[] {
     scale: node.scale,
   };
   const childNodes = node.children?.flatMap(flattenMapNode) ?? [];
+
+  if (node.role === "group") {
+    return childNodes;
+  }
 
   return [mapNode, ...childNodes];
 }
