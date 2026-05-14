@@ -20,7 +20,7 @@ function disposeMaterial(material: THREE.Material): void {
   material.dispose();
 
   for (const key of Object.keys(material)) {
-    const value = (material as Record<string, unknown>)[key];
+    const value = (material as unknown as Record<string, unknown>)[key];
     if (value instanceof THREE.Texture) {
       value.dispose();
     }

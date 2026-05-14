@@ -81,7 +81,10 @@ export function InstancedVegetation({
       );
 
       for (let i = 0; i < matrices.length; i++) {
-        instancedMesh.setMatrixAt(i, matrices[i]);
+        const matrix = matrices[i];
+        if (matrix) {
+          instancedMesh.setMatrixAt(i, matrix);
+        }
       }
 
       instancedMesh.instanceMatrix.needsUpdate = true;

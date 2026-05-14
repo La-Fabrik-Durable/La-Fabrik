@@ -8,6 +8,10 @@ export interface MapNode {
   scale: Vector3Tuple;
 }
 
+export interface HierarchicalMapNode extends MapNode {
+  children?: HierarchicalMapNode[];
+}
+
 export interface SceneData {
   mapNodes: MapNode[];
   models: Map<string, string>;
