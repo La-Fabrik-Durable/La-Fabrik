@@ -14,10 +14,12 @@ interface InstancedVegetationProps {
 interface MeshData {
   geometry: THREE.BufferGeometry;
   material: THREE.Material | THREE.Material[];
+  localMatrix: THREE.Matrix4;
 }
 
 function extractMeshes(scene: THREE.Group): MeshData[] {
   const meshes: MeshData[] = [];
+  scene.updateMatrixWorld(true);
 
   scene.traverse((child) => {
     if (child instanceof THREE.Mesh) {
@@ -26,6 +28,7 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
         material: Array.isArray(child.material)
           ? child.material.map((m) => m.clone())
           : child.material.clone(),
+        localMatrix: child.matrixWorld.clone(),
       });
     }
   });
@@ -40,7 +43,7 @@ function createInstanceMatrices(
   const position = new THREE.Vector3();
   const rotation = new THREE.Euler();
   const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
+  const scale = new THREE.Vector3(1, 1, 1);
 
   for (const instance of instances) {
     const matrix = new THREE.Matrix4();
@@ -48,8 +51,6 @@ function createInstanceMatrices(
     position.set(...instance.position);
     rotation.set(...instance.rotation);
     quaternion.setFromEuler(rotation);
-    scale.set(...instance.scale);
-
     matrix.compose(position, quaternion, scale);
     matrices.push(matrix);
   }
@@ -83,7 +84,10 @@ export function InstancedVegetation({
       for (let i = 0; i < matrices.length; i++) {
         const matrix = matrices[i];
         if (matrix) {
-          instancedMesh.setMatrixAt(i, matrix);
+          instancedMesh.setMatrixAt(
+            i,
+            new THREE.Matrix4().multiplyMatrices(matrix, meshData.localMatrix),
+          );
         }
       }
 

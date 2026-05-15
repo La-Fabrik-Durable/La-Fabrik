@@ -72,6 +72,14 @@ function createRenderableObject(objectNode, meshNode) {
   };
 }
 
+function createRenderableContainer(objectNode, meshNodes) {
+  return {
+    ...cloneNode(objectNode),
+    type: "Object3D",
+    children: meshNodes.map(mapMeshNode),
+  };
+}
+
 function addRenderable(parent, objectNode, meshNode) {
   const renderable = createRenderableObject(objectNode, meshNode);
   getOrCreateModelGroup(parent, renderable.name).children.push(renderable);
@@ -92,6 +100,36 @@ function addObjectsByRange(rawData, parent, start, end, allowedNames) {
     if (allowedNames && !allowedNames.has(node.name)) continue;
 
     addRenderable(parent, currentObject, node);
+  }
+}
+
+function addBuildingsByRange(rawData, parent, start, end) {
+  for (let i = start; i <= end; i++) {
+    const node = rawData[i];
+    if (node?.type !== "Object3D" || node.name !== "immeuble1") continue;
+
+    const meshNodes = [];
+    for (let childIndex = i + 1; childIndex <= end; childIndex++) {
+      const childNode = rawData[childIndex];
+
+      if (childNode?.type === "Object3D") {
+        if (BUILDING_CHILD_OBJECT_NAMES.has(childNode.name)) continue;
+        break;
+      }
+
+      if (
+        childNode?.type === "Mesh" &&
+        BUILDING_MESH_NAMES.has(childNode.name)
+      ) {
+        meshNodes.push(childNode);
+      }
+    }
+
+    if (meshNodes.length > 0) {
+      getOrCreateModelGroup(parent, node.name).children.push(
+        createRenderableContainer(node, meshNodes),
+      );
+    }
   }
 }
 
@@ -116,6 +154,9 @@ function createResidenceZones(rawData, residence) {
     return zone;
   });
 
+  addBuildingsByRange(rawData, zones[0], 831, 873);
+  addBuildingsByRange(rawData, zones[1], 875, 891);
+  addBuildingsByRange(rawData, zones[2], 893, 942);
   addObjectsByRange(rawData, zones[0], 831, 873, RESIDENCE_MESH_NAMES);
   addObjectsByRange(rawData, zones[1], 875, 891, RESIDENCE_MESH_NAMES);
   addObjectsByRange(rawData, zones[2], 893, 942, RESIDENCE_MESH_NAMES);
@@ -144,7 +185,13 @@ const CHAMP_MESH_NAMES = new Set([
   "champsdetournesol",
 ]);
 const FERME_MESH_NAMES = new Set(["buissons", "buisson", "fermeverticale"]);
-const RESIDENCE_MESH_NAMES = new Set(["immeuble_1", "immeuble_2", "maison1"]);
+const RESIDENCE_MESH_NAMES = new Set(["maison1"]);
+const BUILDING_CHILD_OBJECT_NAMES = new Set([
+  "immeuble",
+  "immeuble_1",
+  "immeuble_2",
+]);
+const BUILDING_MESH_NAMES = new Set(["immeuble_1", "immeuble_2"]);
 const ENERGIE_MESH_NAMES = new Set([
   "pyloneelectrique",
   "eoliennes",
@@ -161,12 +208,7 @@ const DIRECTION_MESH_NAMES = new Set([
   "panneaudirresidences2",
   "panneauxquartier",
 ]);
-const LAFABRIK_MESH_NAMES = new Set([
-  "lafabrik",
-  "immeuble_1",
-  "immeuble_2",
-  "maison1",
-]);
+const LAFABRIK_MESH_NAMES = new Set(["lafabrik", "maison1"]);
 function transformMap() {
   console.log("Reading map_raw.json...");
   const rawData = JSON.parse(fs.readFileSync(INPUT_PATH, "utf-8"));
@@ -225,6 +267,7 @@ function transformMap() {
   addObjectsByRange(rawData, ferme, 4595, 4799, FERME_MESH_NAMES);
   addObjectsByRange(rawData, vegetation, 4750, 4797, VEGETATION_MESH_NAMES);
   addObjectsByRange(rawData, energie, 4801, 4872, ENERGIE_MESH_NAMES);
+  addBuildingsByRange(rawData, lafabrik, 4874, 4894);
   addObjectsByRange(rawData, lafabrik, 4874, 4894, LAFABRIK_MESH_NAMES);
   addObjectsByRange(rawData, direction, 4896, 4897, DIRECTION_MESH_NAMES);
   addObjectsByRange(rawData, vegetation, 4898, 4997, VEGETATION_MESH_NAMES);

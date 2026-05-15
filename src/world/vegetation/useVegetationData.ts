@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import type { MapNode } from "@/types/editor/editor";
 import type { Vector3Tuple } from "@/types/three/three";
-import { getMapNodes, loadMapSceneData } from "@/utils/map/loadMapSceneData";
-import {
-  VEGETATION_TYPES,
-  type VegetationType,
-} from "@/world/vegetation/vegetationConfig";
+import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
+import { INSTANCED_MAP_EXCEPTIONS } from "@/world/vegetation/vegetationConfig";
 
 export interface VegetationInstance {
   position: Vector3Tuple;
@@ -13,7 +10,12 @@ export interface VegetationInstance {
   scale: Vector3Tuple;
 }
 
-export type VegetationData = Map<VegetationType, VegetationInstance[]>;
+export interface InstancedMapEntry {
+  modelPath: string;
+  instances: VegetationInstance[];
+}
+
+export type VegetationData = Map<string, InstancedMapEntry>;
 
 function mapNodeToInstance(node: MapNode): VegetationInstance {
   return {
@@ -23,20 +25,28 @@ function mapNodeToInstance(node: MapNode): VegetationInstance {
   };
 }
 
-function extractVegetationData(mapNodes: MapNode[]): VegetationData {
+function extractVegetationData(
+  mapNodes: MapNode[],
+  models: Map<string, string>,
+): VegetationData {
   const data: VegetationData = new Map();
 
-  for (const [type, config] of Object.entries(VEGETATION_TYPES)) {
-    if (!config.enabled) continue;
+  for (const node of mapNodes) {
+    if (node.type !== "Object3D") continue;
+    if (INSTANCED_MAP_EXCEPTIONS.has(node.name)) continue;
 
-    const instances = mapNodes
-      .filter(
-        (node) => node.name === config.mapName && node.type === "Object3D",
-      )
-      .map(mapNodeToInstance);
+    const modelPath = models.get(node.name);
+    if (!modelPath) continue;
 
-    if (instances.length > 0) {
-      data.set(type as VegetationType, instances);
+    const entry = data.get(node.name);
+
+    if (entry) {
+      entry.instances.push(mapNodeToInstance(node));
+    } else {
+      data.set(node.name, {
+        modelPath,
+        instances: [mapNodeToInstance(node)],
+      });
     }
   }
 
@@ -54,21 +64,10 @@ export function useVegetationData(): {
     let cancelled = false;
 
     async function load() {
-      const cachedNodes = getMapNodes();
+      const sceneData = await loadMapSceneData();
 
-      if (cachedNodes) {
-        if (!cancelled) {
-          setData(extractVegetationData(cachedNodes));
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      await loadMapSceneData();
-      const nodes = getMapNodes();
-
-      if (!cancelled && nodes) {
-        setData(extractVegetationData(nodes));
+      if (!cancelled && sceneData) {
+        setData(extractVegetationData(sceneData.mapNodes, sceneData.models));
         setIsLoading(false);
       }
     }

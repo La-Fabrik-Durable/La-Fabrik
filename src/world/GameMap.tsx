@@ -17,8 +17,11 @@ import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
+import { INSTANCED_MAP_EXCEPTIONS } from "@/world/vegetation/vegetationConfig";
 import type { MapNode } from "@/types/editor/editor";
 import type { OctreeReadyHandler } from "@/types/three/three";
+
+const MODEL_RENDER_SCALE: [number, number, number] = [1, 1, 1];
 
 interface LoadedMapNode {
   node: MapNode;
@@ -26,15 +29,6 @@ interface LoadedMapNode {
 }
 
 const MAP_STRUCTURE_NODE_NAMES = new Set(["Scene", "blocking"]);
-const LITE_MAP_SKIPPED_NODE_NAMES = new Set([
-  "arbre",
-  "buisson",
-  "champdeble",
-  "champdesoja",
-  "champsdetournesol",
-  "sapin",
-]);
-
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback: ReactNode;
@@ -256,7 +250,7 @@ function liteMap(node: MapNode): boolean {
     return false;
   }
 
-  return !LITE_MAP_SKIPPED_NODE_NAMES.has(node.name);
+  return INSTANCED_MAP_EXCEPTIONS.has(node.name);
 }
 
 function MapNodeInstance({
@@ -294,12 +288,12 @@ function ModelInstance({
   modelUrl: string;
   onLoaded: () => void;
 }): React.JSX.Element {
-  const { position, rotation, scale } = node;
+  const { position, rotation } = node;
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "GameMap.ModelInstance",
     position,
     rotation,
-    scale,
+    scale: MODEL_RENDER_SCALE,
   });
   const sceneInstance = useClonedObject(scene);
 
@@ -318,7 +312,7 @@ function ModelInstance({
       object={sceneInstance}
       position={position}
       rotation={rotation}
-      scale={scale}
+      scale={MODEL_RENDER_SCALE}
     />
   );
 }
