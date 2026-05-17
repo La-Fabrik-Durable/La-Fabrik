@@ -20,7 +20,6 @@ import {
   PLAYER_GRAVITY,
   PLAYER_JUMP_SPEED,
   PLAYER_MAX_DELTA,
-  PLAYER_WALK_SPEED,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
 import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
@@ -108,6 +107,7 @@ export function PlayerController({
   const wantsJump = useRef(false);
   const initializedRef = useRef(false);
   const canMove = useGameStore((state) => state.missionFlow.canMove);
+  const currentSpeed = useGameStore((state) => state.player.currentSpeed);
 
   const capsule = useRef(createSpawnCapsule(spawnPosition));
 
@@ -237,8 +237,8 @@ export function PlayerController({
     if (_wishDir.lengthSq() > 0) _wishDir.normalize();
 
     const accel = onFloor.current
-      ? PLAYER_WALK_SPEED
-      : PLAYER_WALK_SPEED * PLAYER_AIR_CONTROL_FACTOR;
+      ? currentSpeed
+      : currentSpeed * PLAYER_AIR_CONTROL_FACTOR;
     velocity.current.x +=
       _wishDir.x * accel * dt * PLAYER_ACCELERATION_MULTIPLIER;
     velocity.current.z +=

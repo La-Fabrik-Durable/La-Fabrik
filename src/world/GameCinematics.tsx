@@ -9,6 +9,7 @@ import type {
   CinematicManifest,
 } from "@/types/cinematics/cinematics";
 import type { DialogueManifest } from "@/types/dialogues/dialogues";
+import type { Vector3Tuple } from "@/types/three/three";
 import { logger } from "@/utils/core/Logger";
 import { loadCinematicManifest } from "@/utils/cinematics/loadCinematicManifest";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
@@ -16,6 +17,11 @@ import { queueDialogueById } from "@/utils/dialogues/playDialogue";
 
 export function GameCinematics(): null {
   const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    setGlobalCamera(camera);
+  }, [camera]);
+
   const [manifest, setManifest] = useState<CinematicManifest | null>(null);
   const [dialogueManifest, setDialogueManifest] =
     useState<DialogueManifest | null>(null);
@@ -170,4 +176,60 @@ function playCinematic(
   });
 
   timelineRef.current = timeline;
+}
+
+let cameraTransitionTimeline: gsap.core.Timeline | null = null;
+let globalCamera: THREE.Camera | null = null;
+
+export function setGlobalCamera(camera: THREE.Camera): void {
+  globalCamera = camera;
+}
+
+export function animateCameraTransition(
+  targetPosition: Vector3Tuple,
+  targetLookAt: Vector3Tuple,
+  duration: number = 1,
+  onComplete?: () => void,
+): void {
+  if (!globalCamera) {
+    logger.warn("GameCinematics", "Camera not found for transition");
+    onComplete?.();
+    return;
+  }
+
+  const camera = globalCamera;
+
+  cameraTransitionTimeline?.kill();
+  useGameStore.getState().setCinematicPlaying(true);
+
+  const target = new THREE.Vector3(...targetLookAt);
+
+  cameraTransitionTimeline = gsap.timeline({
+    onUpdate: () => camera.lookAt(target),
+    onComplete: () => {
+      cameraTransitionTimeline = null;
+      useGameStore.getState().setCinematicPlaying(false);
+      onComplete?.();
+    },
+  });
+
+  cameraTransitionTimeline.to(camera.position, {
+    x: targetPosition[0],
+    y: targetPosition[1],
+    z: targetPosition[2],
+    duration,
+    ease: "power2.inOut",
+  });
+
+  cameraTransitionTimeline.to(
+    target,
+    {
+      x: targetLookAt[0],
+      y: targetLookAt[1],
+      z: targetLookAt[2],
+      duration,
+      ease: "power2.inOut",
+    },
+    0,
+  );
 }
