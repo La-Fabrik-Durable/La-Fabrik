@@ -57,7 +57,7 @@ export function GameStageContent(): React.JSX.Element {
       {mainState === "intro" ? (
         <StageAnchor color="#7dd3fc" position={[0, 4, 0]} />
       ) : null}
-      <Ebike position={[0, 5, 0]} />
+      <Ebike position={[0, 10, 0]} />
       {GAME_REPAIR_ZONES.map((zone) => (
         <RepairGame
           key={zone.mission}

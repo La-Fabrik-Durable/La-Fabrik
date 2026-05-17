@@ -17,7 +17,7 @@ interface CameraTransform {
 
 const EBIKE_CAMERA_TRANSFORM: CameraTransform = {
   position: [-3, 8, 0],
-  rotation: [0, 90, 0],
+  rotation: [90, 90, 90],
 };
 
 const EBIKE_DROP_PLAYER_TRANSFORM: CameraTransform = {
@@ -33,7 +33,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useLoggedGLTF(EBIKE_MODEL_PATH, {
     scope: "Ebike",
-    position: [0, 0, 0],
+    position: position,
   });
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
@@ -94,22 +94,24 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   };
 
   return (
-    <group ref={groupRef} position={position}>
-      <primitive object={model} />
-      <InteractableObject
-        kind="trigger"
-        label={
-          movementMode === "walk" ? "Monter sur le bike" : "Descendre du bike"
-        }
-        position={position}
-        radius={10}
-        onPress={handleInteract}
-      >
-        <mesh>
-          <boxGeometry args={[1.5, 1.5, 1.5]} />
-          <meshStandardMaterial color="red" opacity={0.5} transparent />
-        </mesh>
-      </InteractableObject>
+    <>
+      <group ref={groupRef} position={position}>
+        <primitive object={model} />
+        <InteractableObject
+          kind="trigger"
+          label={
+            movementMode === "walk" ? "Monter sur le bike" : "Descendre du bike"
+          }
+          position={position}
+          radius={10}
+          onPress={handleInteract}
+        >
+          <mesh>
+            <boxGeometry args={[1.5, 1.5, 1.5]} />
+            <meshStandardMaterial color="red" opacity={0.5} transparent />
+          </mesh>
+        </InteractableObject>
+      </group>
       {debugRef.current.showCameraPoints && (
         <>
           <mesh position={camPointPos}>
@@ -130,6 +132,6 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           </mesh>
         </>
       )}
-    </group>
+    </>
   );
 }
