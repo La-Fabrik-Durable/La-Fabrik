@@ -1,11 +1,13 @@
 import { useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { animateCameraTransition } from "@/world/GameCinematics";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { PLAYER_EYE_HEIGHT } from "@/data/player/playerConfig";
 import type { Vector3Tuple } from "@/types/three/three";
 
 const EBIKE_MODEL_PATH = "/models/ebike/model.gltf";
@@ -37,6 +39,24 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   });
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      if (movementMode === "ebike") {
+        // Follow player physical position (capsule end)
+        const playerPos = (window as any).playerPos || [0, 10, 0];
+        groupRef.current.position.set(playerPos[0], playerPos[1] - PLAYER_EYE_HEIGHT, playerPos[2]);
+
+        // Match the e-bike's actual physical steering heading
+        const angle = (window as any).ebikeAngle || 0;
+        groupRef.current.rotation.set(0, angle, 0);
+      } else {
+        // Reset to original position
+        groupRef.current.position.set(...position);
+        groupRef.current.rotation.set(0, 0, 0);
+      }
+    }
+  });
 
   const debugRef = useRef({ showCameraPoints: true });
   useDebugFolder("Ebike", (folder) => {
@@ -76,15 +96,22 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         useGameStore.getState().setPlayerMovementMode("ebike");
       });
     } else {
+      const currentPos = new THREE.Vector3();
+      if (groupRef.current) {
+        groupRef.current.getWorldPosition(currentPos);
+      } else {
+        currentPos.set(...position);
+      }
+
       const targetCamPos: Vector3Tuple = [
-        position[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
-        position[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
-        position[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
+        currentPos.x + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
+        currentPos.y + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
+        currentPos.z + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
       ];
       const targetLookAt: Vector3Tuple = [
-        position[0],
-        position[1] + 1,
-        position[2],
+        currentPos.x,
+        currentPos.y + 1,
+        currentPos.z,
       ];
 
       animateCameraTransition(targetCamPos, targetLookAt, 1, () => {
@@ -103,7 +130,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
             movementMode === "walk" ? "Monter sur le bike" : "Descendre du bike"
           }
           position={position}
-          radius={10}
+          radius={15}
           onPress={handleInteract}
         >
           <mesh>
