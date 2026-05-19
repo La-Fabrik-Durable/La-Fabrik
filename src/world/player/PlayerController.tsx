@@ -111,7 +111,6 @@ export function PlayerController({
   const movementMode = useGameStore((state) => state.player.movementMode);
   const movementModeRef = useRef(movementMode);
   const prevMovementModeRef = useRef(movementMode);
-  const ebikeAngle = useRef(0);
 
   useEffect(() => {
     movementModeRef.current = movementMode;
@@ -130,9 +129,6 @@ export function PlayerController({
       velocity.current.set(0, 0, 0);
       onFloor.current = false;
       wantsJump.current = false;
-
-      // Initialize ebikeAngle to the bike's visual orientation (0 by default)
-      ebikeAngle.current = 0;
 
       // Position the camera exactly at the EBIKE_CAMERA_TRANSFORM offset [-3, 8, 0]
       const cameraOffset = new THREE.Vector3(-3, 8, 0);
@@ -270,25 +266,18 @@ export function PlayerController({
     if (movementModeRef.current === "ebike") {
       const turnSpeed = 1.8; // radians per second
       if (keys.current.left) {
-        ebikeAngle.current += turnSpeed * dt;
         camera.rotateOnWorldAxis(_up, turnSpeed * dt);
       }
       if (keys.current.right) {
-        ebikeAngle.current -= turnSpeed * dt;
         camera.rotateOnWorldAxis(_up, -turnSpeed * dt);
       }
     }
 
-    if (movementModeRef.current === "ebike") {
-      _forward.set(Math.sin(ebikeAngle.current), 0, Math.cos(ebikeAngle.current)).normalize();
+    camera.getWorldDirection(_forward);
+    _forward.setY(0);
+    if (_forward.lengthSq() > 0) {
+      _forward.normalize();
       _right.crossVectors(_forward, _up).normalize();
-    } else {
-      camera.getWorldDirection(_forward);
-      _forward.setY(0);
-      if (_forward.lengthSq() > 0) {
-        _forward.normalize();
-        _right.crossVectors(_forward, _up).normalize();
-      }
     }
 
     _wishDir.set(0, 0, 0);
@@ -348,10 +337,12 @@ export function PlayerController({
       }
     }
 
+    const euler = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
+
     if (movementModeRef.current === "ebike") {
-      // Offset of [-3, 8, 0] rotated by e-bike angle
+      // Offset of [-3, 8, 0] rotated by the camera's actual yaw (euler.y)
       const cameraOffset = new THREE.Vector3(-3, 8, 0);
-      cameraOffset.applyAxisAngle(_up, ebikeAngle.current);
+      cameraOffset.applyAxisAngle(_up, euler.y);
 
       const camPos = new THREE.Vector3()
         .copy(capsule.current.end)
@@ -361,9 +352,9 @@ export function PlayerController({
       camera.position.copy(capsule.current.end);
     }
 
-    // Save player capsule end position and e-bike angle globally so other components (like Ebike) can access it
+    // Save player capsule end position and camera yaw globally so other components (like Ebike) can access it
     (window as any).playerPos = [capsule.current.end.x, capsule.current.end.y, capsule.current.end.z];
-    (window as any).ebikeAngle = ebikeAngle.current;
+    (window as any).ebikeAngle = euler.y;
   });
 
   return null;

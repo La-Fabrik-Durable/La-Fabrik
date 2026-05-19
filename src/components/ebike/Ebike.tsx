@@ -40,7 +40,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (groupRef.current) {
       if (movementMode === "ebike") {
         // Follow player physical position (capsule end)
