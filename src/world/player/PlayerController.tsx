@@ -120,15 +120,22 @@ export function PlayerController({
   useEffect(() => {
     if (movementMode === "ebike") {
       // Teleport player capsule to the bike's current parked position
-      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [0, 10, 0];
+      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [0, 8.2, 0];
       const targetRot: number = (window as any).ebikeParkedRotation || 0;
+
+      const headY = targetPos[1] + PLAYER_EYE_HEIGHT;
+      const bottomY = targetPos[1] + PLAYER_CAPSULE_RADIUS;
 
       capsule.current.start.set(
         targetPos[0],
-        targetPos[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
+        bottomY,
         targetPos[2],
       );
-      capsule.current.end.set(...targetPos);
+      capsule.current.end.set(
+        targetPos[0],
+        headY,
+        targetPos[2],
+      );
       velocity.current.set(0, 0, 0);
       onFloor.current = false;
       wantsJump.current = false;

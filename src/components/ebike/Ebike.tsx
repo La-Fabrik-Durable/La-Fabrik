@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
-import { animateCameraTransition, animateCameraTransformTransition } from "@/world/GameCinematics";
+import { animateCameraTransformTransition } from "@/world/GameCinematics";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { PLAYER_EYE_HEIGHT } from "@/data/player/playerConfig";
 import type { Vector3Tuple } from "@/types/three/three";
@@ -23,7 +23,7 @@ export const EBIKE_CAMERA_TRANSFORM: CameraTransform = {
 };
 
 const EBIKE_DROP_PLAYER_TRANSFORM: CameraTransform = {
-  position: [3, 1.5, 0],
+  position: [0, 1.5, 3],
   rotation: [0, 0, 0],
 };
 
@@ -39,8 +39,13 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   });
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
+  const camera = useThree((state) => state.camera);
 
-  const restingPosition = useRef<Vector3Tuple>(position);
+  const restingPosition = useRef<Vector3Tuple>([
+    position[0],
+    position[1] - PLAYER_EYE_HEIGHT,
+    position[2],
+  ]);
   const restingRotation = useRef<number>(0);
 
   useEffect(() => {
@@ -116,13 +121,16 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         currentPos.y + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
         currentPos.z + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
       ];
-      const targetLookAt: Vector3Tuple = [
-        currentPos.x,
-        currentPos.y + 1,
-        currentPos.z,
+
+      // Get camera's current rotation in degrees so we keep the exact orientation during dismount
+      const currentEuler = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
+      const targetRotation: Vector3Tuple = [
+        THREE.MathUtils.radToDeg(currentEuler.x),
+        THREE.MathUtils.radToDeg(currentEuler.y),
+        THREE.MathUtils.radToDeg(currentEuler.z),
       ];
 
-      animateCameraTransition(targetCamPos, targetLookAt, 1, () => {
+      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
         useGameStore.getState().setPlayerMovementMode("walk");
       });
     }
@@ -165,8 +173,8 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           onPress={handleInteract}
         >
           <mesh>
-            <boxGeometry args={[1.5, 1.5, 1.5]} />
-            <meshStandardMaterial color="red" opacity={0.5} transparent />
+            <boxGeometry args={[10, 13, 2]} />
+            <meshBasicMaterial colorWrite={false} depthWrite={false} />
           </mesh>
         </InteractableObject>
       </group>
