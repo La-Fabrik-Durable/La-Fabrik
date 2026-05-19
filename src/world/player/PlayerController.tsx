@@ -278,16 +278,11 @@ export function PlayerController({
       }
     }
 
-    if (movementModeRef.current === "ebike") {
-      _forward.set(Math.sin(ebikeAngle.current), 0, Math.cos(ebikeAngle.current)).normalize();
+    camera.getWorldDirection(_forward);
+    _forward.setY(0);
+    if (_forward.lengthSq() > 0) {
+      _forward.normalize();
       _right.crossVectors(_forward, _up).normalize();
-    } else {
-      camera.getWorldDirection(_forward);
-      _forward.setY(0);
-      if (_forward.lengthSq() > 0) {
-        _forward.normalize();
-        _right.crossVectors(_forward, _up).normalize();
-      }
     }
 
     _wishDir.set(0, 0, 0);

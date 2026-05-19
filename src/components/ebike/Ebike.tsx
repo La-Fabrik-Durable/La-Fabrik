@@ -18,7 +18,7 @@ export interface CameraTransform {
 }
 
 export const EBIKE_CAMERA_TRANSFORM: CameraTransform = {
-  position: [-3, 6, 0],
+  position: [-3.5, 6, 0],
   rotation: [-10, -90, 0],
 };
 
