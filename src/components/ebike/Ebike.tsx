@@ -40,40 +40,67 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
 
+  const restingPosition = useRef<Vector3Tuple>(position);
+  const restingRotation = useRef<number>(0);
+
   useEffect(() => {
     (window as any).ebikeVisualGroup = groupRef;
+    (window as any).ebikeParkedPosition = restingPosition.current;
+    (window as any).ebikeParkedRotation = restingRotation.current;
     return () => {
       (window as any).ebikeVisualGroup = null;
+      (window as any).ebikeParkedPosition = null;
+      (window as any).ebikeParkedRotation = null;
     };
   }, []);
 
   useFrame(() => {
-    if (groupRef.current && movementMode !== "ebike") {
-      // Reset to original position
-      groupRef.current.position.set(...position);
-      groupRef.current.rotation.set(0, 0, 0);
+    if (groupRef.current) {
+      if (movementMode === "ebike") {
+        restingPosition.current = [
+          groupRef.current.position.x,
+          groupRef.current.position.y,
+          groupRef.current.position.z,
+        ];
+        restingRotation.current = groupRef.current.rotation.y;
+      } else {
+        groupRef.current.position.set(...restingPosition.current);
+        groupRef.current.rotation.set(0, restingRotation.current, 0);
+      }
+      (window as any).ebikeParkedPosition = restingPosition.current;
+      (window as any).ebikeParkedRotation = restingRotation.current;
     }
   });
 
   const camPointPos: Vector3Tuple = [
-    position[0] + EBIKE_CAMERA_TRANSFORM.position[0],
-    position[1] + EBIKE_CAMERA_TRANSFORM.position[1],
-    position[2] + EBIKE_CAMERA_TRANSFORM.position[2],
+    restingPosition.current[0] + EBIKE_CAMERA_TRANSFORM.position[0],
+    restingPosition.current[1] + EBIKE_CAMERA_TRANSFORM.position[1],
+    restingPosition.current[2] + EBIKE_CAMERA_TRANSFORM.position[2],
   ];
   const dropPointPos: Vector3Tuple = [
-    position[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
-    position[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
-    position[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
+    restingPosition.current[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
+    restingPosition.current[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
+    restingPosition.current[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
   ];
 
   const handleInteract = (): void => {
     if (movementMode === "walk") {
+      const cameraOffset = new THREE.Vector3(...EBIKE_CAMERA_TRANSFORM.position);
+      cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), restingRotation.current);
+
       const targetCamPos: Vector3Tuple = [
-        position[0] + EBIKE_CAMERA_TRANSFORM.position[0],
-        position[1] + EBIKE_CAMERA_TRANSFORM.position[1],
-        position[2] + EBIKE_CAMERA_TRANSFORM.position[2],
+        restingPosition.current[0] + cameraOffset.x,
+        restingPosition.current[1] + cameraOffset.y,
+        restingPosition.current[2] + cameraOffset.z,
       ];
-      animateCameraTransformTransition(targetCamPos, EBIKE_CAMERA_TRANSFORM.rotation, 1, () => {
+
+      const targetRotation: Vector3Tuple = [
+        EBIKE_CAMERA_TRANSFORM.rotation[0],
+        EBIKE_CAMERA_TRANSFORM.rotation[1] + THREE.MathUtils.radToDeg(restingRotation.current),
+        EBIKE_CAMERA_TRANSFORM.rotation[2],
+      ];
+
+      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
         useGameStore.getState().setPlayerMovementMode("ebike");
       });
     } else {

@@ -117,11 +117,12 @@ export function PlayerController({
   useEffect(() => {
     movementModeRef.current = movementMode;
   }, [movementMode]);
-
   useEffect(() => {
     if (movementMode === "ebike") {
-      // Teleport player capsule to the bike's spawning position [0, 10, 0]
-      const targetPos: Vector3Tuple = [0, 10, 0];
+      // Teleport player capsule to the bike's current parked position
+      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [0, 10, 0];
+      const targetRot: number = (window as any).ebikeParkedRotation || 0;
+
       capsule.current.start.set(
         targetPos[0],
         targetPos[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
@@ -132,16 +133,23 @@ export function PlayerController({
       onFloor.current = false;
       wantsJump.current = false;
 
-      // Initialize ebikeAngle to the bike's visual orientation (0 by default)
-      ebikeAngle.current = 0;
+      // Initialize ebikeAngle to the bike's actual parked orientation!
+      ebikeAngle.current = targetRot;
 
-      // Position the camera exactly at the EBIKE_CAMERA_TRANSFORM offset [-3, 8, 0]
-      const cameraOffset = new THREE.Vector3(-3, 8, 0);
+      // Position the camera exactly at the EBIKE_CAMERA_TRANSFORM offset rotated by targetRot
+      const cameraOffset = new THREE.Vector3(...EBIKE_CAMERA_TRANSFORM.position);
+      cameraOffset.applyAxisAngle(_up, targetRot);
+
       const camPos = new THREE.Vector3()
         .copy(capsule.current.end)
         .add(cameraOffset);
       camera.position.copy(camPos);
-      camera.lookAt(capsule.current.end.x, capsule.current.end.y + 1, capsule.current.end.z);
+
+      // Set the camera's exact rotation according to EBIKE_CAMERA_TRANSFORM.rotation + targetRot
+      const pitchRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[0]);
+      const yawRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[1]) + targetRot;
+      const rollRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[2]);
+      camera.rotation.set(pitchRad, yawRad, rollRad, "YXZ");
     } else if (movementMode === "walk" && prevMovementModeRef.current === "ebike") {
       // Dismount! Teleport player capsule 3 units to the right
       const rightDir = new THREE.Vector3();
