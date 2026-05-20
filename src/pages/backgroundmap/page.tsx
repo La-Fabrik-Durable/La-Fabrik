@@ -147,7 +147,7 @@ export function BackgroundMapPage() {
     const width = maxX - minX;
     const height = maxZ - minZ;
     const maxDim = Math.max(width, height);
-    
+
     const centerX = (minX + maxX) / 2;
     const centerZ = (minZ + maxZ) / 2;
 

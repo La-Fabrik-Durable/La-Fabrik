@@ -238,16 +238,20 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
 
       {/* Dynamic Futuristic 3D GPS Dashboard Preview */}
       <group position={[0, 2.8, -4.8]} rotation={[0, 0, 0]}>
-        {/* Futuristic glowing screen frame */}
+        {/* Futuristic glowing screen frame (commented out to show true 3D transparency!) */}
+        {/*
         <mesh>
           <boxGeometry args={[4.2, 4.2, 0.1]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.2} metalness={0.8} />
+          <meshStandardMaterial color="#0f172a" roughness={0.2} metalness={0.8} transparent opacity={0.4} />
         </mesh>
-        {/* Glow accent border */}
+        */}
+        {/* Glow accent border (commented out to remove any orange transparency tint!) */}
+        {/*
         <mesh position={[0, 0, 0.01]}>
           <boxGeometry args={[4.05, 4.05, 0.02]} />
-          <meshBasicMaterial color="#f97316" transparent opacity={0.2} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.1} />
         </mesh>
+        */}
         {/* GPS Map screen plane */}
         <group position={[0, 0, 0.06]}>
           <EbikeGPSMap
@@ -257,10 +261,10 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
             destPos={{ x: -40, y: 0, z: 30 }}
             mapImageUrl="/map_background.png"
             worldBounds={{
-              minX: -146, // Les valeurs exactes
-              maxX: 131,  // que l'outil t'aura 
-              minZ: -139, // affiché en temps réel !
-              maxZ: 138
+              "minX": -166,
+              "maxX": 163,
+              "minZ": -142,
+              "maxZ": 138
             }}
           />
         </group>

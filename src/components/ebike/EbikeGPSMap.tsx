@@ -58,7 +58,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   height = 1,
 }) => {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
+  const [mapImage, setMapImage] = useState<HTMLImageElement | HTMLCanvasElement | null>(null);
 
   // Offscreen high-res canvas for crystal clear rendering
   const [offscreenCanvas] = useState(() => {
@@ -102,7 +102,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       });
   }, []);
 
-  // Pre-load background map image if provided
+  // Pre-load background map image (standard HTML5 Image loader)
+  // Since the user's PNG is already transparent, we don't need fetch or pixel manipulation!
   useEffect(() => {
     if (!mapImageUrl) {
       setMapImage(null);
@@ -110,7 +111,9 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     }
 
     const img = new Image();
-    img.onload = () => setMapImage(img);
+    img.onload = () => {
+      setMapImage(img);
+    };
     img.onerror = () => {
       console.warn(`[GPS Component] Failed to load map background image from ${mapImageUrl}. Falling back to dynamic vector map.`);
       setMapImage(null);
@@ -170,11 +173,12 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     return { x: px, y: py };
   };
 
+
+
   // Draw loop
   const draw = () => {
     const canvas = offscreenCanvas;
-    const ctx = canvas.getContext('2d');
-    ctx.globalAlpha = 0.5;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true });
     if (!ctx) return;
 
     const size = canvas.width;
@@ -184,10 +188,9 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     // 1. Draw Map Background (Image or premium blueprint vectors)
     if (mapImage) {
       ctx.drawImage(mapImage, 0, 0, size, size);
+      ctx.globalAlpha = 1.0;
     } else {
-      // Dynamic Sci-fi background grid
-      ctx.fillStyle = '#0a0d16'; // Deep space black
-      ctx.fillRect(0, 0, size, size);
+      // Dynamic Sci-fi background grid (Background is transparent!)
 
       // Sci-fi subgrid
       ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
@@ -377,11 +380,12 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   return (
     <mesh castShadow receiveShadow>
       <planeGeometry args={[width, height]} />
-      <meshBasicMaterial toneMapped={false} transparent opacity={0.95}>
+      <meshBasicMaterial toneMapped={false} transparent={true} opacity={1} depthWrite={false}>
         <canvasTexture
           ref={textureRef}
           attach="map"
           image={offscreenCanvas}
+          format={THREE.RGBAFormat}
           minFilter={THREE.LinearFilter}
           magFilter={THREE.LinearFilter}
         />
