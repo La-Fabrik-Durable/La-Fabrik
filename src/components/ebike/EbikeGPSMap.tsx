@@ -1,0 +1,391 @@
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import * as THREE from 'three';
+import { findClosestWaypoint, findWaypointPath } from '@/pathfinding/WaypointAStar';
+import type { Waypoint } from '@/pathfinding/types';
+
+export interface EbikeGPSMapProps {
+  /**
+   * 3D world position of the player/bike (GPS start point)
+   * If omitted, snaps to [0,0,0]
+   */
+  startPos?: { x: number; y: number; z: number };
+  
+  /**
+   * 3D world position of the destination/target (GPS end point)
+   */
+  destPos?: { x: number; y: number; z: number };
+
+  /**
+   * Optional custom URL to the map background texture.
+   * If not provided, renders a high-tech minimalist neon blueprint map dynamically.
+   */
+  mapImageUrl?: string;
+
+  /**
+   * Optional explicit bounds for mapping coordinates.
+   * If omitted, bounds are calculated automatically to perfectly fit the road network!
+   */
+  worldBounds?: {
+    minX: number;
+    maxX: number;
+    minZ: number;
+    maxZ: number;
+  };
+
+  /**
+   * Width of the 3D plane mesh (default: 1)
+   */
+  width?: number;
+
+  /**
+   * Height of the 3D plane mesh (default: 1)
+   */
+  height?: number;
+}
+
+/**
+ * EbikeGPSMap
+ * A premium, state-of-the-art 3D GPS navigation screen for the Ebike.
+ * Loads the road network, runs A* pathfinding, and renders a glowing, animated
+ * orange path over a sleek high-tech map background.
+ */
+export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
+  startPos = { x: 0, y: 0, z: 0 },
+  destPos,
+  mapImageUrl,
+  worldBounds,
+  width = 1,
+  height = 1,
+}) => {
+  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
+  
+  // Offscreen high-res canvas for crystal clear rendering
+  const [offscreenCanvas] = useState(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    return canvas;
+  });
+
+  const textureRef = useRef<THREE.CanvasTexture | null>(null);
+  const animTimeRef = useRef<number>(0);
+
+  // Load waypoints (localStorage with /roadNetwork.json fallback)
+  useEffect(() => {
+    const saved = localStorage.getItem('la-fabrik-waypoints');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setWaypoints(parsed);
+          return;
+        }
+      } catch (e) {
+        console.error('[GPS Component] Error loading local storage waypoints', e);
+      }
+    }
+
+    // Fallback to static roadNetwork.json
+    fetch('/roadNetwork.json')
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error('Not found');
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setWaypoints(data);
+        }
+      })
+      .catch((err) => {
+        console.log('[GPS Component] No default road network found.', err);
+      });
+  }, []);
+
+  // Pre-load background map image if provided
+  useEffect(() => {
+    if (!mapImageUrl) {
+      setMapImage(null);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => setMapImage(img);
+    img.onerror = () => {
+      console.warn(`[GPS Component] Failed to load map background image from ${mapImageUrl}. Falling back to dynamic vector map.`);
+      setMapImage(null);
+    };
+    img.src = mapImageUrl;
+  }, [mapImageUrl]);
+
+  // Determine grid boundaries
+  const bounds = useMemo(() => {
+    if (worldBounds) return worldBounds;
+
+    if (waypoints.length === 0) {
+      return { minX: -200, maxX: 200, minZ: -200, maxZ: 200 };
+    }
+
+    const xs = waypoints.map((w) => w.x);
+    const zs = waypoints.map((w) => w.z);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+
+    // Padding (15% to ensure full view breathing room)
+    const padX = (maxX - minX) * 0.15 || 40;
+    const padZ = (maxZ - minZ) * 0.15 || 40;
+
+    return {
+      minX: minX - padX,
+      maxX: maxX + padX,
+      minZ: minZ - padZ,
+      maxZ: maxZ + padZ,
+    };
+  }, [waypoints, worldBounds]);
+
+  // Snapped positions
+  const startPosSnapped = useMemo(() => {
+    if (waypoints.length === 0) return null;
+    return findClosestWaypoint(waypoints, startPos);
+  }, [waypoints, startPos]);
+
+  const destPosSnapped = useMemo(() => {
+    if (!destPos || waypoints.length === 0) return null;
+    return findClosestWaypoint(waypoints, destPos);
+  }, [waypoints, destPos]);
+
+  // Calculated active A* route
+  const activePath = useMemo(() => {
+    if (!startPosSnapped || !destPosSnapped || waypoints.length === 0) return [];
+    return findWaypointPath(waypoints, startPosSnapped, destPosSnapped);
+  }, [waypoints, startPosSnapped, destPosSnapped]);
+
+  // Translation helper: 3D world to Canvas pixels
+  const worldToCanvas = (wx: number, wz: number, canvasSize: number) => {
+    const { minX, maxX, minZ, maxZ } = bounds;
+    const px = ((wx - minX) / (maxX - minX)) * canvasSize;
+    const py = ((wz - minZ) / (maxZ - minZ)) * canvasSize;
+    return { x: px, y: py };
+  };
+
+  // Draw loop
+  const draw = () => {
+    const canvas = offscreenCanvas;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = canvas.width;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // 1. Draw Map Background (Image or premium blueprint vectors)
+    if (mapImage) {
+      ctx.drawImage(mapImage, 0, 0, size, size);
+    } else {
+      // Dynamic Sci-fi background grid
+      ctx.fillStyle = '#0a0d16'; // Deep space black
+      ctx.fillRect(0, 0, size, size);
+
+      // Sci-fi subgrid
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+      ctx.lineWidth = 1;
+      const step = size / 32;
+      for (let x = 0; x < size; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, size);
+        ctx.stroke();
+      }
+      for (let y = 0; y < size; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(size, y);
+        ctx.stroke();
+      }
+
+      // Aesthetic concentric radar topo-rings
+      ctx.strokeStyle = 'rgba(71, 85, 105, 0.06)';
+      ctx.lineWidth = 2;
+      for (let r = size / 6; r < size; r += size / 6) {
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, r, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+
+      // Faint diagonal technical accents
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(size, size);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(0, size);
+      ctx.stroke();
+    }
+
+    // 2. Draw Active Orange Glowing Path (Neon Highway effect)
+    if (activePath.length > 1) {
+      // Pass 1: Wide transparent orange bloom
+      ctx.beginPath();
+      let pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      ctx.moveTo(pt.x, pt.y);
+      for (let i = 1; i < activePath.length; i++) {
+        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.2)'; // Faint bright orange
+      ctx.lineWidth = 20;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = '#f97316'; // Neon Orange
+      ctx.stroke();
+
+      // Pass 2: Saturated glow core
+      ctx.beginPath();
+      pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      ctx.moveTo(pt.x, pt.y);
+      for (let i = 1; i < activePath.length; i++) {
+        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = '#f97316'; // Vibrant orange
+      ctx.lineWidth = 8;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#ea580c';
+      ctx.stroke();
+
+      // Pass 3: High-intensity white core
+      ctx.beginPath();
+      pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      ctx.moveTo(pt.x, pt.y);
+      for (let i = 1; i < activePath.length; i++) {
+        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = '#fff7ed'; // Cream white
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 0; // Turn off shadows for the core
+      ctx.stroke();
+
+      // 3. Energy Particle Pulse animation tracing the road
+      const segments: { start: { x: number; y: number }; end: { x: number; y: number }; len: number }[] = [];
+      let totalLen = 0;
+      for (let i = 0; i < activePath.length - 1; i++) {
+        const p1 = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        const p2 = worldToCanvas(activePath[i + 1].x, activePath[i + 1].z, size);
+        const len = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        segments.push({ start: p1, end: p2, len });
+        totalLen += len;
+      }
+
+      if (totalLen > 0) {
+        const targetLen = totalLen * animTimeRef.current;
+        let currentLen = 0;
+        let dotPt = segments[0].start;
+
+        for (const seg of segments) {
+          if (currentLen + seg.len >= targetLen) {
+            const ratio = (targetLen - currentLen) / seg.len;
+            dotPt = {
+              x: seg.start.x + (seg.end.x - seg.start.x) * ratio,
+              y: seg.start.y + (seg.end.y - seg.start.y) * ratio,
+            };
+            break;
+          }
+          currentLen += seg.len;
+        }
+
+        // Draw multiple glowing pulses along the path
+        ctx.beginPath();
+        ctx.arc(dotPt.x, dotPt.y, 8, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#f97316';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // 4. Draw Snap Markers (Start and End)
+    if (destPosSnapped) {
+      const pt = worldToCanvas(destPosSnapped.x, destPosSnapped.z, size);
+      const pulseSize = 12 + Math.sin(Date.now() * 0.007) * 4;
+
+      // Pulse ring
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pulseSize, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Solid target core
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ea580c'; // Deep target orange
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if (startPosSnapped) {
+      const pt = worldToCanvas(startPosSnapped.x, startPosSnapped.z, size);
+      
+      // Start Marker (Player Arrow/Dot)
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = '#0ea5e9'; // Cool cyberpunk sky blue
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.fill();
+      ctx.stroke();
+
+      // Tech details
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
+    // 5. Update WebGL Texture
+    if (textureRef.current) {
+      textureRef.current.needsUpdate = true;
+    }
+  };
+
+  // 60 FPS animation ticker
+  useEffect(() => {
+    let animId: number;
+    const tick = () => {
+      animTimeRef.current += 0.004; // Slow, premium sweep speed
+      if (animTimeRef.current > 1) animTimeRef.current = 0;
+
+      draw();
+
+      animId = requestAnimationFrame(tick);
+    };
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [waypoints, startPos, destPos, bounds, mapImage]);
+
+  return (
+    <mesh castShadow receiveShadow>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial toneMapped={false} transparent opacity={0.95}>
+        <canvasTexture
+          ref={textureRef}
+          attach="map"
+          image={offscreenCanvas}
+          minFilter={THREE.LinearFilter}
+          magFilter={THREE.LinearFilter}
+        />
+      </meshBasicMaterial>
+    </mesh>
+  );
+};
