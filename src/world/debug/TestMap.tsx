@@ -147,7 +147,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
       {/* Render Pathfinder Maps Waypoints & Routes visually */}
       <group name="pathfinder-maps-visuals">
         {/* Render Connection Lines */}
-        {waypoints.flatMap((wp) => 
+        {waypoints.flatMap((wp) =>
           wp.connections.map((connId) => {
             const other = waypoints.find((w) => w.id === connId);
             // Draw each line only once by enforcing wp.id < other.id
@@ -174,7 +174,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         {waypoints.map((wp) => (
           <mesh key={`wp-sphere-${wp.id}`} position={[wp.x, wp.y + 0.3, wp.z]}>
             <sphereGeometry args={[0.35, 16, 16]} />
-            <meshBasicMaterial 
+            <meshBasicMaterial
               color="#059669" // Deep emerald green
               transparent
               opacity={0.8}
@@ -250,11 +250,18 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         </mesh>
         {/* GPS Map screen plane */}
         <group position={[0, 0, 0.06]}>
-          <EbikeGPSMap 
+          <EbikeGPSMap
             width={4}
             height={4}
             startPos={{ x: 10, y: 0, z: -10 }}
             destPos={{ x: -40, y: 0, z: 30 }}
+            mapImageUrl="/map_background.png"
+            worldBounds={{
+              minX: -146, // Les valeurs exactes
+              maxX: 131,  // que l'outil t'aura 
+              minZ: -139, // affiché en temps réel !
+              maxZ: 138
+            }}
           />
         </group>
       </group>

@@ -9,7 +9,7 @@ export interface EbikeGPSMapProps {
    * If omitted, snaps to [0,0,0]
    */
   startPos?: { x: number; y: number; z: number };
-  
+
   /**
    * 3D world position of the destination/target (GPS end point)
    */
@@ -59,7 +59,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 }) => {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
-  
+
   // Offscreen high-res canvas for crystal clear rendering
   const [offscreenCanvas] = useState(() => {
     const canvas = document.createElement('canvas');
@@ -110,7 +110,6 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     }
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => setMapImage(img);
     img.onerror = () => {
       console.warn(`[GPS Component] Failed to load map background image from ${mapImageUrl}. Falling back to dynamic vector map.`);
@@ -175,6 +174,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   const draw = () => {
     const canvas = offscreenCanvas;
     const ctx = canvas.getContext('2d');
+    ctx.globalAlpha = 0.5;
     if (!ctx) return;
 
     const size = canvas.width;
@@ -336,7 +336,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
     if (startPosSnapped) {
       const pt = worldToCanvas(startPosSnapped.x, startPosSnapped.z, size);
-      
+
       // Start Marker (Player Arrow/Dot)
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);

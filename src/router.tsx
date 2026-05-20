@@ -7,6 +7,7 @@ import {
 import { HomePage } from "@/pages/page";
 import { EditorPage } from "@/pages/editor/page";
 import { WaypointEditorPage } from "@/pages/waypoint/page";
+import { BackgroundMapPage } from "@/pages/backgroundmap/page";
 import {
   DocsAnimationRoute,
   DocsAudioRoute,
@@ -50,6 +51,12 @@ const waypointRoute = createRoute({
   component: WaypointEditorPage,
 });
 
+const backgroundMapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/backgroundmap",
+  component: BackgroundMapPage,
+});
+
 const docsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/docs",
@@ -86,6 +93,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   editorRoute,
   waypointRoute,
+  backgroundMapRoute,
   docsRoute.addChildren(docsChildRoutes),
 ]);
 
