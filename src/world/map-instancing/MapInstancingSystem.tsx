@@ -1,4 +1,8 @@
 import { Suspense } from "react";
+import {
+  isMapModelVisible,
+  useMapPerformanceStore,
+} from "@/managers/stores/useMapPerformanceStore";
 import { InstancedMapAsset } from "@/world/map-instancing/InstancedMapAsset";
 import {
   MAP_INSTANCING_ASSETS,
@@ -7,6 +11,8 @@ import {
 import { useMapInstancingData } from "@/world/map-instancing/useMapInstancingData";
 
 export function MapInstancingSystem(): React.JSX.Element | null {
+  const groups = useMapPerformanceStore((state) => state.groups);
+  const models = useMapPerformanceStore((state) => state.models);
   const { data, isLoading } = useMapInstancingData();
 
   if (isLoading || !data) {
@@ -14,7 +20,8 @@ export function MapInstancingSystem(): React.JSX.Element | null {
   }
 
   const enabledAssets = Object.entries(MAP_INSTANCING_ASSETS).filter(
-    ([, config]) => config.enabled,
+    ([, config]) =>
+      config.enabled && isMapModelVisible(config.mapName, { groups, models }),
   );
 
   return (

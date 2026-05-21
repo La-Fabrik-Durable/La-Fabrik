@@ -11,6 +11,10 @@ import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { TerrainModel } from "@/components/three/world/TerrainModel";
+import {
+  isMapModelVisible,
+  useMapPerformanceStore,
+} from "@/managers/stores/useMapPerformanceStore";
 import { GameMapCollision } from "@/world/GameMapCollision";
 import { GeneratedMapNodeInstance } from "@/world/map-generated/GeneratedMapNodeInstance";
 import { isGeneratedMapModelName } from "@/world/map-generated/generatedMapModelConfig";
@@ -101,6 +105,8 @@ export function GameMap({
   onOctreeReady,
 }: GameMapProps): React.JSX.Element {
   const settledMapNodesRef = useRef(new Set<number>());
+  const groups = useMapPerformanceStore((state) => state.groups);
+  const models = useMapPerformanceStore((state) => state.models);
   const [mapNodes, setMapNodes] = useState<LoadedMapNode[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [settledMapNodeCount, setSettledMapNodeCount] = useState(0);
@@ -221,17 +227,23 @@ export function GameMap({
             node={mapNode.node}
             onSettled={() => handleMapNodeSettled(index)}
           >
-            <MapNodeInstance
-              node={mapNode.node}
-              modelUrl={mapNode.modelUrl}
-              onSettled={() => handleMapNodeSettled(index)}
-            />
+            {isMapModelVisible(mapNode.node.name, { groups, models }) ? (
+              <MapNodeInstance
+                node={mapNode.node}
+                modelUrl={mapNode.modelUrl}
+                onSettled={() => handleMapNodeSettled(index)}
+              />
+            ) : (
+              <HiddenMapNode onSettled={() => handleMapNodeSettled(index)} />
+            )}
           </ModelErrorBoundary>
         ))}
       </group>
       <MapInstancingSystem />
       <VegetationSystem />
-      <TerrainModel />
+      {isMapModelVisible("terrain", { groups, models }) ? (
+        <TerrainModel />
+      ) : null}
       <GameMapCollision
         buildOctree={buildOctree}
         mapReady={mapReady}
@@ -242,6 +254,14 @@ export function GameMap({
       />
     </>
   );
+}
+
+function HiddenMapNode({ onSettled }: { onSettled: () => void }): null {
+  useEffect(() => {
+    onSettled();
+  }, [onSettled]);
+
+  return null;
 }
 
 /**
