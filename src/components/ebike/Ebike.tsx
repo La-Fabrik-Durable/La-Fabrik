@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
+import { EbikeGPSMap } from "@/components/ebike/EbikeGPSMap";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
@@ -39,7 +40,30 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   });
   const model = useClonedObject(scene);
   const movementMode = useGameStore((state) => state.player.movementMode);
+  const mainState = useGameStore((state) => state.mainState);
   const camera = useThree((state) => state.camera);
+
+  // Map active mainState to target repair zone coordinate
+  const destPos = useMemo(() => {
+    switch (mainState) {
+      case "bike":
+        return { x: 8, y: 0, z: -6 };
+      case "pylone":
+        return { x: 64, y: 0, z: -66 };
+      case "ferme":
+        return { x: -24, y: 0, z: 42 };
+      default:
+        return undefined;
+    }
+  }, [mainState]);
+
+  // Throttled GPS start position to optimize pathfinding A* algorithm execution
+  const [gpsStartPos, setGpsStartPos] = useState<{ x: number; y: number; z: number }>({
+    x: position[0],
+    y: position[1],
+    z: position[2],
+  });
+  const lastGpsUpdatePos = useRef<THREE.Vector3>(new THREE.Vector3(...position));
 
   const restingPosition = useRef<Vector3Tuple>([
     position[0],
@@ -89,6 +113,13 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
             targetForkRotation,
             12 * delta
           );
+        }
+
+        // Throttled GPS start position update to prevent performance loss
+        const currentPos = groupRef.current.position;
+        if (currentPos.distanceTo(lastGpsUpdatePos.current) > 2.0) {
+          lastGpsUpdatePos.current.copy(currentPos);
+          setGpsStartPos({ x: currentPos.x, y: currentPos.y, z: currentPos.z });
         }
       } else {
         groupRef.current.position.set(...restingPosition.current);
@@ -204,7 +235,25 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
             <meshBasicMaterial colorWrite={false} depthWrite={false} />
           </mesh>
         </InteractableObject>
+
+        {/* Dynamic 3D GPS Dashboard Screen */}
+        <group position={[0, 7, 0]} rotation={[0, 90, 0]}>
+          <EbikeGPSMap
+            width={0.8}
+            height={0.8}
+            startPos={gpsStartPos}
+            destPos={destPos}
+            mapImageUrl="/map_background.png"
+            worldBounds={{
+              minX: -166,
+              maxX: 163,
+              minZ: -142,
+              maxZ: 138,
+            }}
+          />
+        </group>
       </group>
+
       {debugRef.current.showCameraPoints && (
         <>
           <mesh position={camPointPos}>

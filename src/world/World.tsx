@@ -29,6 +29,7 @@ import { GameStageContent } from "@/world/GameStageContent";
 import { Player } from "@/world/player/Player";
 import { TestMap } from "@/world/debug/TestMap";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
+import { EbikeGPSMap } from "@/components/ebike/EbikeGPSMap";
 
 interface WorldProps {
   onLoadingStateChange?: SceneLoadingChangeHandler | undefined;

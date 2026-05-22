@@ -63,6 +63,7 @@ const EditorScene: React.FC<EditorSceneProps> = ({
   const { raycaster, pointer, camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const rubberLineRef = useRef<THREE.Line>(null);
+  const rubberLineInstance = React.useMemo(() => new THREE.Line(), []);
 
   // Mirror reactive props inside Refs to guarantee useFrame loop never closes over stale state
   const hoveredNodeIdRef = useRef<number | null>(null);
@@ -151,7 +152,7 @@ const EditorScene: React.FC<EditorSceneProps> = ({
       />
 
       {/* 2. Drag Rubber Band Preview Line (WebGL optimized) */}
-      <line ref={rubberLineRef} visible={false}>
+      <primitive object={rubberLineInstance} ref={rubberLineRef} visible={false}>
         <bufferGeometry attach="geometry" />
         <lineBasicMaterial 
           attach="material" 
@@ -161,7 +162,7 @@ const EditorScene: React.FC<EditorSceneProps> = ({
           transparent 
           opacity={0.9} 
         />
-      </line>
+      </primitive>
 
       {/* 3. Render Established Connections */}
       <ConnectionLines 

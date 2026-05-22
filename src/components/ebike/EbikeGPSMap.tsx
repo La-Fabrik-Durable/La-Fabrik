@@ -8,12 +8,8 @@ export interface EbikeGPSMapProps {
    * 3D world position of the player/bike (GPS start point)
    * If omitted, snaps to [0,0,0]
    */
-  startPos?: { x: number; y: number; z: number };
-
-  /**
-   * 3D world position of the destination/target (GPS end point)
-   */
-  destPos?: { x: number; y: number; z: number };
+  startPos?: { x: number; y: number; z: number } | undefined;
+  destPos?: { x: number; y: number; z: number } | undefined;
 
   /**
    * Optional custom URL to the map background texture.
@@ -41,6 +37,11 @@ export interface EbikeGPSMapProps {
    * Height of the 3D plane mesh (default: 1)
    */
   height?: number;
+
+  /**
+   * Optional world position for the GPS screen (defaults to origin)
+   */
+  position?: [number, number, number];
 }
 
 /**
@@ -56,6 +57,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   worldBounds,
   width = 1,
   height = 1,
+  position = [0, 0, 0],
 }) => {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [mapImage, setMapImage] = useState<HTMLImageElement | HTMLCanvasElement | null>(null);
@@ -235,10 +237,10 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     if (activePath.length > 1) {
       // Pass 1: Wide transparent orange bloom
       ctx.beginPath();
-      let pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      let pt = worldToCanvas(activePath[0]!.x, activePath[0]!.z, size);
       ctx.moveTo(pt.x, pt.y);
       for (let i = 1; i < activePath.length; i++) {
-        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
       ctx.strokeStyle = 'rgba(249, 115, 22, 0.2)'; // Faint bright orange
@@ -251,10 +253,10 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
       // Pass 2: Saturated glow core
       ctx.beginPath();
-      pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      pt = worldToCanvas(activePath[0]!.x, activePath[0]!.z, size);
       ctx.moveTo(pt.x, pt.y);
       for (let i = 1; i < activePath.length; i++) {
-        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
       ctx.strokeStyle = '#f97316'; // Vibrant orange
@@ -265,10 +267,10 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
       // Pass 3: High-intensity white core
       ctx.beginPath();
-      pt = worldToCanvas(activePath[0].x, activePath[0].z, size);
+      pt = worldToCanvas(activePath[0]!.x, activePath[0]!.z, size);
       ctx.moveTo(pt.x, pt.y);
       for (let i = 1; i < activePath.length; i++) {
-        pt = worldToCanvas(activePath[i].x, activePath[i].z, size);
+        pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
       ctx.strokeStyle = '#fff7ed'; // Cream white
@@ -280,8 +282,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       const segments: { start: { x: number; y: number }; end: { x: number; y: number }; len: number }[] = [];
       let totalLen = 0;
       for (let i = 0; i < activePath.length - 1; i++) {
-        const p1 = worldToCanvas(activePath[i].x, activePath[i].z, size);
-        const p2 = worldToCanvas(activePath[i + 1].x, activePath[i + 1].z, size);
+        const p1 = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
+        const p2 = worldToCanvas(activePath[i + 1]!.x, activePath[i + 1]!.z, size);
         const len = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
         segments.push({ start: p1, end: p2, len });
         totalLen += len;
@@ -290,7 +292,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       if (totalLen > 0) {
         const targetLen = totalLen * animTimeRef.current;
         let currentLen = 0;
-        let dotPt = segments[0].start;
+        let dotPt = segments[0]!.start;
 
         for (const seg of segments) {
           if (currentLen + seg.len >= targetLen) {
@@ -378,9 +380,9 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   }, [waypoints, startPos, destPos, bounds, mapImage]);
 
   return (
-    <mesh castShadow receiveShadow>
+    <mesh castShadow receiveShadow position={position as any}>
       <planeGeometry args={[width, height]} />
-      <meshBasicMaterial toneMapped={false} transparent={true} opacity={1} depthWrite={false}>
+      <meshBasicMaterial toneMapped={false} transparent={true} opacity={1} depthWrite={false} side={THREE.DoubleSide}>
         <canvasTexture
           ref={textureRef}
           attach="map"

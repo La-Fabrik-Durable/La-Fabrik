@@ -42,7 +42,7 @@ function CameraManager({
   boundsTextRef
 }: {
   autoBounds: any,
-  boundsTextRef: React.RefObject<HTMLPreElement>
+  boundsTextRef: React.RefObject<HTMLPreElement | null>
 }) {
   const { camera, gl, scene } = useThree();
   const controlsRef = useRef<any>(null);
