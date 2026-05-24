@@ -2,7 +2,7 @@ import { TERRAIN_COLORS } from "@/data/world/terrainConfig";
 
 export const FOG_CONFIG = {
   enabled: true,
-  color: "#eef3f5",
+  color: "#dce8df",
   near: 38,
   far: 45,
 };

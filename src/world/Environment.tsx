@@ -14,10 +14,12 @@ import {
   useMapPerformanceStore,
 } from "@/managers/stores/useMapPerformanceStore";
 import { SkyModel } from "@/components/three/world/SkyModel";
+import { useDebugStore } from "@/hooks/debug/useDebugStore";
 
 export function Environment(): React.JSX.Element {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
+  const fogEnabled = useDebugStore((debug) => debug.getFogEnabled());
   const groups = useMapPerformanceStore((state) => state.groups);
   const models = useMapPerformanceStore((state) => state.models);
   const showSky = isMapModelVisible("sky", { groups, models });
@@ -30,7 +32,10 @@ export function Environment(): React.JSX.Element {
 
   return (
     <>
-      {FOG_CONFIG.enabled && sceneMode === "game" && cameraMode === "player" ? (
+      {FOG_CONFIG.enabled &&
+      fogEnabled &&
+      sceneMode === "game" &&
+      cameraMode === "player" ? (
         <fog
           attach="fog"
           args={[FOG_CONFIG.color, FOG_CONFIG.near, FOG_CONFIG.far]}

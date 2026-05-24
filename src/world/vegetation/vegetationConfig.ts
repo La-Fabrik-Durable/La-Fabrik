@@ -16,7 +16,7 @@ export const VEGETATION_TYPES = {
   sapin: {
     mapName: "sapin",
     modelPath: "/models/sapin/model.gltf",
-    scaleMultiplier: 2,
+    scaleMultiplier: 5,
     castShadow: true,
     receiveShadow: true,
     enabled: true,
