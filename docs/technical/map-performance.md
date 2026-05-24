@@ -159,10 +159,10 @@ Current runtime values:
 ```txt
 chunkSize: 35
 loadRadius: 45
-unloadRadius: 58
+unloadRadius: 45
 updateInterval: 350ms
-fog near: 34
-fog far: 58
+fog near: 30
+fog far: 45
 ```
 
 The streaming and fog are scoped to the production game scene with the player camera only:
@@ -174,6 +174,44 @@ sceneMode === "game" && cameraMode === "player"
 This matters for debugging. In debug camera mode there is no fog and no distance streaming, so the developer can inspect the full map freely. In player mode, chunks mount and unmount around the camera to reduce visible triangle count while fog hides vegetation pop-in.
 
 Chunk cleanup is handled through React unmounting. `VegetationSystem` removes chunks from the tree, and `InstancedVegetation` removes its `THREE.InstancedMesh` objects from the group while disposing the locally created merged geometries/material clones in its own cleanup path.
+
+## Runtime Texture Filtering
+
+Loaded GLTF textures are normalized in code through:
+
+```txt
+src/utils/three/optimizeGLTFScene.ts
+```
+
+The runtime pass applies conservative texture filtering:
+
+1. Cap anisotropy to a small value.
+2. Enable mipmap generation for regular PNG/JPG/WebP textures.
+3. Use trilinear mipmap filtering for minification.
+4. Keep existing opacity/alpha material mapping intact.
+
+This mirrors the intent of the designer upload pipeline without rewriting model files at runtime. The sibling `upload-GLTF` project already has the stronger asset-side path: Blender GLB export with Draco, texture resizing, KTX2 generation with mipmaps, WebP fallback, and GLTF JSON URI/extension rewriting for `KHR_texture_basisu`.
+
+Runtime texture filtering improves distant texture stability and GPU sampling behavior, but it does not reduce mesh triangle count. Triangle reduction still comes from streaming, distance unloading, or optimized source assets.
+
+## Terrain-Snapped Map Placement
+
+Map object heights are corrected at runtime through:
+
+```txt
+src/hooks/three/useTerrainHeight.ts
+```
+
+The terrain raycast is not done every frame. The terrain mesh list is built from the cached terrain GLTF, then each model or instance computes its snapped `y` when it is mounted or when its instance data changes.
+
+Applied paths:
+
+1. Regular `GameMap` model instances.
+2. Generated static map models.
+3. Instanced static map assets.
+4. Vegetation and crop chunks.
+
+Only the `y` coordinate is replaced. `x`, `z`, and rotation stay from `map.json`. Runtime scale is also normalized when a static map node has a non-uniform scale, which prevents exported values like `[1, 2, 1]` from stretching or shrinking a map model unexpectedly.
 
 ## Current Code-Side Optimization
 
@@ -200,10 +238,13 @@ src/world/map-generated/GeneratedMapNodeInstance.tsx
 Current generated model component:
 
 ```txt
-src/components/three/models/generated/EcoleModel.tsx
+src/components/three/world/EcoleModel.tsx
+src/components/three/world/LafabrikModel.tsx
+src/components/three/world/FermeVerticaleModel.tsx
+src/components/three/world/GenerateurModel.tsx
 ```
 
-`ecole` is a safe first candidate because it appears once in `map.json`, has one material, and does not participate in player collision or repair gameplay. Its source GLTF has 107 primitives, so the generated component also merges compatible geometry groups before mounting the meshes.
+`ecole`, `lafabrik`, `fermeverticale`, and `generateur` use this path. Their components share the same merged static model renderer, which groups compatible geometry by material before mounting meshes.
 
 This path should be used selectively. It improves control and can remove clone overhead, but it does not reduce source triangle count by itself.
 
