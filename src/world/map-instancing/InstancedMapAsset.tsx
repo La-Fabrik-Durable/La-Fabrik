@@ -93,25 +93,32 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
     });
   });
 
-  return [...groups.values()].map((group) => {
-    if (group.geometries.length === 1) {
+  return [...groups.values()]
+    .map((group) => {
+      if (group.geometries.length === 1) {
+        return {
+          geometry: group.geometries[0] as THREE.BufferGeometry,
+          material: group.material,
+        };
+      }
+
+      const mergedGeometry = mergeGeometries(group.geometries, false);
+
+      for (const geometry of group.geometries) {
+        geometry.dispose();
+      }
+
+      if (!mergedGeometry) {
+        disposeMaterialOnly(group.material);
+        return null;
+      }
+
       return {
-        geometry: group.geometries[0] as THREE.BufferGeometry,
+        geometry: mergedGeometry,
         material: group.material,
       };
-    }
-
-    const mergedGeometry = mergeGeometries(group.geometries, false);
-
-    for (const geometry of group.geometries) {
-      geometry.dispose();
-    }
-
-    return {
-      geometry: mergedGeometry,
-      material: group.material,
-    };
-  });
+    })
+    .filter((meshData): meshData is MeshData => meshData !== null);
 }
 
 function setInstanceMatrices(

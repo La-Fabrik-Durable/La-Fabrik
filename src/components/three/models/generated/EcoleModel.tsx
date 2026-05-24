@@ -89,25 +89,32 @@ function createMergedMeshes(scene: THREE.Group): MergedMeshData[] {
     });
   });
 
-  return [...groups.values()].map((group) => {
-    if (group.geometries.length === 1) {
+  return [...groups.values()]
+    .map((group) => {
+      if (group.geometries.length === 1) {
+        return {
+          geometry: group.geometries[0] as THREE.BufferGeometry,
+          material: group.material,
+        };
+      }
+
+      const geometry = mergeGeometries(group.geometries, false);
+
+      for (const sourceGeometry of group.geometries) {
+        sourceGeometry.dispose();
+      }
+
+      if (!geometry) {
+        disposeMaterial(group.material);
+        return null;
+      }
+
       return {
-        geometry: group.geometries[0] as THREE.BufferGeometry,
+        geometry,
         material: group.material,
       };
-    }
-
-    const geometry = mergeGeometries(group.geometries, false);
-
-    for (const sourceGeometry of group.geometries) {
-      sourceGeometry.dispose();
-    }
-
-    return {
-      geometry,
-      material: group.material,
-    };
-  });
+    })
+    .filter((meshData): meshData is MergedMeshData => meshData !== null);
 }
 
 export function EcoleModel({

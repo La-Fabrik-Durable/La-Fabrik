@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { VegetationInstance } from "@/world/vegetation/useVegetationData";
-import { disposeInstancedMesh } from "@/utils/three/dispose";
 
 interface InstancedVegetationProps {
   modelPath: string;
@@ -143,7 +142,7 @@ export function InstancedVegetation({
     return () => {
       for (const mesh of instancedMeshes) {
         group.remove(mesh);
-        disposeInstancedMesh(mesh);
+        mesh.dispose();
       }
     };
   }, [instancedMeshes]);
