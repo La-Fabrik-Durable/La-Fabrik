@@ -4,7 +4,7 @@ import type { AnimationAction } from "three";
 import {
   AnimatedModelContext,
   type AnimatedModelContextValue,
-} from "@/components/three/models/useAnimatedModel";
+} from "@/hooks/animation/useAnimatedModel";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { ModelTransformProps } from "@/types/three/three";
 
