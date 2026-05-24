@@ -4,19 +4,55 @@ export const VEGETATION_LOD = {
   windFadeEnd: 70,
 };
 
+export const VEGETATION_TYPES = {
+  buissons: {
+    mapName: "buisson",
+    modelPath: "/models/buisson/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+  sapin: {
+    mapName: "sapin",
+    modelPath: "/models/sapin/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+  arbre: {
+    mapName: "arbre",
+    modelPath: "/models/arbre/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+  champdeble: {
+    mapName: "champdeble",
+    modelPath: "/models/champdeble/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+  champdesoja: {
+    mapName: "champdesoja",
+    modelPath: "/models/champdesoja/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+  champsdetournesol: {
+    mapName: "champsdetournesol",
+    modelPath: "/models/champsdetournesol/model.gltf",
+    castShadow: true,
+    receiveShadow: true,
+    enabled: true,
+  },
+} as const;
+
+export type VegetationType = keyof typeof VEGETATION_TYPES;
+
 export const INSTANCED_MAP_EXCEPTIONS = new Set([
   "Scene",
   "blocking",
   "terrain",
-]);
-
-export const INSTANCED_MAP_CHUNK_SIZE = 45;
-
-export const INSTANCED_MAP_NO_SHADOW_NAMES = new Set([
-  "arbre",
-  "sapin",
-  "buisson",
-  "champdeble",
-  "champdesoja",
-  "champsdetournesol",
 ]);
