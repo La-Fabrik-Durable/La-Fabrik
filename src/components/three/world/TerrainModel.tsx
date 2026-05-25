@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { TERRAIN_MODEL_PATH } from "@/data/world/terrainConfig";
 import type { Vector3Tuple } from "@/types/three/three";
 import { optimizeGLTFSceneTextures } from "@/utils/three/optimizeGLTFScene";
 
-const TERRAIN_MODEL_PATH = "/models/terrain/model.gltf";
 const TERRAIN_DEFAULT_POSITION: Vector3Tuple = [0, 0, 0];
 
 interface TerrainModelProps {

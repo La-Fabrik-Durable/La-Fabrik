@@ -34,3 +34,8 @@ export interface TerrainSurfaceSample {
   key: string | null;
   config: TerrainSurfaceColorConfig | null;
 }
+
+export interface TerrainSurfaceData {
+  bounds: TerrainSurfaceBounds;
+  imageData: ImageData;
+}
