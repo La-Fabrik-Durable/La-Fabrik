@@ -4,7 +4,7 @@ La galerie est disponible sur `/gallery`. Elle permet de parcourir les modèles 
 
 ## Objectif
 
-Cette page sert à remercier et valoriser le travail des designers du projet La Fabrik. Chaque modèle est affiché dans un canvas dédié, avec la même skybox que l'expérience principale pour garder une ambiance visuelle cohérente.
+Cette page sert à remercier et valoriser le travail des designers du projet La Fabrik. Chaque modèle est affiché dans un canvas dédié, avec la même skybox et le même lighting que l'expérience principale.
 
 ## Utilisation
 
@@ -19,7 +19,7 @@ Cette page sert à remercier et valoriser le travail des designers du projet La 
 - Le viewer utilise `@react-three/fiber` et `@react-three/drei`.
 - `OrbitControls` permet de manipuler la caméra autour du modèle.
 - `Bounds` et `Center` recadrent automatiquement le modèle actif.
-- `SkyModel` réutilise la skybox du jeu.
+- `SkyModel` réutilise la skybox du jeu, avec un matériau non éclairé uniquement dans la galerie pour éviter que certaines faces deviennent noires avec une caméra orbitale libre.
 - Les animations GLTF présentes dans un modèle sont lancées automatiquement.
 - Un diagnostic simple inspecte les matériaux chargés pour signaler les textures absentes ou non exploitables.
 

@@ -23,13 +23,14 @@ import {
 } from "lucide-react";
 import * as THREE from "three";
 import { SkyModel } from "@/components/three/world/SkyModel";
+import { galleryModels, type GalleryModel } from "@/data/galleryModels";
 import {
   GAME_SCENE_FALLBACK_SKY_MODEL_PATH,
   GAME_SCENE_FALLBACK_SKY_MODEL_SCALE,
   GAME_SCENE_SKY_MODEL_PATH,
   GAME_SCENE_SKY_MODEL_SCALE,
 } from "@/data/world/environmentConfig";
-import { galleryModels, type GalleryModel } from "@/data/galleryModels";
+import { Lighting } from "@/world/Lighting";
 
 interface GalleryModelProps {
   model: GalleryModel;
@@ -147,11 +148,12 @@ function GalleryScene({
       <SkyModel
         fallbackModelPath={GAME_SCENE_FALLBACK_SKY_MODEL_PATH}
         fallbackScale={GAME_SCENE_FALLBACK_SKY_MODEL_SCALE}
+        materialSide={THREE.DoubleSide}
         modelPath={GAME_SCENE_SKY_MODEL_PATH}
         scale={GAME_SCENE_SKY_MODEL_SCALE}
+        unlit
       />
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[6, 8, 4]} intensity={2.1} />
+      <Lighting />
       <Bounds fit clip observe margin={1.35}>
         <Center>
           <GalleryModelPreview

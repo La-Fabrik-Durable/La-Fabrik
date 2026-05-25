@@ -8,12 +8,16 @@ interface SkyModelProps {
   modelPath: string;
   fallbackModelPath?: string | undefined;
   fallbackScale?: number | undefined;
+  materialSide?: THREE.Side | undefined;
   scale?: number | undefined;
+  unlit?: boolean | undefined;
 }
 
 interface SkyModelContentProps {
+  materialSide: THREE.Side;
   modelPath: string;
   scale: number;
+  unlit: boolean;
 }
 
 interface SkyModelErrorBoundaryProps {
@@ -54,23 +58,37 @@ class SkyModelErrorBoundary extends Component<
 export function SkyModel({
   fallbackModelPath,
   fallbackScale = SKY_MODEL_SCALE,
+  materialSide = THREE.BackSide,
   modelPath,
   scale = SKY_MODEL_SCALE,
+  unlit = false,
 }: SkyModelProps): React.JSX.Element {
   const fallback = fallbackModelPath ? (
-    <SkyModelContent modelPath={fallbackModelPath} scale={fallbackScale} />
+    <SkyModelContent
+      materialSide={materialSide}
+      modelPath={fallbackModelPath}
+      scale={fallbackScale}
+      unlit={unlit}
+    />
   ) : null;
 
   return (
     <SkyModelErrorBoundary key={modelPath} fallback={fallback}>
-      <SkyModelContent modelPath={modelPath} scale={scale} />
+      <SkyModelContent
+        materialSide={materialSide}
+        modelPath={modelPath}
+        scale={scale}
+        unlit={unlit}
+      />
     </SkyModelErrorBoundary>
   );
 }
 
 function SkyModelContent({
+  materialSide,
   modelPath,
   scale,
+  unlit,
 }: SkyModelContentProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const groupRef = useRef<THREE.Group>(null);
@@ -78,7 +96,10 @@ function SkyModelContent({
     scope: "SkyModel",
     scale,
   });
-  const model = useMemo(() => createSkyModel(scene), [scene]);
+  const model = useMemo(
+    () => createSkyModel(scene, materialSide, unlit),
+    [materialSide, scene, unlit],
+  );
 
   useEffect(() => {
     return () => {
@@ -102,7 +123,11 @@ function SkyModelContent({
   );
 }
 
-function createSkyModel(scene: THREE.Object3D): THREE.Object3D {
+function createSkyModel(
+  scene: THREE.Object3D,
+  materialSide: THREE.Side,
+  unlit: boolean,
+): THREE.Object3D {
   const model = scene.clone(true);
 
   model.traverse((object) => {
@@ -112,20 +137,42 @@ function createSkyModel(scene: THREE.Object3D): THREE.Object3D {
     if (!(object instanceof THREE.Mesh)) return;
 
     object.material = Array.isArray(object.material)
-      ? object.material.map(createSkyMaterial)
-      : createSkyMaterial(object.material);
+      ? object.material.map((material) =>
+          createSkyMaterial(material, materialSide, unlit),
+        )
+      : createSkyMaterial(object.material, materialSide, unlit);
   });
 
   return model;
 }
 
-function createSkyMaterial<T extends THREE.Material>(material: T): T {
-  const skyMaterial = material.clone();
-  skyMaterial.side = THREE.BackSide;
+function createSkyMaterial<T extends THREE.Material>(
+  material: T,
+  materialSide: THREE.Side,
+  unlit: boolean,
+): THREE.Material {
+  const skyMaterial = unlit
+    ? createUnlitSkyMaterial(material)
+    : material.clone();
+  skyMaterial.side = materialSide;
   skyMaterial.depthTest = false;
   skyMaterial.depthWrite = false;
 
-  return skyMaterial as T;
+  return skyMaterial;
+}
+
+function createUnlitSkyMaterial(
+  material: THREE.Material,
+): THREE.MeshBasicMaterial {
+  const sourceMaterial = material as THREE.MeshStandardMaterial;
+
+  return new THREE.MeshBasicMaterial({
+    color: sourceMaterial.color?.clone() ?? new THREE.Color("#ffffff"),
+    map: sourceMaterial.map ?? null,
+    opacity: sourceMaterial.opacity,
+    toneMapped: false,
+    transparent: sourceMaterial.transparent,
+  });
 }
 
 function disposeSkyModelMaterials(model: THREE.Object3D): void {
