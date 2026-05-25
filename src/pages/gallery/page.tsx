@@ -165,6 +165,8 @@ function GalleryScene({
         enableDamping
         autoRotate
         autoRotateSpeed={0.5}
+        minPolarAngle={Math.PI * 0.18}
+        maxPolarAngle={Math.PI * 0.48}
       />
     </>
   );
@@ -274,7 +276,6 @@ export function GalleryPage(): React.JSX.Element {
           <Canvas camera={{ position: [3.5, 2.4, 4.5], fov: 45 }} dpr={[1, 2]}>
             <Suspense fallback={null}>
               <GalleryScene
-                key={activeModel.id}
                 model={activeModel}
                 onTextureDiagnosticReady={setTextureDiagnostic}
               />

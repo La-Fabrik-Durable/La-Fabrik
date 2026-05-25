@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Component, useMemo, useRef, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 
@@ -80,6 +80,12 @@ function SkyModelContent({
   });
   const model = useMemo(() => createSkyModel(scene), [scene]);
 
+  useEffect(() => {
+    return () => {
+      disposeSkyModelMaterials(model);
+    };
+  }, [model]);
+
   useFrame(() => {
     groupRef.current?.position.copy(camera.position);
   });
@@ -120,6 +126,21 @@ function createSkyMaterial<T extends THREE.Material>(material: T): T {
   skyMaterial.depthWrite = false;
 
   return skyMaterial as T;
+}
+
+function disposeSkyModelMaterials(model: THREE.Object3D): void {
+  model.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+
+    if (Array.isArray(object.material)) {
+      for (const material of object.material) {
+        material.dispose();
+      }
+      return;
+    }
+
+    object.material.dispose();
+  });
 }
 
 useGLTF.preload("/models/skybox/skybox.gltf");
