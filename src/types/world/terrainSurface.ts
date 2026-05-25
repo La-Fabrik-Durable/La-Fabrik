@@ -8,6 +8,18 @@ export type TerrainSurfaceKind =
 
 export type TerrainSurfaceRgb = readonly [number, number, number];
 
+export interface TerrainSurfaceUv {
+  u: number;
+  v: number;
+}
+
+export interface TerrainSurfaceBounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export interface TerrainSurfaceColorConfig {
   hex: string;
   rgb: TerrainSurfaceRgb;
@@ -15,4 +27,10 @@ export interface TerrainSurfaceColorConfig {
   grassTipColor?: string;
   modelPath?: string;
   tileSize?: number;
+}
+
+export interface TerrainSurfaceSample {
+  rgb: TerrainSurfaceRgb;
+  key: string | null;
+  config: TerrainSurfaceColorConfig | null;
 }
