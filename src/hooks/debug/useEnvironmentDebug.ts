@@ -1,7 +1,9 @@
 import { CLOUD_BOUNDS } from "@/data/world/cloudConfig";
+import { FOG_BOUNDS, type FogMode } from "@/data/world/fogConfig";
 import { WIND_BOUNDS } from "@/data/world/windConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { useWorldSettingsStore } from "@/managers/stores/useWorldSettingsStore";
+import { Debug } from "@/utils/debug/Debug";
 
 export function useEnvironmentDebug(): void {
   useDebugFolder("Dynamic Wind", (folder) => {
@@ -49,12 +51,38 @@ export function useEnvironmentDebug(): void {
   });
 
   useDebugFolder("Environment", (folder) => {
-    const { clouds, graphics, setClouds, setDynamicClouds } =
+    Debug.getInstance().addFogControl(folder);
+
+    const { clouds, fog, graphics, setClouds, setDynamicClouds, setFog } =
       useWorldSettingsStore.getState();
     const controls = {
       ...clouds,
+      ...fog,
       dynamicClouds: graphics.dynamicClouds,
     };
+
+    folder
+      .add(controls, "mode", { Linear: "linear", Exp2: "exp2" })
+      .name("Fog mode")
+      .onChange((mode: FogMode) => setFog({ mode }));
+
+    folder
+      .add(controls, "near", FOG_BOUNDS.near.min, FOG_BOUNDS.near.max)
+      .step(FOG_BOUNDS.near.step)
+      .name("Fog near")
+      .onChange((near: number) => setFog({ near }));
+
+    folder
+      .add(controls, "far", FOG_BOUNDS.far.min, FOG_BOUNDS.far.max)
+      .step(FOG_BOUNDS.far.step)
+      .name("Fog far")
+      .onChange((far: number) => setFog({ far }));
+
+    folder
+      .add(controls, "density", FOG_BOUNDS.density.min, FOG_BOUNDS.density.max)
+      .step(FOG_BOUNDS.density.step)
+      .name("Fog density")
+      .onChange((density: number) => setFog({ density }));
 
     folder
       .add(controls, "dynamicClouds")

@@ -5,7 +5,6 @@ import {
   AMBIENT_INTENSITY_MAX,
   AMBIENT_INTENSITY_MIN,
   AMBIENT_INTENSITY_STEP,
-  LIGHTING_DEFAULTS,
   SUN_INTENSITY_MAX,
   SUN_INTENSITY_MIN,
   SUN_INTENSITY_STEP,
@@ -20,23 +19,12 @@ import {
   SUN_Z_STEP,
 } from "@/data/world/lightingConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
+import { LIGHTING_STATE } from "@/world/lightingState";
 
 const SHADOW_MAP_SIZE = 2048;
 const SHADOW_CAMERA_SIZE = 170;
 const SHADOW_CAMERA_NEAR = 0.5;
 const SHADOW_CAMERA_FAR = 300;
-
-type LightingState = {
-  ambientColor: string;
-  ambientIntensity: number;
-  sunColor: string;
-  sunIntensity: number;
-  sunX: number;
-  sunY: number;
-  sunZ: number;
-};
-
-const LIGHTING_STATE: LightingState = { ...LIGHTING_DEFAULTS };
 
 export function Lighting(): React.JSX.Element {
   const ambient = useRef<AmbientLight>(null);

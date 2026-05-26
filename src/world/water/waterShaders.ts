@@ -33,8 +33,10 @@ export const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uOpacity;
   uniform float uDeepOpacity;
   uniform float uFogEnabled;
+  uniform float uFogMode;
   uniform float uFogNear;
   uniform float uFogFar;
+  uniform float uFogDensity;
   uniform vec3 uFogColor;
 
   varying vec2 vUv;
@@ -152,6 +154,12 @@ export const WATER_FRAGMENT_SHADER = /* glsl */ `
     if (uFogEnabled > 0.5) {
       float fogDistance = distance(cameraPosition, vWorldPosition);
       float fogFactor = smoothstep(uFogNear, uFogFar, fogDistance);
+
+      if (uFogMode > 0.5) {
+        fogFactor = 1.0 - exp(-uFogDensity * uFogDensity * fogDistance * fogDistance);
+      }
+
+      fogFactor = clamp(fogFactor, 0.0, 1.0);
       color = mix(color, uFogColor, fogFactor);
       alpha *= 1.0 - fogFactor;
     }

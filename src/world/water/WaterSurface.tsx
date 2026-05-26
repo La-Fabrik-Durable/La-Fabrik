@@ -44,8 +44,10 @@ export function WaterSurface({
       uOpacity: { value: WATER_SHADER_CONFIG.opacity },
       uDeepOpacity: { value: WATER_SHADER_CONFIG.deepOpacity },
       uFogEnabled: { value: 0 },
+      uFogMode: { value: 0 },
       uFogNear: { value: FOG_CONFIG.near },
       uFogFar: { value: FOG_CONFIG.far },
+      uFogDensity: { value: FOG_CONFIG.density },
       uFogColor: { value: new THREE.Color(FOG_CONFIG.color) },
     }),
     [],
@@ -61,8 +63,10 @@ export function WaterSurface({
       uFlowX,
       uFlowZ,
       uFogColor,
+      uFogDensity,
       uFogEnabled,
       uFogFar,
+      uFogMode,
       uFogNear,
       uNoiseScale,
       uTime,
@@ -77,8 +81,14 @@ export function WaterSurface({
 
     if (scene.fog instanceof THREE.Fog) {
       if (uFogEnabled) uFogEnabled.value = 1;
+      if (uFogMode) uFogMode.value = 0;
       if (uFogNear) uFogNear.value = scene.fog.near;
       if (uFogFar) uFogFar.value = scene.fog.far;
+      if (uFogColor) uFogColor.value.copy(scene.fog.color);
+    } else if (scene.fog instanceof THREE.FogExp2) {
+      if (uFogEnabled) uFogEnabled.value = 1;
+      if (uFogMode) uFogMode.value = 1;
+      if (uFogDensity) uFogDensity.value = scene.fog.density;
       if (uFogColor) uFogColor.value.copy(scene.fog.color);
     } else if (uFogEnabled) {
       uFogEnabled.value = 0;
