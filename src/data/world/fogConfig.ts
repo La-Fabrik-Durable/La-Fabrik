@@ -32,9 +32,9 @@ export interface FogState {
 export const CHUNK_CONFIG = {
   enabled: true,
   chunkSize: 35,
-  loadRadius: 65,
-  unloadRadius: 75,
-  updateInterval: 350,
+  loadRadius: 50,
+  unloadRadius: 65,
+  updateInterval: 250,
 };
 
 export const GROUND_PLANE_COLOR = TERRAIN_COLORS.grass1.hex;
