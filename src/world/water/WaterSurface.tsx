@@ -10,6 +10,8 @@ import {
 
 export function WaterSurface({
   position,
+  renderOrder,
+  rotation,
   size,
 }: WaterSurfaceConfig): React.JSX.Element {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
@@ -46,11 +48,16 @@ export function WaterSurface({
   });
 
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
+    <mesh
+      position={position}
+      rotation={[-Math.PI / 2 + rotation[0], rotation[1], rotation[2]]}
+      renderOrder={renderOrder}
+    >
       <planeGeometry args={size} />
       <shaderMaterial
         ref={materialRef}
         attach="material"
+        depthTest
         depthWrite={false}
         fragmentShader={WATER_FRAGMENT_SHADER}
         side={THREE.FrontSide}

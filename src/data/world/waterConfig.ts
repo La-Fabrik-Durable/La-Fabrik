@@ -3,7 +3,9 @@ import type { Vector3Tuple } from "@/types/three/three";
 
 export interface WaterSurfaceConfig {
   position: Vector3Tuple;
+  rotation: Vector3Tuple;
   size: [number, number];
+  renderOrder: number;
 }
 
 export const WATER_SHADER_CONFIG = {
@@ -30,6 +32,8 @@ export const WATER_SHADER_CONFIG = {
 export const WATER_SURFACES: WaterSurfaceConfig[] = [
   {
     position: [62, TERRAIN_WATER_HEIGHT, -82],
+    rotation: [0, 0, 0],
     size: [75, 42],
+    renderOrder: 0,
   },
 ];
