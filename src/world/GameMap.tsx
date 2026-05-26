@@ -391,7 +391,13 @@ function FallbackMapNode({ node }: { node: MapNode }): React.JSX.Element {
   const normalizedScale = normalizeMapScale(scale);
 
   return (
-    <mesh position={position} rotation={rotation} scale={normalizedScale}>
+    <mesh
+      castShadow
+      position={position}
+      receiveShadow
+      rotation={rotation}
+      scale={normalizedScale}
+    >
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color="#64748b" wireframe />
     </mesh>

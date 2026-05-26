@@ -1,7 +1,21 @@
 import { useEffect, useMemo } from "react";
+import * as THREE from "three";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
 import { disposeObject3D } from "@/utils/three/dispose";
+
+function applyShadowSettings(
+  object: THREE.Object3D,
+  castShadow: boolean,
+  receiveShadow: boolean,
+): void {
+  object.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+
+    child.castShadow = castShadow;
+    child.receiveShadow = receiveShadow;
+  });
+}
 
 export interface SimpleModelConfig extends ModelTransformProps {
   modelPath: string;
@@ -31,6 +45,10 @@ export function SimpleModel({
   const model = useMemo(() => scene.clone(true), [scene]);
 
   useEffect(() => {
+    applyShadowSettings(model, castShadow, receiveShadow);
+  }, [castShadow, model, receiveShadow]);
+
+  useEffect(() => {
     return () => {
       disposeObject3D(model);
     };
@@ -41,13 +59,7 @@ export function SimpleModel({
 
   return (
     <group position={position} rotation={rotation} scale={parsedScale}>
-      {children ?? (
-        <primitive
-          object={model}
-          castShadow={castShadow}
-          receiveShadow={receiveShadow}
-        />
-      )}
+      {children ?? <primitive object={model} />}
     </group>
   );
 }

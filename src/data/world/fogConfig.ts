@@ -3,7 +3,7 @@ import { TERRAIN_COLORS } from "@/data/world/terrainConfig";
 export type FogMode = "linear" | "exp2";
 
 export const FOG_CONFIG = {
-  enabled: true,
+  enabled: false,
   mode: "exp2" as FogMode,
   color: "#dfe7d8",
   near: 32,

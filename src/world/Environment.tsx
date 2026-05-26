@@ -9,7 +9,7 @@ import {
   GAME_SCENE_SKY_MODEL_SCALE,
   PHYSICS_SCENE_BACKGROUND_COLOR,
 } from "@/data/world/environmentConfig";
-import { FOG_CONFIG, FOG_LIGHTING_COLOR_MIX } from "@/data/world/fogConfig";
+import { FOG_LIGHTING_COLOR_MIX } from "@/data/world/fogConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { useFogSettings } from "@/hooks/world/useFogSettings";
@@ -57,15 +57,13 @@ export function Environment(): React.JSX.Element {
 
   return (
     <>
-      {FOG_CONFIG.enabled &&
-      fogEnabled &&
+      {fogEnabled &&
       sceneMode === "game" &&
       cameraMode === "player" &&
       fog.mode === "linear" ? (
         <fog attach="fog" args={[fogColor, fog.near, fog.far]} />
       ) : null}
-      {FOG_CONFIG.enabled &&
-      fogEnabled &&
+      {fogEnabled &&
       sceneMode === "game" &&
       cameraMode === "player" &&
       fog.mode === "exp2" ? (
