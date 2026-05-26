@@ -2,7 +2,9 @@ export const AMBIENT_LIGHT_COLOR = "#dbeafe";
 export const SUN_LIGHT_COLOR = "#fff7ed";
 
 export const LIGHTING_DEFAULTS = {
+  ambientColor: AMBIENT_LIGHT_COLOR,
   ambientIntensity: 1.8,
+  sunColor: SUN_LIGHT_COLOR,
   sunIntensity: 2.8,
   sunX: 60,
   sunY: 80,

@@ -5,12 +5,10 @@ import {
   AMBIENT_INTENSITY_MAX,
   AMBIENT_INTENSITY_MIN,
   AMBIENT_INTENSITY_STEP,
-  AMBIENT_LIGHT_COLOR,
   LIGHTING_DEFAULTS,
   SUN_INTENSITY_MAX,
   SUN_INTENSITY_MIN,
   SUN_INTENSITY_STEP,
-  SUN_LIGHT_COLOR,
   SUN_X_MAX,
   SUN_X_MIN,
   SUN_X_STEP,
@@ -29,7 +27,9 @@ const SHADOW_CAMERA_NEAR = 0.5;
 const SHADOW_CAMERA_FAR = 200;
 
 type LightingState = {
+  ambientColor: string;
   ambientIntensity: number;
+  sunColor: string;
   sunIntensity: number;
   sunX: number;
   sunY: number;
@@ -57,6 +57,7 @@ export function Lighting(): React.JSX.Element {
   }, []);
 
   useDebugFolder("Lighting", (folder) => {
+    folder.addColor(LIGHTING_STATE, "ambientColor").name("Ambient Color");
     folder
       .add(
         LIGHTING_STATE,
@@ -75,6 +76,7 @@ export function Lighting(): React.JSX.Element {
         SUN_INTENSITY_STEP,
       )
       .name("Sun Intensity");
+    folder.addColor(LIGHTING_STATE, "sunColor").name("Sun Color");
     folder
       .add(LIGHTING_STATE, "sunX", SUN_X_MIN, SUN_X_MAX, SUN_X_STEP)
       .name("Sun X");
@@ -88,6 +90,7 @@ export function Lighting(): React.JSX.Element {
 
   useFrame(() => {
     if (ambient.current) {
+      ambient.current.color.set(LIGHTING_STATE.ambientColor);
       ambient.current.intensity = LIGHTING_STATE.ambientIntensity;
     }
 
@@ -97,6 +100,7 @@ export function Lighting(): React.JSX.Element {
         LIGHTING_STATE.sunY,
         LIGHTING_STATE.sunZ,
       );
+      sun.current.color.set(LIGHTING_STATE.sunColor);
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
     }
   });
@@ -106,7 +110,7 @@ export function Lighting(): React.JSX.Element {
       <ambientLight
         ref={ambient}
         intensity={LIGHTING_STATE.ambientIntensity}
-        color={AMBIENT_LIGHT_COLOR}
+        color={LIGHTING_STATE.ambientColor}
       />
       <directionalLight
         ref={sun}
@@ -116,7 +120,7 @@ export function Lighting(): React.JSX.Element {
           LIGHTING_STATE.sunZ,
         ]}
         intensity={LIGHTING_STATE.sunIntensity}
-        color={SUN_LIGHT_COLOR}
+        color={LIGHTING_STATE.sunColor}
         castShadow
       />
     </>
