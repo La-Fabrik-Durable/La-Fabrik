@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
+import { TerrainBoundaryCollision } from "@/world/collision/TerrainBoundaryCollision";
 import type { MapNode } from "@/types/editor/editor";
 import type { OctreeReadyHandler } from "@/types/three/three";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
@@ -173,6 +174,7 @@ export function GameMapCollision({
 
   return (
     <group ref={groupRef} visible={false}>
+      {mapReady ? <TerrainBoundaryCollision /> : null}
       {mapReady
         ? collisionNodes.map((mapNode, index) => (
             <CollisionErrorBoundary
