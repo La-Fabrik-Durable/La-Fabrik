@@ -25,6 +25,23 @@ function applyTerrainMaterialSettings(
   scene.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.receiveShadow = receiveShadow;
+
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      for (const material of materials) {
+        const materialWithAlphaMap = material as THREE.Material & {
+          alphaMap?: THREE.Texture | null;
+        };
+
+        material.depthTest = true;
+        material.depthWrite = true;
+
+        if (material.opacity >= 1 && !materialWithAlphaMap.alphaMap) {
+          material.transparent = false;
+        }
+      }
     }
   });
 }

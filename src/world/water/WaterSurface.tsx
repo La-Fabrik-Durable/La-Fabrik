@@ -1,8 +1,10 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { getWindVector } from "@/data/world/windConfig";
 import { WATER_SHADER_CONFIG } from "@/data/world/waterConfig";
 import type { WaterSurfaceConfig } from "@/data/world/waterConfig";
+import { useWind } from "@/hooks/world/useWind";
 import {
   WATER_FRAGMENT_SHADER,
   WATER_VERTEX_SHADER,
@@ -15,6 +17,7 @@ export function WaterSurface({
   size,
 }: WaterSurfaceConfig): React.JSX.Element {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const wind = useWind();
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
@@ -28,6 +31,8 @@ export function WaterSurface({
       uNoiseScale: { value: WATER_SHADER_CONFIG.noiseScale },
       uNoiseFlowSpeed: { value: WATER_SHADER_CONFIG.noiseFlowSpeed },
       uDistortAmount: { value: WATER_SHADER_CONFIG.distortAmount },
+      uBorderRadius: { value: WATER_SHADER_CONFIG.borderRadius },
+      uBorderSoftness: { value: WATER_SHADER_CONFIG.borderSoftness },
       uDeepColor: { value: new THREE.Color(WATER_SHADER_CONFIG.deepColor) },
       uMidColor: { value: new THREE.Color(WATER_SHADER_CONFIG.midColor) },
       uMidPos: { value: WATER_SHADER_CONFIG.midPos },
@@ -41,15 +46,28 @@ export function WaterSurface({
   );
 
   useFrame(({ clock }) => {
-    const uniform = materialRef.current?.uniforms.uTime;
-    if (uniform) {
-      uniform.value = clock.getElapsedTime();
+    const material = materialRef.current;
+    if (!material) return;
+
+    const windVector = getWindVector(wind);
+
+    const { uFlowX, uFlowZ, uNoiseScale, uTime } = material.uniforms;
+
+    if (uTime) uTime.value = clock.getElapsedTime();
+    if (uFlowX) uFlowX.value = WATER_SHADER_CONFIG.flowX + windVector.x;
+    if (uFlowZ) uFlowZ.value = WATER_SHADER_CONFIG.flowZ + windVector.z;
+    if (uNoiseScale) {
+      uNoiseScale.value = WATER_SHADER_CONFIG.noiseScale * wind.noiseScale;
     }
   });
 
   return (
     <mesh
-      position={position}
+      position={[
+        position[0],
+        position[1] + WATER_SHADER_CONFIG.depthOffset,
+        position[2],
+      ]}
       rotation={[-Math.PI / 2 + rotation[0], rotation[1], rotation[2]]}
       renderOrder={renderOrder}
     >

@@ -8,7 +8,7 @@ export const TERRAIN_SURFACE_PROJECTION = {
   offsetX: 0,
   offsetZ: 0,
 };
-export const TERRAIN_WATER_HEIGHT = 0;
+export const TERRAIN_WATER_HEIGHT = 0.8;
 export const TERRAIN_TILE_SIZE = 1;
 export const GRASS_BASE_COLOR = "#1a3a1a";
 

@@ -11,7 +11,10 @@ export interface WaterSurfaceConfig {
 export const WATER_SHADER_CONFIG = {
   enabled: true,
   height: TERRAIN_WATER_HEIGHT,
-  scale: 0.3,
+  depthOffset: -0.04,
+  borderRadius: 0.18,
+  borderSoftness: 0.035,
+  scale: 0.4,
   smoothness: 0.55,
   edgeThreshold: 0.067,
   edgeSoftness: 0.01,
@@ -31,9 +34,9 @@ export const WATER_SHADER_CONFIG = {
 
 export const WATER_SURFACES: WaterSurfaceConfig[] = [
   {
-    position: [62, TERRAIN_WATER_HEIGHT, -82],
+    position: [40, TERRAIN_WATER_HEIGHT, -102],
     rotation: [0, 0, 0],
-    size: [75, 42],
+    size: [75, 45],
     renderOrder: 0,
   },
 ];

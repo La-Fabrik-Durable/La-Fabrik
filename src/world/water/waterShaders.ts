@@ -1,7 +1,9 @@
 export const WATER_VERTEX_SHADER = /* glsl */ `
+  varying vec2 vUv;
   varying vec2 vWorldPos;
 
   void main() {
+    vUv = uv;
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
     vWorldPos = worldPosition.xz;
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
@@ -20,6 +22,8 @@ export const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uNoiseScale;
   uniform float uNoiseFlowSpeed;
   uniform float uDistortAmount;
+  uniform float uBorderRadius;
+  uniform float uBorderSoftness;
   uniform vec3 uDeepColor;
   uniform vec3 uMidColor;
   uniform float uMidPos;
@@ -27,7 +31,17 @@ export const WATER_FRAGMENT_SHADER = /* glsl */ `
   uniform float uOpacity;
   uniform float uDeepOpacity;
 
+  varying vec2 vUv;
   varying vec2 vWorldPos;
+
+  float roundedBoxMask(vec2 uv, float radius, float softness) {
+    vec2 centeredUv = uv * 2.0 - 1.0;
+    vec2 boxSize = vec2(1.0 - radius);
+    vec2 distanceToEdge = abs(centeredUv) - boxSize;
+    float outsideDistance = length(max(distanceToEdge, 0.0)) - radius;
+
+    return 1.0 - smoothstep(-softness, softness, outsideDistance);
+  }
 
   vec2 hash2(vec2 p) {
     p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -126,6 +140,11 @@ export const WATER_FRAGMENT_SHADER = /* glsl */ `
       inSecondSegment
     );
     float alpha = mix(uDeepOpacity, 1.0, ramp) * uOpacity;
+    alpha *= roundedBoxMask(vUv, uBorderRadius, uBorderSoftness);
+
+    if (alpha < 0.01) {
+      discard;
+    }
 
     gl_FragColor = vec4(color, alpha);
   }
