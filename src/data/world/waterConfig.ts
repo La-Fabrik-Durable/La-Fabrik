@@ -35,8 +35,8 @@ export const WATER_SHADER_CONFIG = {
 export const WATER_STREAMING_CONFIG = {
   enabled: true,
   loadDistance: 40,
-  unloadDistance: 35,
-  updateInterval: 250,
+  unloadDistance: 48,
+  updateInterval: 350,
 };
 
 export const WATER_SURFACES: WaterSurfaceConfig[] = [

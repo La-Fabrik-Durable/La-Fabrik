@@ -17,6 +17,8 @@ import {
   PLAYER_AIR_CONTROL_FACTOR,
   PLAYER_CAPSULE_RADIUS,
   PLAYER_EYE_HEIGHT,
+  PLAYER_FALL_RESPAWN_DELAY,
+  PLAYER_FALL_RESPAWN_Y,
   PLAYER_GRAVITY,
   PLAYER_JUMP_SPEED,
   PLAYER_MAX_DELTA,
@@ -56,6 +58,22 @@ const _wishDir = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
 const _collisionCorrection = new THREE.Vector3();
+
+function resetPlayerCapsule(
+  capsule: Capsule,
+  spawnPosition: Vector3Tuple,
+  camera: THREE.Camera,
+  velocity: THREE.Vector3,
+): void {
+  capsule.start.set(
+    spawnPosition[0],
+    spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
+    spawnPosition[2],
+  );
+  capsule.end.set(...spawnPosition);
+  velocity.set(0, 0, 0);
+  camera.position.copy(capsule.end);
+}
 
 function createSpawnCapsule(spawnPosition: Vector3Tuple): Capsule {
   return new Capsule(
@@ -104,6 +122,7 @@ export function PlayerController({
   const movementLockedRef = useRef(movementLocked);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
+  const fallDuration = useRef(0);
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
   const initializedRef = useRef(false);
@@ -112,16 +131,15 @@ export function PlayerController({
   const capsule = useRef(createSpawnCapsule(spawnPosition));
 
   useLayoutEffect(() => {
-    capsule.current.start.set(
-      spawnPosition[0],
-      spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
-      spawnPosition[2],
+    resetPlayerCapsule(
+      capsule.current,
+      spawnPosition,
+      camera,
+      velocity.current,
     );
-    capsule.current.end.set(...spawnPosition);
-    velocity.current.set(0, 0, 0);
+    fallDuration.current = 0;
     onFloor.current = false;
     wantsJump.current = false;
-    camera.position.copy(capsule.current.end);
     initializedRef.current = true;
   }, [camera, spawnPosition]);
 
@@ -211,14 +229,33 @@ export function PlayerController({
   useFrame((_, delta) => {
     if (!initializedRef.current) return;
 
+    const dt = Math.min(delta, PLAYER_MAX_DELTA);
+
+    if (capsule.current.end.y < PLAYER_FALL_RESPAWN_Y) {
+      fallDuration.current += dt;
+
+      if (fallDuration.current >= PLAYER_FALL_RESPAWN_DELAY) {
+        resetPlayerCapsule(
+          capsule.current,
+          spawnPosition,
+          camera,
+          velocity.current,
+        );
+        fallDuration.current = 0;
+        onFloor.current = false;
+        wantsJump.current = false;
+        return;
+      }
+    } else {
+      fallDuration.current = 0;
+    }
+
     if (isPlayerInputLocked() || !canMove) {
       keys.current = { ...DEFAULT_KEYS };
       velocity.current.set(0, 0, 0);
       wantsJump.current = false;
       return;
     }
-
-    const dt = Math.min(delta, PLAYER_MAX_DELTA);
 
     camera.getWorldDirection(_forward);
     _forward.setY(0);
