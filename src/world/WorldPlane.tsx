@@ -11,10 +11,11 @@ export function WorldPlane(): React.JSX.Element | null {
     <mesh
       name="world-plane"
       position={[center[0], planeY, center[2]]}
+      receiveShadow
       rotation={[-Math.PI / 2, 0, 0]}
     >
       <planeGeometry args={size} />
-      <meshBasicMaterial color={planeColor} />
+      <meshStandardMaterial color={planeColor} roughness={1} />
     </mesh>
   );
 }
