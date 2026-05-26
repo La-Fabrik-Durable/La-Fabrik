@@ -18,6 +18,7 @@ interface DebugEvents {
 
 const DEBUG_FOLDER_ORDER = [
   "Lighting",
+  "Dynamic Wind",
   "Environment",
   "Game",
   "Interaction",

@@ -22,9 +22,9 @@ import {
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 
 const SHADOW_MAP_SIZE = 2048;
-const SHADOW_CAMERA_SIZE = 100;
+const SHADOW_CAMERA_SIZE = 170;
 const SHADOW_CAMERA_NEAR = 0.5;
-const SHADOW_CAMERA_FAR = 200;
+const SHADOW_CAMERA_FAR = 300;
 
 type LightingState = {
   ambientColor: string;
