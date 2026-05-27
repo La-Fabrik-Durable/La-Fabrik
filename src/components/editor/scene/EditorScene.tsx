@@ -21,6 +21,7 @@ interface EditorSceneProps {
   hoveredNodeIndex: number | null;
   onHoverNode: (index: number | null) => void;
   transformMode: TransformMode;
+  lockTerrainSelection: boolean;
   onTransformModeChange: (mode: TransformMode) => void;
   onTransformStart: () => void;
   onTransformEnd: () => void;
@@ -40,6 +41,7 @@ export function EditorScene({
   hoveredNodeIndex,
   onHoverNode,
   transformMode,
+  lockTerrainSelection,
   onTransformModeChange,
   onTransformStart,
   onTransformEnd,
@@ -126,6 +128,7 @@ export function EditorScene({
         hoveredNodeIndex={hoveredNodeIndex}
         onHoverNode={onHoverNode}
         transformMode={transformMode}
+        lockTerrainSelection={lockTerrainSelection}
         onTransformStart={onTransformStart}
         onTransformEnd={onTransformEnd}
         onNodeTransform={onNodeTransform}

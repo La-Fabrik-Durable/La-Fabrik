@@ -28,6 +28,8 @@ interface EditorControlsProps {
   mapNodes: MapNode[];
   nodesCount: number;
   selectedNodeName: string | null;
+  lockTerrainSelection: boolean;
+  onLockTerrainSelectionChange: (locked: boolean) => void;
   isSelectionLocked: boolean;
   onSelectionLockToggle: () => void;
   onClearSelection: () => void;
@@ -90,6 +92,8 @@ export function EditorControls({
   mapNodes,
   nodesCount,
   selectedNodeName,
+  lockTerrainSelection,
+  onLockTerrainSelectionChange,
   isSelectionLocked,
   onSelectionLockToggle,
   onClearSelection,
@@ -105,6 +109,9 @@ export function EditorControls({
 }: EditorControlsProps): React.JSX.Element {
   const viewModeLabel = isPlayerMode ? "View locked" : "Lock view";
   const jsonPreview = getJsonPreview(mapNodes, selectedNodeIndex);
+  const selectedNode =
+    selectedNodeIndex !== null ? mapNodes[selectedNodeIndex] : null;
+  const transformValues = getTransformValues(selectedNode ?? null);
 
   return (
     <>
@@ -155,7 +162,10 @@ export function EditorControls({
                   aria-pressed={transformMode === mode}
                 >
                   <Icon size={16} aria-hidden="true" />
-                  <span>{label}</span>
+                  <span className="editor-transform-label">
+                    <span>{label}</span>
+                    <small>{transformValues[mode]}</small>
+                  </span>
                   <kbd>{shortcut}</kbd>
                 </button>
               ))}
@@ -257,6 +267,20 @@ export function EditorControls({
                 {viewModeLabel}
               </button>
             )}
+
+            <label className="editor-checkbox-row">
+              <input
+                type="checkbox"
+                checked={lockTerrainSelection}
+                onChange={(event) =>
+                  onLockTerrainSelectionChange(event.currentTarget.checked)
+                }
+              />
+              <span>
+                <strong>Lock terrain</strong>
+                <small>Keep terrain visible but ignore terrain clicks</small>
+              </span>
+            </label>
           </section>
 
           <section
@@ -327,6 +351,42 @@ export function EditorControls({
       </aside>
     </>
   );
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatVector(values: readonly [number, number, number]): string {
+  return `X ${formatNumber(values[0])} · Y ${formatNumber(values[1])} · Z ${formatNumber(values[2])}`;
+}
+
+function formatRotation(values: readonly [number, number, number]): string {
+  const degrees = values.map((value) => (value * 180) / Math.PI) as [
+    number,
+    number,
+    number,
+  ];
+
+  return `X ${formatNumber(degrees[0])}° · Y ${formatNumber(degrees[1])}° · Z ${formatNumber(degrees[2])}°`;
+}
+
+function getTransformValues(
+  node: MapNode | null,
+): Record<TransformMode, string> {
+  if (!node) {
+    return {
+      translate: "No selection",
+      rotate: "No selection",
+      scale: "No selection",
+    };
+  }
+
+  return {
+    translate: formatVector(node.position),
+    rotate: formatRotation(node.rotation),
+    scale: formatVector(node.scale),
+  };
 }
 
 interface JsonPreviewLine {

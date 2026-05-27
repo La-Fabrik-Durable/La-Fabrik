@@ -141,6 +141,7 @@ export function EditorPage(): React.JSX.Element {
     useState<TransformMode>("translate");
   const [isPlayerMode, setIsPlayerMode] = useState(false);
   const [isSelectionLocked, setIsSelectionLocked] = useState(false);
+  const [lockTerrainSelection, setLockTerrainSelection] = useState(true);
   const [sceneLoadingState, setSceneLoadingState] = useState<SceneLoadingState>(
     {
       ...INITIAL_SCENE_LOADING_STATE,
@@ -193,6 +194,22 @@ export function EditorPage(): React.JSX.Element {
   const handleSelectionLockToggle = useCallback(() => {
     setIsSelectionLocked((locked) => !locked);
   }, []);
+
+  const handleTerrainSelectionLockChange = useCallback(
+    (locked: boolean) => {
+      setLockTerrainSelection(locked);
+
+      if (!locked) return;
+
+      setSelectedNodeIndex((currentIndex) => {
+        if (currentIndex === null) return null;
+
+        const selectedNode = sceneData?.mapNodes[currentIndex];
+        return selectedNode?.name === "terrain" ? null : currentIndex;
+      });
+    },
+    [sceneData],
+  );
 
   const handleHoverNode = useCallback((index: number | null) => {
     setHoveredNodeIndex(index);
@@ -351,6 +368,7 @@ export function EditorPage(): React.JSX.Element {
             hoveredNodeIndex={hoveredNodeIndex}
             onHoverNode={handleHoverNode}
             transformMode={transformMode}
+            lockTerrainSelection={lockTerrainSelection}
             onTransformModeChange={handleTransformModeChange}
             onTransformStart={handleTransformStart}
             onTransformEnd={handleTransformEnd}
@@ -378,6 +396,8 @@ export function EditorPage(): React.JSX.Element {
               ? sceneData.mapNodes[selectedNodeIndex].name || null
               : null
           }
+          lockTerrainSelection={lockTerrainSelection}
+          onLockTerrainSelectionChange={handleTerrainSelectionLockChange}
           isSelectionLocked={isSelectionLocked}
           onSelectionLockToggle={handleSelectionLockToggle}
           onClearSelection={handleClearSelection}
