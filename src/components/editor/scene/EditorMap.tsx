@@ -215,13 +215,7 @@ export function EditorMap({
       />
       <axesHelper args={[10]} />
 
-      <group
-        onClick={(event: ThreeEvent<MouseEvent>) => {
-          event.stopPropagation();
-          if (isSelectionLocked) return;
-          onSelectNode(null);
-        }}
-      >
+      <group>
         {terrainNode ? (
           <EditorTerrainNode
             index={terrainNodeIndex}
