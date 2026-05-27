@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useTexture } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useWind } from "@/hooks/world/useWind";
@@ -10,8 +11,6 @@ import {
 import type { TerrainGrassSampler } from "@/world/grass/useTerrainGrassSampler";
 
 interface GrassPatchProps {
-  chunkX: number;
-  chunkZ: number;
   density: number;
   terrainSampler: TerrainGrassSampler;
 }
@@ -21,15 +20,126 @@ function random01(seed: number): number {
   return value - Math.floor(value);
 }
 
-function createGrassMaterial(): THREE.ShaderMaterial {
+function pushVector(target: number[], value: THREE.Vector3): void {
+  target.push(value.x, value.y, value.z);
+}
+
+function pushColor(target: number[], value: THREE.Color): void {
+  target.push(value.r, value.g, value.b);
+}
+
+function createGrassGeometry(density: number): THREE.BufferGeometry {
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const uvs: number[] = [];
+  const bladeOrigins: number[] = [];
+  const yaws: number[] = [];
+  const bladeCount = Math.round(GRASS_CONFIG.bladeCount * density);
+  const halfPatchSize = GRASS_CONFIG.patchSize * 0.5;
+
+  for (let index = 0; index < bladeCount; index++) {
+    const seed = index * 997;
+    const origin = new THREE.Vector3(
+      random01(seed + 1) * GRASS_CONFIG.patchSize - halfPatchSize,
+      0,
+      random01(seed + 2) * GRASS_CONFIG.patchSize - halfPatchSize,
+    );
+    const yawAngle = random01(seed + 3) * Math.PI * 2;
+    const yaw = new THREE.Vector3(Math.sin(yawAngle), 0, -Math.cos(yawAngle));
+    const colorIndex = Math.floor(random01(seed + 4) * GRASS_COLORS.length);
+    const color = new THREE.Color(GRASS_COLORS[colorIndex] ?? GRASS_COLORS[0]);
+    const markerColors = [
+      new THREE.Color(0.1, 0, 0),
+      new THREE.Color(0, 0, 0.1),
+      new THREE.Color(1, 1, 1),
+    ] as const;
+    const uv = new THREE.Vector2(
+      origin.x / GRASS_CONFIG.patchSize + 0.5,
+      origin.z / GRASS_CONFIG.patchSize + 0.5,
+    );
+
+    for (let vertexIndex = 0; vertexIndex < 3; vertexIndex++) {
+      pushVector(positions, origin);
+      pushColor(colors, markerColors[vertexIndex] ?? markerColors[2]);
+      pushVector(bladeOrigins, origin);
+      pushVector(yaws, yaw);
+      pushColor(colors, color);
+      uvs.push(uv.x, uv.y);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  const markerColorValues: number[] = [];
+  const bladeColorValues: number[] = [];
+
+  for (let index = 0; index < colors.length; index += 6) {
+    markerColorValues.push(
+      colors[index] ?? 0,
+      colors[index + 1] ?? 0,
+      colors[index + 2] ?? 0,
+    );
+    bladeColorValues.push(
+      colors[index + 3] ?? 0,
+      colors[index + 4] ?? 0,
+      colors[index + 5] ?? 0,
+    );
+  }
+
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  geometry.setAttribute(
+    "color",
+    new THREE.Float32BufferAttribute(markerColorValues, 3),
+  );
+  geometry.setAttribute(
+    "aBladeColor",
+    new THREE.Float32BufferAttribute(bladeColorValues, 3),
+  );
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setAttribute(
+    "aBladeOrigin",
+    new THREE.Float32BufferAttribute(bladeOrigins, 3),
+  );
+  geometry.setAttribute("aYaw", new THREE.Float32BufferAttribute(yaws, 3));
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+
+  return geometry;
+}
+
+function createGrassMaterial(
+  terrainSampler: TerrainGrassSampler,
+  noiseTexture: THREE.Texture,
+  grassTexture: THREE.Texture,
+): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    side: THREE.DoubleSide,
     vertexShader: grassVertexShader,
     fragmentShader: grassFragmentShader,
+    vertexColors: true,
+    side: THREE.DoubleSide,
     uniforms: {
       uTime: { value: 0 },
+      uNoiseTexture: { value: noiseTexture },
+      uDiffuseMap: { value: grassTexture },
+      uHeightMap: { value: terrainSampler.heightTexture },
       uPlayerPosition: { value: new THREE.Vector3() },
-      uPatchSize: { value: GRASS_CONFIG.chunkSize },
+      uBoundingBoxMin: {
+        value: new THREE.Vector3(
+          terrainSampler.bounds.minX,
+          terrainSampler.minHeight,
+          terrainSampler.bounds.minZ,
+        ),
+      },
+      uBoundingBoxMax: {
+        value: new THREE.Vector3(
+          terrainSampler.bounds.maxX,
+          terrainSampler.maxHeight,
+          terrainSampler.bounds.maxZ,
+        ),
+      },
+      uPatchSize: { value: GRASS_CONFIG.patchSize },
       uBladeWidth: { value: GRASS_CONFIG.bladeWidth },
       uWindDirection: { value: 0 },
       uWindSpeed: { value: 0 },
@@ -41,153 +151,51 @@ function createGrassMaterial(): THREE.ShaderMaterial {
       uMaxBendAngle: { value: GRASS_CONFIG.maxBendAngle },
       uMaxBladeHeight: { value: GRASS_CONFIG.maxBladeHeight },
       uRandomHeightAmount: { value: GRASS_CONFIG.randomHeightAmount },
+      uSurfaceOffset: { value: GRASS_CONFIG.surfaceOffset },
     },
   });
 }
 
-function pushVector(target: number[], value: THREE.Vector3): void {
-  target.push(value.x, value.y, value.z);
-}
-
-function pushColor(target: number[], value: THREE.Color): void {
-  target.push(value.r, value.g, value.b);
-}
-
-function addGrassBlade(
-  positions: number[],
-  bladeColors: number[],
-  bladeBases: number[],
-  bladeNormals: number[],
-  sideFactors: number[],
-  tipFactors: number[],
-  randoms: number[],
-  yaws: number[],
-  basePosition: THREE.Vector3,
-  normal: THREE.Vector3,
-  color: THREE.Color,
-  yaw: THREE.Vector3,
-  random: number,
-): void {
-  const vertices = [
-    { side: 1, tip: 0 },
-    { side: -1, tip: 0 },
-    { side: 0, tip: 1 },
-  ];
-
-  for (const vertex of vertices) {
-    pushVector(positions, basePosition);
-    pushColor(bladeColors, color);
-    pushVector(bladeBases, basePosition);
-    pushVector(bladeNormals, normal);
-    pushVector(yaws, yaw);
-    sideFactors.push(vertex.side);
-    tipFactors.push(vertex.tip);
-    randoms.push(random);
-  }
-}
-
-function createGrassGeometry(
-  chunkX: number,
-  chunkZ: number,
-  density: number,
-  terrainSampler: TerrainGrassSampler,
-): THREE.BufferGeometry | null {
-  const positions: number[] = [];
-  const bladeColors: number[] = [];
-  const bladeBases: number[] = [];
-  const bladeNormals: number[] = [];
-  const sideFactors: number[] = [];
-  const tipFactors: number[] = [];
-  const randoms: number[] = [];
-  const yaws: number[] = [];
-  const startX = chunkX * GRASS_CONFIG.chunkSize;
-  const startZ = chunkZ * GRASS_CONFIG.chunkSize;
-  const bladeCount = Math.round(GRASS_CONFIG.baseBladesPerChunk * density);
-
-  for (let index = 0; index < bladeCount; index++) {
-    const seed = (chunkX + 101) * 92821 + (chunkZ + 103) * 68917 + index * 997;
-    const x = startX + random01(seed + 1) * GRASS_CONFIG.chunkSize;
-    const z = startZ + random01(seed + 2) * GRASS_CONFIG.chunkSize;
-    const sample = terrainSampler.sample(x, z);
-    if (!sample) continue;
-
-    const colorIndex = Math.floor(random01(seed + 3) * GRASS_COLORS.length);
-    const color = new THREE.Color(GRASS_COLORS[colorIndex] ?? GRASS_COLORS[0]);
-    const yawAngle = random01(seed + 4) * Math.PI * 2;
-    const yaw = new THREE.Vector3(Math.sin(yawAngle), 0, -Math.cos(yawAngle));
-    const basePosition = sample.position
-      .clone()
-      .addScaledVector(sample.normal, GRASS_CONFIG.surfaceOffset);
-
-    addGrassBlade(
-      positions,
-      bladeColors,
-      bladeBases,
-      bladeNormals,
-      sideFactors,
-      tipFactors,
-      randoms,
-      yaws,
-      basePosition,
-      sample.normal,
-      color,
-      yaw,
-      random01(seed + 5),
-    );
-  }
-
-  if (positions.length === 0) return null;
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
-  geometry.setAttribute(
-    "aBladeColor",
-    new THREE.Float32BufferAttribute(bladeColors, 3),
-  );
-  geometry.setAttribute(
-    "aBladeBase",
-    new THREE.Float32BufferAttribute(bladeBases, 3),
-  );
-  geometry.setAttribute(
-    "aBladeNormal",
-    new THREE.Float32BufferAttribute(bladeNormals, 3),
-  );
-  geometry.setAttribute(
-    "aSideFactor",
-    new THREE.Float32BufferAttribute(sideFactors, 1),
-  );
-  geometry.setAttribute(
-    "aTipFactor",
-    new THREE.Float32BufferAttribute(tipFactors, 1),
-  );
-  geometry.setAttribute(
-    "aRandom",
-    new THREE.Float32BufferAttribute(randoms, 1),
-  );
-  geometry.setAttribute("aYaw", new THREE.Float32BufferAttribute(yaws, 3));
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-
-  return geometry;
-}
-
 export function GrassPatch({
-  chunkX,
-  chunkZ,
   density,
   terrainSampler,
-}: GrassPatchProps): React.JSX.Element | null {
+}: GrassPatchProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const wind = useWind();
+  const [noiseTexture, grassTexture] = useTexture([
+    "/textures/grass/noise.png",
+    "/textures/grass/grass.jpg",
+  ]) as [THREE.Texture, THREE.Texture];
+  const grassTextures = useMemo(() => {
+    const noise = noiseTexture.clone();
+    const grass = grassTexture.clone();
+
+    noise.wrapS = noise.wrapT = THREE.RepeatWrapping;
+    grass.wrapS = grass.wrapT = THREE.MirroredRepeatWrapping;
+    noise.needsUpdate = true;
+    grass.needsUpdate = true;
+
+    return { grass, noise };
+  }, [grassTexture, noiseTexture]);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const geometry = useMemo(
-    () => createGrassGeometry(chunkX, chunkZ, density, terrainSampler),
-    [chunkX, chunkZ, density, terrainSampler],
+  const geometry = useMemo(() => createGrassGeometry(density), [density]);
+
+  useEffect(() => {
+    return () => {
+      grassTextures.grass.dispose();
+      grassTextures.noise.dispose();
+    };
+  }, [grassTextures]);
+
+  const material = useMemo(
+    () =>
+      createGrassMaterial(
+        terrainSampler,
+        grassTextures.noise,
+        grassTextures.grass,
+      ),
+    [grassTextures, terrainSampler],
   );
-  const material = useMemo(() => createGrassMaterial(), []);
 
   useEffect(() => {
     materialRef.current = material;
@@ -199,7 +207,7 @@ export function GrassPatch({
 
   useEffect(() => {
     return () => {
-      geometry?.dispose();
+      geometry.dispose();
     };
   }, [geometry]);
 
@@ -219,8 +227,6 @@ export function GrassPatch({
         GRASS_CONFIG.windNoiseScale * wind.noiseScale;
     }
   });
-
-  if (!geometry) return null;
 
   return <mesh geometry={geometry} material={material} frustumCulled={false} />;
 }

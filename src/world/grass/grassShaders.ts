@@ -1,16 +1,17 @@
 export const grassVertexShader = /* glsl */ `
-  attribute vec3 aBladeColor;
-  attribute vec3 aBladeNormal;
-  attribute vec3 aBladeBase;
-  attribute float aSideFactor;
-  attribute float aTipFactor;
-  attribute float aRandom;
   attribute vec3 aYaw;
+  attribute vec3 aBladeOrigin;
+  attribute vec3 aBladeColor;
 
   varying vec3 vColor;
 
   uniform float uTime;
   uniform vec3 uPlayerPosition;
+  uniform sampler2D uHeightMap;
+  uniform sampler2D uDiffuseMap;
+  uniform sampler2D uNoiseTexture;
+  uniform vec3 uBoundingBoxMin;
+  uniform vec3 uBoundingBoxMax;
   uniform float uPatchSize;
   uniform float uBladeWidth;
   uniform float uWindDirection;
@@ -23,6 +24,7 @@ export const grassVertexShader = /* glsl */ `
   uniform float uMaxBendAngle;
   uniform float uMaxBladeHeight;
   uniform float uRandomHeightAmount;
+  uniform float uSurfaceOffset;
 
   float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
@@ -45,32 +47,58 @@ export const grassVertexShader = /* glsl */ `
   }
 
   void main() {
-    vec3 origin = aBladeBase;
-    vec3 transformed = origin;
+    vec3 transformed = position;
+    vec3 origin = aBladeOrigin;
     float halfPatchSize = uPatchSize * 0.5;
-    vec2 uv = vec2(origin.x, origin.z) * 0.05;
 
-    float heightNoise =
-      random(floor(uv * uHeightNoiseFrequency) + aRandom) *
-      uMaxBladeHeight *
-      uHeightNoiseAmplitude;
-    float heightModifier = heightNoise + random(uv + aRandom) * (uRandomHeightAmount * 0.1);
+    origin.x = mod(origin.x - uPlayerPosition.x + halfPatchSize, uPatchSize) - halfPatchSize;
+    origin.z = mod(origin.z - uPlayerPosition.z + halfPatchSize, uPatchSize) - halfPatchSize;
 
-    float edgeDistanceX = abs(origin.x - uPlayerPosition.x) / halfPatchSize;
-    float edgeDistanceZ = abs(origin.z - uPlayerPosition.z) / halfPatchSize;
+    vec3 worldPos = vec3(uPlayerPosition.x + origin.x, 0.0, uPlayerPosition.z + origin.z);
+    transformed.x = worldPos.x;
+    transformed.z = worldPos.z;
+
+    vec2 terrainUv = vec2(
+      mapValue(worldPos.x, uBoundingBoxMin.x, uBoundingBoxMax.x, 0.0, 1.0),
+      mapValue(worldPos.z, uBoundingBoxMin.z, uBoundingBoxMax.z, 0.0, 1.0)
+    );
+    terrainUv = clamp(terrainUv, 0.0, 1.0);
+
+    float terrainHeightRatio = texture2D(uHeightMap, terrainUv).r;
+    float terrainHeight = mix(uBoundingBoxMin.y, uBoundingBoxMax.y, terrainHeightRatio);
+    transformed.y = terrainHeight + uSurfaceOffset;
+
+    vec3 heightNoise = texture2D(uNoiseTexture, terrainUv.yx * vec2(uHeightNoiseFrequency)).rgb;
+    float heightModifier = ((heightNoise.r + heightNoise.g + heightNoise.b) * uMaxBladeHeight) * uHeightNoiseAmplitude;
+    heightModifier += random(terrainUv) * (uRandomHeightAmount * 0.1);
+
+    float edgeDistanceX = abs(origin.x) / halfPatchSize;
+    float edgeDistanceZ = abs(origin.z) / halfPatchSize;
     float edgeFactor = 1.0 - max(edgeDistanceX, edgeDistanceZ);
     edgeFactor = pow(clamp(edgeFactor, 0.0, 1.0), uFalloffSharpness);
 
-    float baldPatch = random(floor(uv * 3.0)) * (uBaldPatchModifier * (1.0 - edgeFactor));
-    heightModifier = max(0.0, heightModifier - baldPatch);
+    float baldPatchOffset = heightNoise.r * (uBaldPatchModifier * (1.0 - edgeFactor));
+    heightModifier -= baldPatchOffset;
 
-    float distanceFromCenter = length(origin.xz - uPlayerPosition.xz) / halfPatchSize;
+    float edgeFade =
+      smoothstep(uBoundingBoxMin.x, uBoundingBoxMin.x + 2.0, worldPos.x) *
+      smoothstep(uBoundingBoxMax.x, uBoundingBoxMax.x - 2.0, worldPos.x) *
+      smoothstep(uBoundingBoxMin.z, uBoundingBoxMin.z + 2.0, worldPos.z) *
+      smoothstep(uBoundingBoxMax.z, uBoundingBoxMax.z - 2.0, worldPos.z);
+    heightModifier *= edgeFade;
+
+    float sideFactor = (color.r == 0.1) ? 1.0 : (color.b == 0.1) ? -1.0 : 0.0;
+    float tipFactor = color.g;
+    float width = smoothstep(0.5, 1.0, heightModifier * 2.0) * uBladeWidth;
+    transformed += aYaw * (width / 2.0) * sideFactor;
+
+    vec3 textureColor = texture2D(uDiffuseMap, terrainUv * 10.0).rgb;
+    vec3 colorNoise = texture2D(uNoiseTexture, terrainUv.yx * vec2(uHeightNoiseFrequency) + (uTime * 0.1)).rgb;
+    vColor = mix(aBladeColor * 0.55, aBladeColor, tipFactor) * textureColor * mix(vec3(0.75), vec3(1.15), colorNoise);
+
+    float distanceFromCenter = length(origin.xz) / halfPatchSize;
     float innerCircleFactor = clamp(smoothstep(0.0, 0.5, distanceFromCenter), 0.0, 1.0);
     heightModifier *= mix(0.25, 1.0, innerCircleFactor);
-
-    vec3 tangent = normalize(aYaw - aBladeNormal * dot(aYaw, aBladeNormal));
-    transformed += tangent * (uBladeWidth * 0.5) * aSideFactor;
-    transformed += aBladeNormal * heightModifier * aTipFactor;
 
     float noiseScale = uWindNoiseScale * 0.1;
     vec2 noiseUV = vec2(origin.x * noiseScale, origin.z * noiseScale);
@@ -79,20 +107,18 @@ export const grassVertexShader = /* glsl */ `
       sin(uWindDirection), cos(uWindDirection)
     );
     vec2 rotatedNoiseUV = rotation * noiseUV + uTime * vec2(uWindSpeed);
-    float windA = random(floor(rotatedNoiseUV * 10.0));
-    float windB = random(floor(rotatedNoiseUV.yx * 10.0 + 17.0));
-    vec3 axis = normalize(vec3(windA, 0.0, windB));
-    float angle = radians(mapValue(windA + windB, 0.0, 2.0, -uMaxBendAngle, uMaxBendAngle)) * aTipFactor;
+    vec3 windNoise = texture2D(uNoiseTexture, rotatedNoiseUV).rgb;
+
+    vec3 axis = vec3(windNoise.g, 0.0, windNoise.b);
+    float angle = radians(mapValue(windNoise.g + windNoise.b, 0.0, 2.0, -uMaxBendAngle, uMaxBendAngle)) * tipFactor;
     mat3 rotationMatrix = rotate3d(axis, angle);
 
-    vec3 relativePosition = transformed - origin;
+    vec3 basePosition = vec3(transformed.x, transformed.y - heightModifier, transformed.z);
+    vec3 relativePosition = transformed - basePosition;
     relativePosition = rotationMatrix * relativePosition;
-    transformed = origin + relativePosition;
+    transformed = basePosition + relativePosition;
+    transformed.y += heightModifier * tipFactor;
 
-    vec3 baseColor = aBladeColor * 0.45;
-    vec3 tipColor = aBladeColor;
-    float shadeNoise = random(floor((uv + uTime * 0.01) * 24.0));
-    vColor = mix(baseColor, tipColor, aTipFactor) * mix(0.72, 1.08, shadeNoise);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
   }
 `;
