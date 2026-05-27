@@ -25,6 +25,16 @@ export const grassVertexShader = /* glsl */ `
   uniform float uClumpFrequency;
   uniform float uClumpThreshold;
   uniform float uClumpSoftness;
+  uniform float uZoneFrequency;
+  uniform float uSparseZoneThreshold;
+  uniform float uTallZoneThreshold;
+  uniform float uZoneSoftness;
+  uniform float uSparseZoneHeight;
+  uniform float uLowZoneHeight;
+  uniform float uTallZoneHeight;
+  uniform float uSparseZoneDensity;
+  uniform float uLowZoneDensity;
+  uniform float uTallZoneDensity;
   uniform float uMaxBendAngle;
   uniform float uMaxBladeHeight;
   uniform float uRandomHeightAmount;
@@ -77,9 +87,23 @@ export const grassVertexShader = /* glsl */ `
     vec2 clumpUv = (worldPos.xz / uPatchSize) * uClumpFrequency;
     float clumpNoise = texture2D(uNoiseTexture, clumpUv).r;
     float clumpMask = smoothstep(uClumpThreshold, uClumpThreshold + uClumpSoftness, clumpNoise);
+    float zoneNoise = texture2D(uNoiseTexture, worldPos.xz * uZoneFrequency).r;
+    float sparseZone = 1.0 - smoothstep(uSparseZoneThreshold, uSparseZoneThreshold + uZoneSoftness, zoneNoise);
+    float tallZone = smoothstep(uTallZoneThreshold, uTallZoneThreshold + uZoneSoftness, zoneNoise);
+    float midZone = clamp(1.0 - sparseZone - tallZone, 0.0, 1.0);
+    float zoneHeight =
+      sparseZone * uSparseZoneHeight +
+      midZone * uLowZoneHeight +
+      tallZone * uTallZoneHeight;
+    float zoneDensity =
+      sparseZone * uSparseZoneDensity +
+      midZone * uLowZoneDensity +
+      tallZone * uTallZoneDensity;
+    float bladeVisibility = step(random(worldPos.xz), zoneDensity);
     float heightModifier = uMaxBladeHeight * mix(0.35, 1.0, heightNoiseAverage) * uHeightNoiseAmplitude;
     heightModifier += random(terrainUv) * (uRandomHeightAmount * 0.1);
     heightModifier = clamp(heightModifier, 0.0, uMaxBladeHeight);
+    heightModifier *= zoneHeight * bladeVisibility;
 
     float edgeDistanceX = abs(origin.x) / halfPatchSize;
     float edgeDistanceZ = abs(origin.z) / halfPatchSize;
@@ -99,7 +123,7 @@ export const grassVertexShader = /* glsl */ `
 
     float sideFactor = (color.r == 0.1) ? 1.0 : (color.b == 0.1) ? -1.0 : 0.0;
     float tipFactor = color.g;
-    float width = smoothstep(0.02, uMaxBladeHeight * 0.85, heightModifier) * uBladeWidth;
+    float width = smoothstep(0.02, uMaxBladeHeight * 0.85, heightModifier) * uBladeWidth * bladeVisibility;
     transformed += aYaw * (width / 2.0) * sideFactor;
 
     vec3 textureColor = texture2D(uDiffuseMap, terrainUv * 10.0).rgb;
