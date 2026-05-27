@@ -26,6 +26,7 @@ import {
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
 import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
+import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
 import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
@@ -48,7 +49,8 @@ const DEFAULT_KEYS: Keys = {
 };
 
 const PLAYER_COLLISION_ITERATIONS = 3;
-const PLAYER_FLOOR_NORMAL_MIN = 0.5;
+const PLAYER_FLOOR_NORMAL_MIN = 0.15;
+const PLAYER_GROUND_SNAP_DISTANCE = 0.22;
 
 interface PlayerControllerProps {
   octree: Octree | null;
@@ -116,12 +118,17 @@ function setMovementKey(keys: Keys, key: string, pressed: boolean): boolean {
   }
 }
 
+function getCapsuleFootY(capsule: Capsule): number {
+  return capsule.start.y - capsule.radius;
+}
+
 export function PlayerController({
   octree,
   spawnPosition,
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
   const movementLocked = useRepairMovementLocked();
+  const terrainHeight = useTerrainHeightSampler();
   const movementLockedRef = useRef(movementLocked);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
@@ -319,11 +326,31 @@ export function PlayerController({
 
         if (isFloorCollision) {
           velocity.current.y = Math.max(0, velocity.current.y);
+          capsule.current.translate(
+            _collisionCorrection.set(0, result.depth / result.normal.y, 0),
+          );
+          continue;
         }
 
         capsule.current.translate(
           _collisionCorrection.copy(result.normal).multiplyScalar(result.depth),
         );
+      }
+    }
+
+    const groundHeight = terrainHeight.getHeight(
+      capsule.current.end.x,
+      capsule.current.end.z,
+    );
+    if (groundHeight !== null && velocity.current.y <= 0) {
+      const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
+
+      if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
+        capsule.current.translate(
+          _collisionCorrection.set(0, -groundOffset, 0),
+        );
+        velocity.current.y = 0;
+        onFloor.current = true;
       }
     }
 

@@ -17,10 +17,14 @@ export const grassVertexShader = /* glsl */ `
   uniform float uWindDirection;
   uniform float uWindSpeed;
   uniform float uWindNoiseScale;
+  uniform float uWindStrength;
   uniform float uBaldPatchModifier;
   uniform float uFalloffSharpness;
   uniform float uHeightNoiseFrequency;
   uniform float uHeightNoiseAmplitude;
+  uniform float uClumpFrequency;
+  uniform float uClumpThreshold;
+  uniform float uClumpSoftness;
   uniform float uMaxBendAngle;
   uniform float uMaxBladeHeight;
   uniform float uRandomHeightAmount;
@@ -69,8 +73,13 @@ export const grassVertexShader = /* glsl */ `
     transformed.y = terrainHeight + uSurfaceOffset;
 
     vec3 heightNoise = texture2D(uNoiseTexture, terrainUv.yx * vec2(uHeightNoiseFrequency)).rgb;
-    float heightModifier = ((heightNoise.r + heightNoise.g + heightNoise.b) * uMaxBladeHeight) * uHeightNoiseAmplitude;
+    float heightNoiseAverage = (heightNoise.r + heightNoise.g + heightNoise.b) / 3.0;
+    vec2 clumpUv = (worldPos.xz / uPatchSize) * uClumpFrequency;
+    float clumpNoise = texture2D(uNoiseTexture, clumpUv).r;
+    float clumpMask = smoothstep(uClumpThreshold, uClumpThreshold + uClumpSoftness, clumpNoise);
+    float heightModifier = uMaxBladeHeight * mix(0.35, 1.0, heightNoiseAverage) * uHeightNoiseAmplitude;
     heightModifier += random(terrainUv) * (uRandomHeightAmount * 0.1);
+    heightModifier = clamp(heightModifier, 0.0, uMaxBladeHeight);
 
     float edgeDistanceX = abs(origin.x) / halfPatchSize;
     float edgeDistanceZ = abs(origin.z) / halfPatchSize;
@@ -79,17 +88,18 @@ export const grassVertexShader = /* glsl */ `
 
     float baldPatchOffset = heightNoise.r * (uBaldPatchModifier * (1.0 - edgeFactor));
     heightModifier -= baldPatchOffset;
+    heightModifier = max(heightModifier, 0.0);
 
     float edgeFade =
       smoothstep(uBoundingBoxMin.x, uBoundingBoxMin.x + 2.0, worldPos.x) *
       smoothstep(uBoundingBoxMax.x, uBoundingBoxMax.x - 2.0, worldPos.x) *
       smoothstep(uBoundingBoxMin.z, uBoundingBoxMin.z + 2.0, worldPos.z) *
       smoothstep(uBoundingBoxMax.z, uBoundingBoxMax.z - 2.0, worldPos.z);
-    heightModifier *= edgeFade;
+    heightModifier *= edgeFade * mix(0.45, 1.0, clumpMask);
 
     float sideFactor = (color.r == 0.1) ? 1.0 : (color.b == 0.1) ? -1.0 : 0.0;
     float tipFactor = color.g;
-    float width = smoothstep(0.5, 1.0, heightModifier * 2.0) * uBladeWidth;
+    float width = smoothstep(0.02, uMaxBladeHeight * 0.85, heightModifier) * uBladeWidth;
     transformed += aYaw * (width / 2.0) * sideFactor;
 
     vec3 textureColor = texture2D(uDiffuseMap, terrainUv * 10.0).rgb;
@@ -110,7 +120,7 @@ export const grassVertexShader = /* glsl */ `
     vec3 windNoise = texture2D(uNoiseTexture, rotatedNoiseUV).rgb;
 
     vec3 axis = vec3(windNoise.g, 0.0, windNoise.b);
-    float angle = radians(mapValue(windNoise.g + windNoise.b, 0.0, 2.0, -uMaxBendAngle, uMaxBendAngle)) * tipFactor;
+    float angle = radians(mapValue(windNoise.g + windNoise.b, 0.0, 2.0, -uMaxBendAngle, uMaxBendAngle)) * tipFactor * uWindStrength;
     mat3 rotationMatrix = rotate3d(axis, angle);
 
     vec3 basePosition = vec3(transformed.x, transformed.y - heightModifier, transformed.z);
