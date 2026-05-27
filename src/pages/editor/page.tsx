@@ -143,6 +143,11 @@ export function EditorPage(): React.JSX.Element {
   const [isSelectionLocked, setIsSelectionLocked] = useState(false);
   const [lockTerrainSelection, setLockTerrainSelection] = useState(true);
   const [resetCameraRequest, setResetCameraRequest] = useState(0);
+  const [focusSelectedCameraRequest, setFocusSelectedCameraRequest] =
+    useState(0);
+  const [cameraViewMode, setCameraViewMode] = useState<"home" | "object">(
+    "home",
+  );
   const [sceneLoadingState, setSceneLoadingState] = useState<SceneLoadingState>(
     {
       ...INITIAL_SCENE_LOADING_STATE,
@@ -186,6 +191,9 @@ export function EditorPage(): React.JSX.Element {
 
   const handleSelectNode = useCallback((index: number | null) => {
     setSelectedNodeIndex(index);
+    if (index !== null) {
+      setCameraViewMode("object");
+    }
   }, []);
 
   const handleClearSelection = useCallback(() => {
@@ -258,9 +266,16 @@ export function EditorPage(): React.JSX.Element {
     setIsPlayerMode((prev) => !prev);
   }, []);
 
-  const handleResetCamera = useCallback(() => {
+  const handleCameraAction = useCallback(() => {
+    if (selectedNodeIndex !== null && cameraViewMode === "home") {
+      setFocusSelectedCameraRequest((request) => request + 1);
+      setCameraViewMode("object");
+      return;
+    }
+
     setResetCameraRequest((request) => request + 1);
-  }, []);
+    setCameraViewMode("home");
+  }, [cameraViewMode, selectedNodeIndex]);
 
   const handlePreviewCinematic = useCallback(
     (cinematic: CinematicDefinition) => {
@@ -381,6 +396,7 @@ export function EditorPage(): React.JSX.Element {
             onUndo={handleUndo}
             onRedo={handleRedo}
             resetCameraRequest={resetCameraRequest}
+            focusSelectedCameraRequest={focusSelectedCameraRequest}
             isPlayerMode={isPlayerMode}
             cinematicPreviewRequest={cinematicPreviewRequest}
             onCinematicPreviewComplete={handleCinematicPreviewComplete}
@@ -411,7 +427,12 @@ export function EditorPage(): React.JSX.Element {
           redoCount={redoCount}
           onUndo={handleUndo}
           onRedo={handleRedo}
-          onResetCamera={handleResetCamera}
+          cameraActionLabel={
+            selectedNodeIndex !== null && cameraViewMode === "home"
+              ? "Center on object"
+              : "Reset camera"
+          }
+          onCameraAction={handleCameraAction}
           onExportJson={handleExportJson}
           onSaveToServer={import.meta.env.DEV ? handleSaveToServer : undefined}
           onPlayerMode={handlePlayerMode}

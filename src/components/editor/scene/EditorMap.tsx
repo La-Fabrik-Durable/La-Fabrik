@@ -6,16 +6,11 @@ import * as THREE from "three";
 import { TerrainModel } from "@/components/three/world/TerrainModel";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
-import {
-  normalizeMapScale,
-  useTerrainSnappedPosition,
-} from "@/hooks/three/useTerrainHeight";
 import type { SceneData, MapNode, TransformMode } from "@/types/editor/editor";
 import {
   isEditorVisibleMapNode,
   getTerrainMapNode,
 } from "@/utils/map/mapRuntimeClassification";
-import { getVegetationScaleMultiplier } from "@/world/vegetation/vegetationConfig";
 
 interface EditorMapProps {
   sceneData: SceneData;
@@ -161,6 +156,11 @@ export function EditorMap({
   };
 
   const handleTransformMouseUp = () => {
+    syncSelectedObjectTransform();
+    onTransformEnd();
+  };
+
+  const syncSelectedObjectTransform = () => {
     if (selectedNodeIndex !== null) {
       const obj = objectsMapRef.current.get(selectedNodeIndex);
       if (!obj) return;
@@ -175,7 +175,6 @@ export function EditorMap({
         onNodeTransform(selectedNodeIndex, updatedNode);
       }
     }
-    onTransformEnd();
   };
 
   const [selectedObject, setSelectedObject] = useState<THREE.Object3D | null>(
@@ -279,6 +278,7 @@ export function EditorMap({
           mode={transformMode}
           onMouseDown={handleTransformMouseDown}
           onMouseUp={handleTransformMouseUp}
+          onObjectChange={syncSelectedObjectTransform}
         />
       )}
     </>
@@ -299,23 +299,14 @@ function EditorModelNode({
   modelUrl: string;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const snappedPosition = useTerrainSnappedPosition(node.position);
-  const vegetationScaleMultiplier = getVegetationScaleMultiplier(node.name);
-  const normalizedScale = vegetationScaleMultiplier
-    ? ([
-        vegetationScaleMultiplier,
-        vegetationScaleMultiplier,
-        vegetationScaleMultiplier,
-      ] satisfies MapNode["scale"])
-    : normalizeMapScale(node.scale);
   const originalMaterialsRef = useRef(
     new Map<THREE.Mesh, THREE.Material | THREE.Material[]>(),
   );
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "EditorMap.EditorModelNode",
-    position: snappedPosition,
+    position: node.position,
     rotation: node.rotation,
-    scale: normalizedScale,
+    scale: node.scale,
   });
   const sceneInstance = useClonedObject(scene);
   const pointerHandlers = createEditorNodePointerHandlers(
@@ -324,16 +315,7 @@ function EditorModelNode({
     isSelectionLocked,
     onHoverNode,
   );
-  useRegisteredEditorNode(
-    groupRef,
-    index,
-    {
-      ...node,
-      position: snappedPosition,
-      scale: normalizedScale,
-    },
-    objectsMapRef,
-  );
+  useRegisteredEditorNode(groupRef, index, node, objectsMapRef);
 
   useEffect(() => {
     if (!groupRef.current) return;
@@ -390,9 +372,9 @@ function EditorModelNode({
     <primitive
       ref={groupRef}
       object={sceneInstance}
-      position={snappedPosition}
+      position={node.position}
       rotation={node.rotation}
-      scale={normalizedScale}
+      scale={node.scale}
       {...pointerHandlers}
     />
   );
@@ -440,33 +422,22 @@ function EditorFallbackNode({
   onHoverNode,
 }: EditorNodeCommonProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const snappedPosition = useTerrainSnappedPosition(node.position);
-  const normalizedScale = normalizeMapScale(node.scale);
   const pointerHandlers = createEditorNodePointerHandlers(
     index,
     onSelectNode,
     isSelectionLocked,
     onHoverNode,
   );
-  useRegisteredEditorNode(
-    meshRef,
-    index,
-    {
-      ...node,
-      position: snappedPosition,
-      scale: normalizedScale,
-    },
-    objectsMapRef,
-  );
+  useRegisteredEditorNode(meshRef, index, node, objectsMapRef);
 
   const color = getNodeHighlightColor(isSelected, isHovered) ?? "#6f6f6f";
 
   return (
     <mesh
       ref={meshRef}
-      position={snappedPosition}
+      position={node.position}
       rotation={node.rotation}
-      scale={normalizedScale}
+      scale={node.scale}
       {...pointerHandlers}
     >
       <boxGeometry args={[1, 1, 1]} />

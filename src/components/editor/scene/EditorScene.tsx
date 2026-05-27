@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
@@ -33,6 +33,7 @@ interface EditorSceneProps {
   onUndo: () => void;
   onRedo: () => void;
   resetCameraRequest: number;
+  focusSelectedCameraRequest: number;
   isPlayerMode?: boolean;
   cinematicPreviewRequest?: EditorCinematicPreviewRequest | null;
   onCinematicPreviewComplete?: (() => void) | undefined;
@@ -54,6 +55,7 @@ export function EditorScene({
   onUndo,
   onRedo,
   resetCameraRequest,
+  focusSelectedCameraRequest,
   isPlayerMode = false,
   cinematicPreviewRequest = null,
   onCinematicPreviewComplete,
@@ -62,6 +64,21 @@ export function EditorScene({
   const camera = useThree((state) => state.camera);
   const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
   const previousSelectedNodeIndexRef = useRef<number | null>(null);
+
+  const focusCameraOnNode = useCallback(
+    (node: MapNode): void => {
+      const controls = orbitControlsRef.current;
+      const target = new THREE.Vector3(...node.position);
+      const currentTarget = controls?.target ?? EDITOR_CAMERA_HOME_TARGET;
+      const cameraOffset = camera.position.clone().sub(currentTarget);
+
+      camera.position.copy(target).add(cameraOffset);
+      camera.lookAt(target);
+      controls?.target.copy(target);
+      controls?.update();
+    },
+    [camera],
+  );
 
   useEffect(() => {
     if (selectedNodeIndex === previousSelectedNodeIndexRef.current) return;
@@ -74,17 +91,33 @@ export function EditorScene({
     const selectedNode = sceneData.mapNodes[selectedNodeIndex];
     if (!selectedNode) return;
 
-    const controls = orbitControlsRef.current;
-    const target = new THREE.Vector3(...selectedNode.position);
-    const currentTarget = controls?.target ?? EDITOR_CAMERA_HOME_TARGET;
-    const cameraOffset = camera.position.clone().sub(currentTarget);
-
-    camera.position.copy(target).add(cameraOffset);
-    camera.lookAt(target);
-    controls?.target.copy(target);
-    controls?.update();
+    focusCameraOnNode(selectedNode);
   }, [
     camera,
+    isCinematicPreviewing,
+    isPlayerMode,
+    focusCameraOnNode,
+    sceneData,
+    selectedNodeIndex,
+  ]);
+
+  useEffect(() => {
+    if (
+      focusSelectedCameraRequest === 0 ||
+      selectedNodeIndex === null ||
+      isPlayerMode ||
+      isCinematicPreviewing
+    ) {
+      return;
+    }
+
+    const selectedNode = sceneData.mapNodes[selectedNodeIndex];
+    if (!selectedNode) return;
+
+    focusCameraOnNode(selectedNode);
+  }, [
+    focusSelectedCameraRequest,
+    focusCameraOnNode,
     isCinematicPreviewing,
     isPlayerMode,
     sceneData,
