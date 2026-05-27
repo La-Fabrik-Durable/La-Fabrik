@@ -2,6 +2,28 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { findClosestWaypoint, findWaypointPath } from '@/pathfinding/WaypointAStar';
 import type { Waypoint } from '@/pathfinding/types';
+function computeImageSource(
+  img: HTMLImageElement | HTMLCanvasElement,
+  baseBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+) {
+  const imgW = img.width;
+  const imgH = img.height;
+
+  const baseW = baseBounds.maxX - baseBounds.minX;
+  const baseH = baseBounds.maxZ - baseBounds.minZ;
+
+  if (baseW === 0 || baseH === 0) {
+    return { sx: 0, sy: 0, sW: imgW, sH: imgH };
+  }
+
+  const sx = ((bounds.minX - baseBounds.minX) / baseW) * imgW;
+  const sy = ((bounds.minZ - baseBounds.minZ) / baseH) * imgH;
+  const sW = ((bounds.maxX - bounds.minX) / baseW) * imgW;
+  const sH = ((bounds.maxZ - bounds.minZ) / baseH) * imgH;
+
+  return { sx, sy, sW, sH };
+}
 
 export interface EbikeGPSMapProps {
   /**
@@ -233,7 +255,13 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
     // 1. Draw Map Background (Image or premium blueprint vectors)
     if (mapImage) {
-      ctx.drawImage(mapImage, 0, 0, size, size);
+      const src = computeImageSource(mapImage, baseBounds, bounds);
+      const sx = Math.max(0, Math.min(mapImage.width, src.sx));
+      const sy = Math.max(0, Math.min(mapImage.height, src.sy));
+      const sW = Math.max(1, Math.min(mapImage.width - sx, src.sW));
+      const sH = Math.max(1, Math.min(mapImage.height - sy, src.sH));
+
+      ctx.drawImage(mapImage, sx, sy, sW, sH, 0, 0, size, size);
       ctx.globalAlpha = 1.0;
     } else {
       // Dynamic Sci-fi background grid (Background is transparent!)
