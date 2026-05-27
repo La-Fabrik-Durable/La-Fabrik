@@ -1,7 +1,6 @@
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
-import { useTerrainSurfaceData } from "@/hooks/world/useTerrainSurfaceData";
 import {
   useDynamicGrass,
   useGrassDensity,
@@ -9,6 +8,7 @@ import {
 import type { TerrainSurfaceBounds } from "@/types/world/terrainSurface";
 import { GRASS_CONFIG } from "@/world/grass/grassConfig";
 import { GrassPatch } from "@/world/grass/GrassPatch";
+import { useTerrainGrassSampler } from "@/world/grass/useTerrainGrassSampler";
 
 interface GrassChunk {
   centerX: number;
@@ -52,7 +52,7 @@ function createGrassChunks(bounds: TerrainSurfaceBounds): GrassChunk[] {
 
 export function GrassSystem(): React.JSX.Element | null {
   const camera = useThree((state) => state.camera);
-  const terrainSurfaceData = useTerrainSurfaceData();
+  const terrainSampler = useTerrainGrassSampler();
   const sceneMode = useSceneMode();
   const dynamicGrass = useDynamicGrass();
   const grassDensity = useGrassDensity();
@@ -62,9 +62,8 @@ export function GrassSystem(): React.JSX.Element | null {
   );
   const density = Math.max(0, grassDensity);
   const chunks = useMemo(
-    () =>
-      terrainSurfaceData ? createGrassChunks(terrainSurfaceData.bounds) : [],
-    [terrainSurfaceData],
+    () => createGrassChunks(terrainSampler.bounds),
+    [terrainSampler],
   );
   const streamingEnabled = sceneMode === "game";
 
@@ -110,7 +109,7 @@ export function GrassSystem(): React.JSX.Element | null {
     !GRASS_CONFIG.enabled ||
     !dynamicGrass ||
     density <= 0 ||
-    !terrainSurfaceData
+    chunks.length === 0
   ) {
     return null;
   }
@@ -138,7 +137,7 @@ export function GrassSystem(): React.JSX.Element | null {
             chunkX={chunk.x}
             chunkZ={chunk.z}
             density={density}
-            terrainSurfaceData={terrainSurfaceData}
+            terrainSampler={terrainSampler}
           />
         </Suspense>
       ))}
