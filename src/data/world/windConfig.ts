@@ -1,8 +1,8 @@
 export const WIND_DEFAULTS = {
-  speed: 1.5,
+  speed: 0.8,
   direction: 0.5584,
   strength: 1.5,
-  noiseScale: 0.5,
+  noiseScale: 0.8,
 };
 
 export const WIND_BOUNDS = {
