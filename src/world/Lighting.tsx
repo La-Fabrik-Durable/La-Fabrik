@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Object3D } from "three";
 import type { AmbientLight, DirectionalLight } from "three";
 import {
   AMBIENT_INTENSITY_MAX,
@@ -22,17 +23,20 @@ import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { LIGHTING_STATE } from "@/world/lightingState";
 
 const SHADOW_MAP_SIZE = 2048;
-const SHADOW_CAMERA_SIZE = 170;
+const SHADOW_CAMERA_SIZE = 95;
 const SHADOW_CAMERA_NEAR = 0.5;
 const SHADOW_CAMERA_FAR = 300;
 
 export function Lighting(): React.JSX.Element {
+  const camera = useThree((state) => state.camera);
   const ambient = useRef<AmbientLight>(null);
   const sun = useRef<DirectionalLight>(null);
+  const sunTarget = useMemo(() => new Object3D(), []);
 
   useEffect(() => {
     if (!sun.current) return;
 
+    sun.current.target = sunTarget;
     sun.current.shadow.mapSize.width = SHADOW_MAP_SIZE;
     sun.current.shadow.mapSize.height = SHADOW_MAP_SIZE;
     sun.current.shadow.camera.left = -SHADOW_CAMERA_SIZE;
@@ -42,7 +46,7 @@ export function Lighting(): React.JSX.Element {
     sun.current.shadow.camera.near = SHADOW_CAMERA_NEAR;
     sun.current.shadow.camera.far = SHADOW_CAMERA_FAR;
     sun.current.shadow.camera.updateProjectionMatrix();
-  }, []);
+  }, [sunTarget]);
 
   useDebugFolder("Lighting", (folder) => {
     folder.addColor(LIGHTING_STATE, "ambientColor").name("Ambient Color");
@@ -83,10 +87,12 @@ export function Lighting(): React.JSX.Element {
     }
 
     if (sun.current) {
+      sunTarget.position.set(camera.position.x, 0, camera.position.z);
+      sunTarget.updateMatrixWorld();
       sun.current.position.set(
-        LIGHTING_STATE.sunX,
+        camera.position.x + LIGHTING_STATE.sunX,
         LIGHTING_STATE.sunY,
-        LIGHTING_STATE.sunZ,
+        camera.position.z + LIGHTING_STATE.sunZ,
       );
       sun.current.color.set(LIGHTING_STATE.sunColor);
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
@@ -102,6 +108,7 @@ export function Lighting(): React.JSX.Element {
       />
       <directionalLight
         ref={sun}
+        target={sunTarget}
         position={[
           LIGHTING_STATE.sunX,
           LIGHTING_STATE.sunY,
@@ -111,6 +118,7 @@ export function Lighting(): React.JSX.Element {
         color={LIGHTING_STATE.sunColor}
         castShadow
       />
+      <primitive object={sunTarget} />
     </>
   );
 }
