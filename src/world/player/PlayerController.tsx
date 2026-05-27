@@ -106,7 +106,8 @@ export function PlayerController({
   const velocity = useRef(new THREE.Vector3());
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
-  const initializedRef = useRef(false);  const canMove = useGameStore((state) => state.missionFlow.canMove);
+  const initializedRef = useRef(false);
+  const canMove = useGameStore((state) => state.missionFlow.canMove);
 
   const capsule = useRef(createSpawnCapsule(spawnPosition));
 
