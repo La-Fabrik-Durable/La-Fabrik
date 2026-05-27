@@ -4,6 +4,7 @@ import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import * as THREE from "three";
 import { EditorMap } from "@/components/editor/scene/EditorMap";
+import { TerrainModel } from "@/components/three/world/TerrainModel";
 import { FlyController } from "@/controls/editor/FlyController";
 import type { CinematicDefinition } from "@/types/cinematics/cinematics";
 import type { MapNode, TransformMode, SceneData } from "@/types/editor/editor";
@@ -21,6 +22,7 @@ interface EditorSceneProps {
   hoveredNodeIndex: number | null;
   onHoverNode: (index: number | null) => void;
   transformMode: TransformMode;
+  snapToTerrain: boolean;
   onTransformModeChange: (mode: TransformMode) => void;
   onTransformStart: () => void;
   onTransformEnd: () => void;
@@ -40,6 +42,7 @@ export function EditorScene({
   hoveredNodeIndex,
   onHoverNode,
   transformMode,
+  snapToTerrain,
   onTransformModeChange,
   onTransformStart,
   onTransformEnd,
@@ -126,10 +129,13 @@ export function EditorScene({
         hoveredNodeIndex={hoveredNodeIndex}
         onHoverNode={onHoverNode}
         transformMode={transformMode}
+        snapToTerrain={snapToTerrain}
         onTransformStart={onTransformStart}
         onTransformEnd={onTransformEnd}
         onNodeTransform={onNodeTransform}
       />
+
+      <TerrainModel />
 
       <ambientLight intensity={0.6} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />

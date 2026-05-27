@@ -130,6 +130,7 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 function setInstanceMatrices(
   instancedMesh: THREE.InstancedMesh,
   instances: MapAssetInstance[],
+  geometryBottomY: number,
 ): void {
   const position = new THREE.Vector3();
   const rotation = new THREE.Euler();
@@ -145,11 +146,26 @@ function setInstanceMatrices(
     rotation.set(...instance.rotation);
     quaternion.setFromEuler(rotation);
     scale.set(...instance.scale);
+    position.y += -geometryBottomY * scale.y;
     matrix.compose(position, quaternion, scale);
     instancedMesh.setMatrixAt(i, matrix);
   }
 
   instancedMesh.instanceMatrix.needsUpdate = true;
+}
+
+function getMeshBottomY(meshDataList: MeshData[]): number {
+  let bottomY = Number.POSITIVE_INFINITY;
+
+  for (const meshData of meshDataList) {
+    meshData.geometry.computeBoundingBox();
+    const minY = meshData.geometry.boundingBox?.min.y;
+    if (minY !== undefined) {
+      bottomY = Math.min(bottomY, minY);
+    }
+  }
+
+  return Number.isFinite(bottomY) ? bottomY : 0;
 }
 
 export function InstancedMapAsset({
@@ -185,6 +201,7 @@ export function InstancedMapAsset({
 
     optimizeGLTFSceneTextures(scene, maxAnisotropy);
     const meshDataList = extractMeshes(scene);
+    const geometryBottomY = getMeshBottomY(meshDataList);
     const instancedMeshes = meshDataList.map((meshData, index) => {
       const instancedMesh = new THREE.InstancedMesh(
         meshData.geometry,
@@ -192,7 +209,7 @@ export function InstancedMapAsset({
         groundedInstances.length,
       );
 
-      setInstanceMatrices(instancedMesh, groundedInstances);
+      setInstanceMatrices(instancedMesh, groundedInstances, geometryBottomY);
       instancedMesh.castShadow = castShadow;
       instancedMesh.receiveShadow = receiveShadow;
       instancedMesh.name = `instanced-map-asset-${index}`;

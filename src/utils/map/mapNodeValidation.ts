@@ -26,7 +26,9 @@ function isMapNode(value: unknown): value is MapNode {
   );
 }
 
-function isHierarchicalMapNode(value: unknown): value is HierarchicalMapNode {
+export function isHierarchicalMapNode(
+  value: unknown,
+): value is HierarchicalMapNode {
   if (!isMapNode(value)) {
     return false;
   }
@@ -54,13 +56,25 @@ function flattenMapNode(node: HierarchicalMapNode): MapNode[] {
     rotation: node.rotation,
     scale: node.scale,
   };
-  const childNodes = node.children?.flatMap(flattenMapNode) ?? [];
-
   if (node.role === "group") {
-    return childNodes;
+    return node.children?.flatMap(flattenMapNode) ?? [];
   }
 
-  return [mapNode, ...childNodes];
+  return [mapNode];
+}
+
+export function parseHierarchicalMapPayload(
+  value: unknown,
+): HierarchicalMapNode | HierarchicalMapNode[] {
+  if (Array.isArray(value) && value.every(isHierarchicalMapNode)) {
+    return value;
+  }
+
+  if (isHierarchicalMapNode(value)) {
+    return value;
+  }
+
+  throw new Error("Invalid map node data");
 }
 
 export function parseMapNodes(value: unknown): MapNode[] {

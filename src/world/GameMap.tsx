@@ -4,6 +4,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -11,8 +12,9 @@ import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import {
+  getObjectBottomOffset,
   normalizeMapScale,
-  useTerrainSnappedPosition,
+  useTerrainHeightSampler,
 } from "@/hooks/three/useTerrainHeight";
 import { TerrainModel } from "@/components/three/world/TerrainModel";
 import {
@@ -356,15 +358,21 @@ function ModelInstance({
   onLoaded: () => void;
 }): React.JSX.Element {
   const { position, rotation, scale } = node;
-  const snappedPosition = useTerrainSnappedPosition(position);
   const normalizedScale = normalizeMapScale(scale);
+  const terrainHeight = useTerrainHeightSampler();
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "GameMap.ModelInstance",
-    position: snappedPosition,
+    position,
     rotation,
     scale: normalizedScale,
   });
   const sceneInstance = useClonedObject(scene);
+  const groundedPosition = useMemo(() => {
+    const [x, y, z] = position;
+    const height = terrainHeight.getHeight(x, z);
+    const bottomOffset = getObjectBottomOffset(sceneInstance, normalizedScale);
+    return [x, height !== null ? height + bottomOffset : y, z] as const;
+  }, [normalizedScale, position, sceneInstance, terrainHeight]);
 
   useEffect(() => {
     sceneInstance.traverse((child) => {
@@ -379,7 +387,7 @@ function ModelInstance({
   return (
     <primitive
       object={sceneInstance}
-      position={snappedPosition}
+      position={groundedPosition}
       rotation={rotation}
       scale={normalizedScale}
     />

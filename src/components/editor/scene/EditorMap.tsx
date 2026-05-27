@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
+import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
 import type { SceneData, MapNode, TransformMode } from "@/types/editor/editor";
 
 interface EditorMapProps {
@@ -15,6 +16,7 @@ interface EditorMapProps {
   hoveredNodeIndex: number | null;
   onHoverNode: (index: number | null) => void;
   transformMode: TransformMode;
+  snapToTerrain: boolean;
   onTransformStart: () => void;
   onTransformEnd: () => void;
   onNodeTransform: (nodeIndex: number, transform: MapNode) => void;
@@ -138,11 +140,13 @@ export function EditorMap({
   hoveredNodeIndex,
   onHoverNode,
   transformMode,
+  snapToTerrain,
   onTransformStart,
   onTransformEnd,
   onNodeTransform,
 }: EditorMapProps): React.JSX.Element {
   const objectsMapRef = useRef<Map<number, THREE.Object3D>>(new Map());
+  const terrainHeight = useTerrainHeightSampler();
 
   const handleTransformMouseDown = () => {
     onTransformStart();
@@ -154,9 +158,22 @@ export function EditorMap({
       if (!obj) return;
       const node = sceneData.mapNodes[selectedNodeIndex];
       if (node) {
+        const terrainY = snapToTerrain
+          ? terrainHeight.getHeight(obj.position.x, obj.position.z)
+          : null;
+        if (terrainY !== null && transformMode === "translate") {
+          obj.position.y = terrainY;
+        }
+
         const updatedNode: MapNode = {
           ...node,
-          position: [obj.position.x, obj.position.y, obj.position.z],
+          position: [
+            obj.position.x,
+            terrainY !== null && transformMode === "translate"
+              ? terrainY
+              : obj.position.y,
+            obj.position.z,
+          ],
           rotation: [obj.rotation.x, obj.rotation.y, obj.rotation.z],
           scale: [obj.scale.x, obj.scale.y, obj.scale.z],
         };

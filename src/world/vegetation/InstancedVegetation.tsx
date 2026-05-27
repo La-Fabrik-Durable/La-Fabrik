@@ -75,6 +75,7 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 function createInstanceMatrices(
   instances: VegetationInstance[],
   scaleMultiplier: number,
+  geometryBottomY: number,
 ): THREE.Matrix4[] {
   const matrices: THREE.Matrix4[] = [];
   const position = new THREE.Vector3();
@@ -90,6 +91,7 @@ function createInstanceMatrices(
     const matrix = new THREE.Matrix4();
 
     position.set(...instance.position);
+    position.y += -geometryBottomY * scaleMultiplier;
     rotation.set(...instance.rotation);
     quaternion.setFromEuler(rotation);
     matrix.compose(position, quaternion, scale);
@@ -97,6 +99,20 @@ function createInstanceMatrices(
   }
 
   return matrices;
+}
+
+function getMeshBottomY(meshDataList: MeshData[]): number {
+  let bottomY = Number.POSITIVE_INFINITY;
+
+  for (const meshData of meshDataList) {
+    meshData.geometry.computeBoundingBox();
+    const minY = meshData.geometry.boundingBox?.min.y;
+    if (minY !== undefined) {
+      bottomY = Math.min(bottomY, minY);
+    }
+  }
+
+  return Number.isFinite(bottomY) ? bottomY : 0;
 }
 
 export function InstancedVegetation({
@@ -130,8 +146,13 @@ export function InstancedVegetation({
     [instances, terrainHeight],
   );
   const matrices = useMemo(
-    () => createInstanceMatrices(groundedInstances, scaleMultiplier),
-    [groundedInstances, scaleMultiplier],
+    () =>
+      createInstanceMatrices(
+        groundedInstances,
+        scaleMultiplier,
+        getMeshBottomY(meshDataList),
+      ),
+    [groundedInstances, meshDataList, scaleMultiplier],
   );
 
   const instancedMeshes = useMemo(() => {

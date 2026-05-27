@@ -8,9 +8,11 @@ import {
   Lock,
   MousePointer2,
   Move3D,
+  Plus,
   Redo2,
   RotateCw,
   Save,
+  Trash2,
   Undo2,
   Unlock,
   X,
@@ -19,18 +21,27 @@ import { EditorCinematicManifestPanel } from "@/components/editor/EditorCinemati
 import { EditorDialogueManifestPanel } from "@/components/editor/EditorDialogueManifestPanel";
 import { EditorSrtPanel } from "@/components/editor/EditorSrtPanel";
 import type { CinematicDefinition } from "@/types/cinematics/cinematics";
-import type { MapNode, TransformMode } from "@/types/editor/editor";
+import type { EditableMapNode, TransformMode } from "@/types/editor/editor";
+import type { Vector3Tuple } from "@/types/three/three";
 
 interface EditorControlsProps {
   transformMode: TransformMode;
   onTransformModeChange: (mode: TransformMode) => void;
   selectedNodeIndex: number | null;
-  mapNodes: MapNode[];
+  mapNodes: EditableMapNode[];
   nodesCount: number;
   selectedNodeName: string | null;
+  selectedNodeScale: Vector3Tuple | null;
   isSelectionLocked: boolean;
   onSelectionLockToggle: () => void;
   onClearSelection: () => void;
+  snapToTerrain: boolean;
+  onSnapToTerrainToggle: () => void;
+  newNodeName: string;
+  onNewNodeNameChange: (value: string) => void;
+  onAddNode: () => void;
+  onDeleteSelectedNode: () => void;
+  onSelectedScaleChange: (axis: 0 | 1 | 2, value: number) => void;
   undoCount: number;
   redoCount: number;
   onUndo: () => void;
@@ -90,9 +101,17 @@ export function EditorControls({
   mapNodes,
   nodesCount,
   selectedNodeName,
+  selectedNodeScale,
   isSelectionLocked,
   onSelectionLockToggle,
   onClearSelection,
+  snapToTerrain,
+  onSnapToTerrainToggle,
+  newNodeName,
+  onNewNodeNameChange,
+  onAddNode,
+  onDeleteSelectedNode,
+  onSelectedScaleChange,
   undoCount,
   redoCount,
   onUndo,
@@ -181,6 +200,15 @@ export function EditorControls({
                 <span>{redoCount}</span>
               </button>
             </div>
+
+            <label className="editor-checkbox-row">
+              <input
+                type="checkbox"
+                checked={snapToTerrain}
+                onChange={onSnapToTerrainToggle}
+              />
+              <span>Snap terrain on move</span>
+            </label>
           </section>
 
           <section
@@ -204,6 +232,14 @@ export function EditorControls({
                   </span>
                 </div>
                 <div className="editor-selected-actions">
+                  <button
+                    type="button"
+                    onClick={onDeleteSelectedNode}
+                    aria-label="Delete selected node"
+                    title="Delete selected node"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
                   <button
                     type="button"
                     onClick={onSelectionLockToggle}
@@ -230,6 +266,26 @@ export function EditorControls({
                     <X size={14} aria-hidden="true" />
                   </button>
                 </div>
+                {selectedNodeScale ? (
+                  <div className="editor-scale-fields">
+                    {selectedNodeScale.map((value, axis) => (
+                      <label key={axis}>
+                        <span>{["X", "Y", "Z"][axis]}</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={Number(value.toFixed(4))}
+                          onChange={(event) =>
+                            onSelectedScaleChange(
+                              axis as 0 | 1 | 2,
+                              Number(event.target.value),
+                            )
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="editor-no-selection">
@@ -237,6 +293,32 @@ export function EditorControls({
                 No object selected
               </div>
             )}
+          </section>
+
+          <section
+            className="editor-control-section"
+            aria-labelledby="add-node-heading"
+          >
+            <div className="editor-section-heading">
+              <h3 id="add-node-heading">Add Node</h3>
+            </div>
+
+            <div className="editor-add-node-row">
+              <input
+                type="text"
+                value={newNodeName}
+                onChange={(event) => onNewNodeNameChange(event.target.value)}
+                placeholder="model-folder-name"
+              />
+              <button
+                type="button"
+                className="editor-action-button"
+                onClick={onAddNode}
+              >
+                <Plus size={16} aria-hidden="true" />
+                Add cube
+              </button>
+            </div>
           </section>
 
           <section
@@ -341,7 +423,7 @@ interface JsonPreview {
 }
 
 function getJsonPreview(
-  mapNodes: MapNode[],
+  mapNodes: EditableMapNode[],
   selectedNodeIndex: number | null,
 ): JsonPreview {
   const { lines, ranges } = formatMapNodesWithRanges(mapNodes);
@@ -370,7 +452,7 @@ function getJsonPreview(
   };
 }
 
-function formatMapNodesWithRanges(mapNodes: MapNode[]): {
+function formatMapNodesWithRanges(mapNodes: EditableMapNode[]): {
   lines: string[];
   ranges: Array<{ start: number; end: number }>;
 } {
@@ -378,7 +460,14 @@ function formatMapNodesWithRanges(mapNodes: MapNode[]): {
   const ranges: Array<{ start: number; end: number }> = [];
 
   mapNodes.forEach((node, index) => {
-    const objectLines = JSON.stringify(node, null, 2)
+    const serializableNode = {
+      name: node.name,
+      position: node.position,
+      rotation: node.rotation,
+      scale: node.scale,
+      type: node.type,
+    };
+    const objectLines = JSON.stringify(serializableNode, null, 2)
       .split("\n")
       .map((line) => `  ${line}`);
 

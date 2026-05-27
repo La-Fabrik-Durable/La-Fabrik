@@ -1,5 +1,5 @@
 import type { SceneData } from "@/types/editor/editor";
-import { parseMapNodes } from "@/utils/map/mapNodeValidation";
+import { createSceneDataFromMapPayload } from "@/utils/map/loadMapSceneData";
 
 const MAP_JSON_PATH = "/map.json";
 
@@ -18,7 +18,7 @@ export async function createSceneDataFromFiles(
   }
 
   const mapPayload: unknown = JSON.parse(await mapFile.text());
-  const mapNodes = parseMapNodes(mapPayload);
+  const sceneData = await createSceneDataFromMapPayload(mapPayload);
   const models = new Map<string, string>();
 
   for (const [path, file] of fileMap.entries()) {
@@ -31,7 +31,7 @@ export async function createSceneDataFromFiles(
     }
   }
 
-  return { mapNodes, models };
+  return { ...sceneData, models };
 }
 
 function getProjectRelativePath(file: File): string {

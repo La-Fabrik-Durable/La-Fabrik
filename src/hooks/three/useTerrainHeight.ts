@@ -57,6 +57,16 @@ export function useTerrainSnappedPosition(
   }, [position, terrainHeight]);
 }
 
+export function getObjectBottomOffset(
+  object: THREE.Object3D,
+  scale: Vector3Tuple = [1, 1, 1],
+): number {
+  const bounds = new THREE.Box3().setFromObject(object);
+  if (bounds.isEmpty()) return 0;
+
+  return -bounds.min.y * scale[1];
+}
+
 export function normalizeMapScale(scale: Vector3Tuple): Vector3Tuple {
   const [x, y, z] = scale;
   const isUniform = Math.abs(x - y) < 0.001 && Math.abs(x - z) < 0.001;
