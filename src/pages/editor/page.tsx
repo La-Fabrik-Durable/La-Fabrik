@@ -142,6 +142,7 @@ export function EditorPage(): React.JSX.Element {
   const [isPlayerMode, setIsPlayerMode] = useState(false);
   const [isSelectionLocked, setIsSelectionLocked] = useState(false);
   const [lockTerrainSelection, setLockTerrainSelection] = useState(true);
+  const [resetCameraRequest, setResetCameraRequest] = useState(0);
   const [sceneLoadingState, setSceneLoadingState] = useState<SceneLoadingState>(
     {
       ...INITIAL_SCENE_LOADING_STATE,
@@ -255,6 +256,10 @@ export function EditorPage(): React.JSX.Element {
 
   const handlePlayerMode = useCallback(() => {
     setIsPlayerMode((prev) => !prev);
+  }, []);
+
+  const handleResetCamera = useCallback(() => {
+    setResetCameraRequest((request) => request + 1);
   }, []);
 
   const handlePreviewCinematic = useCallback(
@@ -375,6 +380,7 @@ export function EditorPage(): React.JSX.Element {
             onNodeTransform={handleNodeTransform}
             onUndo={handleUndo}
             onRedo={handleRedo}
+            resetCameraRequest={resetCameraRequest}
             isPlayerMode={isPlayerMode}
             cinematicPreviewRequest={cinematicPreviewRequest}
             onCinematicPreviewComplete={handleCinematicPreviewComplete}
@@ -405,6 +411,7 @@ export function EditorPage(): React.JSX.Element {
           redoCount={redoCount}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          onResetCamera={handleResetCamera}
           onExportJson={handleExportJson}
           onSaveToServer={import.meta.env.DEV ? handleSaveToServer : undefined}
           onPlayerMode={handlePlayerMode}

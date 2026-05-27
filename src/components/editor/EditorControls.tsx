@@ -11,6 +11,7 @@ import {
   Redo2,
   RotateCw,
   Save,
+  ScanSearch,
   Undo2,
   Unlock,
   X,
@@ -37,6 +38,7 @@ interface EditorControlsProps {
   redoCount: number;
   onUndo: () => void;
   onRedo: () => void;
+  onResetCamera: () => void;
   onExportJson: () => void;
   onSaveToServer?: (() => void | Promise<void>) | undefined;
   onPlayerMode?: (() => void) | undefined;
@@ -101,6 +103,7 @@ export function EditorControls({
   redoCount,
   onUndo,
   onRedo,
+  onResetCamera,
   onExportJson,
   onSaveToServer,
   onPlayerMode,
@@ -267,6 +270,11 @@ export function EditorControls({
                 {viewModeLabel}
               </button>
             )}
+
+            <button className="editor-action-button" onClick={onResetCamera}>
+              <ScanSearch size={16} aria-hidden="true" />
+              Reset camera
+            </button>
 
             <label className="editor-checkbox-row">
               <input

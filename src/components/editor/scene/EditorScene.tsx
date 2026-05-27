@@ -3,10 +3,14 @@ import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EditorMap } from "@/components/editor/scene/EditorMap";
 import { FlyController } from "@/controls/editor/FlyController";
 import type { CinematicDefinition } from "@/types/cinematics/cinematics";
 import type { MapNode, TransformMode, SceneData } from "@/types/editor/editor";
+
+const EDITOR_CAMERA_HOME_POSITION = new THREE.Vector3(0, 50, 100);
+const EDITOR_CAMERA_HOME_TARGET = new THREE.Vector3(0, 0, 0);
 
 export interface EditorCinematicPreviewRequest {
   id: string;
@@ -28,6 +32,7 @@ interface EditorSceneProps {
   onNodeTransform: (nodeIndex: number, transform: MapNode) => void;
   onUndo: () => void;
   onRedo: () => void;
+  resetCameraRequest: number;
   isPlayerMode?: boolean;
   cinematicPreviewRequest?: EditorCinematicPreviewRequest | null;
   onCinematicPreviewComplete?: (() => void) | undefined;
@@ -48,11 +53,55 @@ export function EditorScene({
   onNodeTransform,
   onUndo,
   onRedo,
+  resetCameraRequest,
   isPlayerMode = false,
   cinematicPreviewRequest = null,
   onCinematicPreviewComplete,
 }: EditorSceneProps): React.JSX.Element {
   const isCinematicPreviewing = cinematicPreviewRequest !== null;
+  const camera = useThree((state) => state.camera);
+  const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
+  const previousSelectedNodeIndexRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (selectedNodeIndex === previousSelectedNodeIndexRef.current) return;
+    previousSelectedNodeIndexRef.current = selectedNodeIndex;
+
+    if (selectedNodeIndex === null || isPlayerMode || isCinematicPreviewing) {
+      return;
+    }
+
+    const selectedNode = sceneData.mapNodes[selectedNodeIndex];
+    if (!selectedNode) return;
+
+    const controls = orbitControlsRef.current;
+    const target = new THREE.Vector3(...selectedNode.position);
+    const currentTarget = controls?.target ?? EDITOR_CAMERA_HOME_TARGET;
+    const cameraOffset = camera.position.clone().sub(currentTarget);
+
+    camera.position.copy(target).add(cameraOffset);
+    camera.lookAt(target);
+    controls?.target.copy(target);
+    controls?.update();
+  }, [
+    camera,
+    isCinematicPreviewing,
+    isPlayerMode,
+    sceneData,
+    selectedNodeIndex,
+  ]);
+
+  useEffect(() => {
+    if (resetCameraRequest === 0 || isPlayerMode || isCinematicPreviewing) {
+      return;
+    }
+
+    const controls = orbitControlsRef.current;
+    camera.position.copy(EDITOR_CAMERA_HOME_POSITION);
+    camera.lookAt(EDITOR_CAMERA_HOME_TARGET);
+    controls?.target.copy(EDITOR_CAMERA_HOME_TARGET);
+    controls?.update();
+  }, [camera, isCinematicPreviewing, isPlayerMode, resetCameraRequest]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -109,6 +158,7 @@ export function EditorScene({
         <FlyController disabled={isCinematicPreviewing} />
       ) : (
         <OrbitControls
+          ref={orbitControlsRef}
           enabled={!isCinematicPreviewing}
           enableDamping
           dampingFactor={0.05}

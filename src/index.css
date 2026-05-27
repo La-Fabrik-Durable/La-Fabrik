@@ -1371,7 +1371,8 @@ canvas {
     transform 160ms ease;
 }
 
-.editor-action-button + .editor-action-button {
+.editor-action-button + .editor-action-button,
+.editor-player-button + .editor-action-button {
   margin-top: 8px;
 }
 
