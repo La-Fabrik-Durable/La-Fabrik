@@ -7,6 +7,7 @@ export const grassVertexShader = /* glsl */ `
 
   uniform float uTime;
   uniform vec3 uPlayerPosition;
+  uniform vec3 uBaseBladeColor;
   uniform sampler2D uHeightMap;
   uniform sampler2D uDiffuseMap;
   uniform sampler2D uNoiseTexture;
@@ -136,9 +137,7 @@ export const grassVertexShader = /* glsl */ `
     float width = smoothstep(0.02, uMaxBladeHeight * 0.85, heightModifier) * uBladeWidth * bladeVisibility;
     transformed += aYaw * (width / 2.0) * sideFactor;
 
-    vec3 textureColor = texture2D(uDiffuseMap, terrainUv * 10.0).rgb;
-    vec3 colorNoise = texture2D(uNoiseTexture, terrainUv.yx * vec2(uHeightNoiseFrequency) + (uTime * 0.1)).rgb;
-    vColor = mix(aBladeColor * 0.55, aBladeColor, tipFactor) * textureColor * mix(vec3(0.75), vec3(1.15), colorNoise);
+    vColor = mix(uBaseBladeColor, aBladeColor, tipFactor);
 
     float distanceFromCenter = length(origin.xz) / halfPatchSize;
     float innerCircleFactor = clamp(smoothstep(0.0, 0.5, distanceFromCenter), 0.0, 1.0);

@@ -33,3 +33,4 @@ export const GRASS_CONFIG = {
 } as const;
 
 export const GRASS_COLORS = ["#84C66B", "#67B058", "#A3CA5B"] as const;
+export const GRASS_BASE_COLOR = "#1A3A1A" as const;

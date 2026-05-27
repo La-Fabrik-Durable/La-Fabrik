@@ -3,7 +3,11 @@ import { useTexture } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useWind } from "@/hooks/world/useWind";
-import { GRASS_COLORS, GRASS_CONFIG } from "@/world/grass/grassConfig";
+import {
+  GRASS_BASE_COLOR,
+  GRASS_COLORS,
+  GRASS_CONFIG,
+} from "@/world/grass/grassConfig";
 import {
   grassFragmentShader,
   grassVertexShader,
@@ -125,6 +129,7 @@ function createGrassMaterial(
       uDiffuseMap: { value: grassTexture },
       uHeightMap: { value: terrainSampler.heightTexture },
       uPlayerPosition: { value: new THREE.Vector3() },
+      uBaseBladeColor: { value: new THREE.Color(GRASS_BASE_COLOR) },
       uBoundingBoxMin: {
         value: new THREE.Vector3(
           terrainSampler.bounds.minX,
