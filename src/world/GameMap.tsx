@@ -19,6 +19,7 @@ import {
   isMapModelVisible,
   useMapPerformanceStore,
 } from "@/managers/stores/useMapPerformanceStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { GameMapCollision } from "@/world/GameMapCollision";
 import { CloudSystem } from "@/world/clouds/CloudSystem";
 import { GeneratedMapNodeInstance } from "@/world/map-generated/GeneratedMapNodeInstance";
@@ -302,14 +303,28 @@ function MapNodeInstance({
   node: MapNode;
   modelUrl: string | null;
   onSettled: () => void;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const isGeneratedModel = isGeneratedMapModelName(node.name);
+  const mainState = useGameStore((state) => state.mainState);
+  const bikeStep = useGameStore((state) => state.bike.currentStep);
+  const hideEbikeMapModel =
+    node.name === "ebike" && mainState === "bike" && bikeStep !== "locked";
 
   useEffect(() => {
     if (modelUrl !== null || isGeneratedModel) return;
 
     onSettled();
   }, [isGeneratedModel, modelUrl, onSettled]);
+
+  useEffect(() => {
+    if (!hideEbikeMapModel) return;
+
+    onSettled();
+  }, [hideEbikeMapModel, onSettled]);
+
+  if (hideEbikeMapModel) {
+    return null;
+  }
 
   if (isGeneratedModel) {
     return (
