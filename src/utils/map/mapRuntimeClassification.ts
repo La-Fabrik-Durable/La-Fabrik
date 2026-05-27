@@ -30,6 +30,10 @@ export function isRuntimeSingleMapNode(node: MapNode): boolean {
   );
 }
 
+export function isRuntimeCollisionMapNode(node: MapNode): boolean {
+  return node.name === "terrain" || isRuntimeSingleMapNode(node);
+}
+
 export function isEditorVisibleMapNode(node: MapNode): boolean {
   return !isRuntimeStructureMapNode(node.name) && node.type !== "Mesh";
 }

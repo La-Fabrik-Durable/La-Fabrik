@@ -4,6 +4,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -11,6 +12,11 @@ import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
+import {
+  getObjectBottomOffset,
+  normalizeMapScale,
+  useTerrainHeightSampler,
+} from "@/hooks/three/useTerrainHeight";
 import { WorldBoundsCollision } from "@/world/collision/WorldBoundsCollision";
 import type { MapNode } from "@/types/editor/editor";
 import type { OctreeReadyHandler } from "@/types/three/three";
@@ -26,6 +32,8 @@ interface ResolvedGameMapCollisionNode {
   node: MapNode;
   modelUrl: string;
 }
+
+type TerrainHeightSampler = ReturnType<typeof useTerrainHeightSampler>;
 
 interface GameMapCollisionProps {
   buildOctree?: boolean;
@@ -46,8 +54,6 @@ interface CollisionErrorBoundaryProps {
 interface CollisionErrorBoundaryState {
   hasError: boolean;
 }
-
-const MAP_COLLISION_NODE_NAMES = new Set(["terrain"]);
 
 class CollisionErrorBoundary extends Component<
   CollisionErrorBoundaryProps,
@@ -88,9 +94,7 @@ class CollisionErrorBoundary extends Component<
 function isCollisionNode(
   mapNode: GameMapCollisionNode,
 ): mapNode is ResolvedGameMapCollisionNode {
-  return (
-    mapNode.modelUrl !== null && MAP_COLLISION_NODE_NAMES.has(mapNode.node.name)
-  );
+  return mapNode.modelUrl !== null;
 }
 
 export function GameMapCollision({
@@ -105,6 +109,7 @@ export function GameMapCollision({
   const settledCollisionNodesRef = useRef(new Set<number>());
   const loadedNotifiedRef = useRef(false);
   const [settledCollisionNodeCount, setSettledCollisionNodeCount] = useState(0);
+  const terrainHeight = useTerrainHeightSampler();
   const collisionNodes = nodes.filter(isCollisionNode);
   const collisionReady =
     mapReady && settledCollisionNodeCount >= collisionNodes.length;
@@ -188,6 +193,7 @@ export function GameMapCollision({
                   node={mapNode.node}
                   modelUrl={mapNode.modelUrl}
                   onLoaded={() => handleCollisionNodeSettled(index)}
+                  terrainHeight={terrainHeight}
                 />
               </Suspense>
             </CollisionErrorBoundary>
@@ -201,19 +207,30 @@ function CollisionModelInstance({
   node,
   modelUrl,
   onLoaded,
+  terrainHeight,
 }: {
   node: MapNode;
   modelUrl: string;
   onLoaded: () => void;
+  terrainHeight: TerrainHeightSampler;
 }): React.JSX.Element {
   const { position, rotation, scale } = node;
+  const normalizedScale = normalizeMapScale(scale);
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "GameMapCollision.ModelInstance",
     position,
     rotation,
-    scale,
+    scale: normalizedScale,
   });
   const sceneInstance = useClonedObject(scene);
+  const collisionPosition = useMemo(() => {
+    if (node.name === "terrain") return position;
+
+    const [x, y, z] = position;
+    const height = terrainHeight.getHeight(x, z);
+    const bottomOffset = getObjectBottomOffset(sceneInstance, normalizedScale);
+    return [x, height !== null ? height + bottomOffset : y, z] as const;
+  }, [node.name, normalizedScale, position, sceneInstance, terrainHeight]);
 
   useEffect(() => {
     onLoaded();
@@ -222,9 +239,9 @@ function CollisionModelInstance({
   return (
     <primitive
       object={sceneInstance}
-      position={position}
+      position={collisionPosition}
       rotation={rotation}
-      scale={scale}
+      scale={normalizedScale}
     />
   );
 }

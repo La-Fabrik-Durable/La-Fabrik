@@ -47,6 +47,9 @@ const DEFAULT_KEYS: Keys = {
   jump: false,
 };
 
+const PLAYER_COLLISION_ITERATIONS = 3;
+const PLAYER_FLOOR_NORMAL_MIN = 0.5;
+
 interface PlayerControllerProps {
   octree: Octree | null;
   spawnPosition: Vector3Tuple;
@@ -300,16 +303,21 @@ export function PlayerController({
     capsule.current.translate(_translateVec);
 
     if (octree) {
-      const result = octree.capsuleIntersect(capsule.current);
       onFloor.current = false;
 
-      if (result) {
-        onFloor.current = result.normal.y > 0;
+      for (let index = 0; index < PLAYER_COLLISION_ITERATIONS; index++) {
+        const result = octree.capsuleIntersect(capsule.current);
+        if (!result) break;
 
-        if (!onFloor.current) {
-          const vn = result.normal.dot(velocity.current);
-          velocity.current.addScaledVector(result.normal, -vn);
-        } else {
+        const isFloorCollision = result.normal.y > PLAYER_FLOOR_NORMAL_MIN;
+        onFloor.current ||= isFloorCollision;
+        const normalVelocity = result.normal.dot(velocity.current);
+
+        if (!isFloorCollision && normalVelocity < 0) {
+          velocity.current.addScaledVector(result.normal, -normalVelocity);
+        }
+
+        if (isFloorCollision) {
           velocity.current.y = Math.max(0, velocity.current.y);
         }
 

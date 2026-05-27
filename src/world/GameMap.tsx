@@ -31,6 +31,7 @@ import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
 import {
   getTerrainMapNode,
+  isRuntimeCollisionMapNode,
   isRuntimeSingleMapNode,
 } from "@/utils/map/mapRuntimeClassification";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
@@ -178,7 +179,7 @@ export function GameMap({
           return { node, modelUrl: modelUrl ?? null };
         });
         const loadedCollisionNodes = sceneData.mapNodes
-          .filter((node) => node.name === "terrain")
+          .filter(isRuntimeCollisionMapNode)
           .map((node) => {
             const modelUrl = sceneData.models.get(node.name);
             return { node, modelUrl: modelUrl ?? null };
