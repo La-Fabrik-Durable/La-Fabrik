@@ -3,10 +3,26 @@ import { RepairGame } from "@/components/three/gameplay/RepairGame";
 import {
   REPAIR_MISSION_POSITION_ENTRIES,
   REPAIR_MISSION_TRIGGERS,
-  type RepairMissionTriggerConfig,
 } from "@/data/gameplay/repairMissionAnchors";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
+import type { RepairMissionId } from "@/types/gameplay/repairMission";
+import type { RepairMissionTriggerConfig } from "@/types/gameplay/repairMission";
 import type { Vector3Tuple } from "@/types/three/three";
+
+const FALLBACK_REPAIR_MISSION_POSITIONS = new Map(
+  REPAIR_MISSION_POSITION_ENTRIES.map(({ mission, position }) => [
+    mission,
+    position,
+  ]),
+);
+
+function getRepairMissionPosition(
+  mission: RepairMissionId,
+  anchors: Partial<Record<RepairMissionId, Vector3Tuple>>,
+): Vector3Tuple | undefined {
+  return anchors[mission] ?? FALLBACK_REPAIR_MISSION_POSITIONS.get(mission);
+}
 
 interface StageAnchorProps {
   color: string;
@@ -42,10 +58,9 @@ function RepairMissionTrigger({
   const missionStep = useGameStore(
     (state) => state[config.mission].currentStep,
   );
+  const anchors = useRepairMissionAnchorStore((state) => state.anchors);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
-  const position = REPAIR_MISSION_POSITION_ENTRIES.find(
-    (entry) => entry.mission === config.mission,
-  )?.position;
+  const position = getRepairMissionPosition(config.mission, anchors);
 
   if (!position) return null;
   if (mainState !== config.mission || missionStep !== "locked") return null;
@@ -70,15 +85,20 @@ function RepairMissionTrigger({
 
 export function GameStageContent(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
+  const anchors = useRepairMissionAnchorStore((state) => state.anchors);
 
   return (
     <>
       {mainState === "intro" ? (
         <StageAnchor color="#7dd3fc" position={[0, 4, 0]} />
       ) : null}
-      {REPAIR_MISSION_POSITION_ENTRIES.map(({ mission, position }) => (
-        <RepairGame key={mission} mission={mission} position={position} />
-      ))}
+      {REPAIR_MISSION_POSITION_ENTRIES.map(({ mission }) => {
+        const position = getRepairMissionPosition(mission, anchors);
+        if (!position) return null;
+        return (
+          <RepairGame key={mission} mission={mission} position={position} />
+        );
+      })}
       {REPAIR_MISSION_TRIGGERS.map((config) => (
         <RepairMissionTrigger key={config.mission} config={config} />
       ))}

@@ -22,9 +22,11 @@ import {
   useMapPerformanceStore,
 } from "@/managers/stores/useMapPerformanceStore";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
 import { GameMapCollision } from "@/world/GameMapCollision";
 import { GeneratedMapNodeInstance } from "@/world/map-generated/GeneratedMapNodeInstance";
 import { isGeneratedMapModelName } from "@/data/world/generatedMapModelConfig";
+import { getMapSingleModelScaleMultiplier } from "@/data/world/mapInstancingConfig";
 import { MapInstancingSystem } from "@/world/map-instancing/MapInstancingSystem";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 import { logger } from "@/utils/core/Logger";
@@ -35,6 +37,7 @@ import {
   isRuntimeSingleMapNode,
 } from "@/utils/map/mapRuntimeClassification";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
+import { getRepairMissionMapAnchors } from "@/utils/map/repairMissionMapAnchors";
 import type { MapNode } from "@/types/map/mapScene";
 import type { OctreeReadyHandler } from "@/types/three/three";
 
@@ -114,6 +117,9 @@ export function GameMap({
   const [terrainNode, setTerrainNode] = useState<MapNode | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [settledMapNodeCount, setSettledMapNodeCount] = useState(0);
+  const setRepairMissionAnchors = useRepairMissionAnchorStore(
+    (state) => state.setAnchors,
+  );
   const mapReady = mapLoaded;
 
   const handleMapNodeSettled = useCallback((index: number) => {
@@ -185,6 +191,9 @@ export function GameMap({
             return { node, modelUrl: modelUrl ?? null };
           });
         const loadedTerrainNode = getTerrainMapNode(sceneData.mapNodes);
+        const repairMissionAnchors = getRepairMissionMapAnchors(
+          sceneData.mapNodes,
+        );
         const missingModelCount = loadedMapNodes.filter(
           (mapNode) => mapNode.modelUrl === null,
         ).length;
@@ -202,6 +211,7 @@ export function GameMap({
         setRenderMapNodes(loadedMapNodes);
         setCollisionMapNodes(loadedCollisionNodes);
         setTerrainNode(loadedTerrainNode);
+        setRepairMissionAnchors(repairMissionAnchors);
         setMapLoaded(true);
         settledMapNodesRef.current.clear();
         setSettledMapNodeCount(0);
@@ -219,7 +229,7 @@ export function GameMap({
     };
 
     loadMap();
-  }, [onLoadingStateChange, showEmptyMap]);
+  }, [onLoadingStateChange, setRepairMissionAnchors, showEmptyMap]);
 
   useEffect(() => {
     if (renderMapNodes.length === 0) return;
@@ -350,7 +360,17 @@ function ModelInstance({
   onLoaded: () => void;
 }): React.JSX.Element {
   const { position, rotation, scale } = node;
-  const normalizedScale = normalizeMapScale(scale);
+  const scaleMultiplier = getMapSingleModelScaleMultiplier(node.name);
+  const baseScale = normalizeMapScale(scale);
+  const normalizedScale = useMemo(
+    () =>
+      [
+        baseScale[0] * scaleMultiplier,
+        baseScale[1] * scaleMultiplier,
+        baseScale[2] * scaleMultiplier,
+      ] satisfies [number, number, number],
+    [baseScale, scaleMultiplier],
+  );
   const terrainHeight = useTerrainHeightSampler();
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "GameMap.ModelInstance",

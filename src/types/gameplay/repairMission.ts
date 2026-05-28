@@ -6,6 +6,12 @@ import type {
 
 export type RepairMissionId = "ebike" | "pylon" | "farm";
 
+export interface RepairMissionTriggerConfig {
+  mission: RepairMissionId;
+  label: string;
+  radius: number;
+}
+
 export interface RepairMissionCaseConfig {
   position: Vector3Tuple;
   rotation: Vector3Tuple;

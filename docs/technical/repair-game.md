@@ -159,7 +159,7 @@ The repair case appears near the mission object. The player can:
 
 Both paths move to `fragmented`.
 
-Important current detail: `useRepairMovementLocked()` currently returns `false`, so the movement-lock rule and indicator are present but disabled in the current branch.
+`useRepairMovementLocked()` locks player movement during focused repair steps and drives the repair movement indicator.
 
 ### Fragmented
 

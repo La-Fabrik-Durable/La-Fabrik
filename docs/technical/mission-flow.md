@@ -37,7 +37,7 @@ Mission progression is not owned by a manager. Components update the store throu
 
 - `src/components/game/GameFlow.tsx` reacts to `missionFlow.step` and triggers one-off side effects such as intro audio and movement unlocks.
 - `src/components/zone/ZoneDetection.tsx` reads the camera position and moves the flow to a target step when the player enters a configured zone.
-- `src/components/three/interaction/CentralObject.tsx` and `VillageoisHelperObject.tsx` expose temporary interactive mission objects.
+- `src/world/GameStageContent.tsx` mounts repair games and their mission-start triggers.
 - `src/pages/page.tsx` mounts mission HTML overlays: `IntroUI`, `BienvenueDisplay`, and `DialogMessage`.
 - `src/world/player/PlayerController.tsx` reads `missionFlow.canMove` as an additional movement lock.
 

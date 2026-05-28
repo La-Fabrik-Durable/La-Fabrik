@@ -1,11 +1,8 @@
 import type { Vector3Tuple } from "@/types/three/three";
-import type { RepairMissionId } from "@/types/gameplay/repairMission";
-
-export interface RepairMissionTriggerConfig {
-  mission: RepairMissionId;
-  label: string;
-  radius: number;
-}
+import type {
+  RepairMissionId,
+  RepairMissionTriggerConfig,
+} from "@/types/gameplay/repairMission";
 
 export const EBIKE_REPAIR_POSITION = [
   42.2399, 4.5484, 34.6468,
