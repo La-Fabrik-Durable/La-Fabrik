@@ -1,5 +1,3 @@
-import type { AudioCategory } from "@/managers/AudioManager";
-
 export const AUDIO_PATHS = {
   intro: "/sounds/effect/fa.mp3",
   bienvenue: "/sounds/effect/fa.mp3",
@@ -7,6 +5,8 @@ export const AUDIO_PATHS = {
   searching: "/sounds/effect/fa.mp3",
   helped: "/sounds/effect/fa.mp3",
 } as const;
+
+export type AudioCategory = "music" | "sfx" | "dialogue";
 
 export const DEFAULT_CATEGORY_VOLUMES: Record<AudioCategory, number> = {
   music: 1,

@@ -1,5 +1,3 @@
-import type * as THREE from "three";
-
 export type TerrainSurfaceKind =
   | "grass"
   | "path"
@@ -9,18 +7,6 @@ export type TerrainSurfaceKind =
   | "rock";
 
 export type TerrainSurfaceRgb = readonly [number, number, number];
-
-export interface TerrainSurfaceUv {
-  u: number;
-  v: number;
-}
-
-export interface TerrainSurfaceProjectionConfig {
-  flipX?: boolean;
-  flipZ?: boolean;
-  offsetX?: number;
-  offsetZ?: number;
-}
 
 export interface TerrainSurfaceBounds {
   minX: number;
@@ -36,16 +22,4 @@ export interface TerrainSurfaceColorConfig {
   grassTipColor?: string;
   modelPath?: string;
   tileSize?: number;
-}
-
-export interface TerrainSurfaceSample {
-  rgb: TerrainSurfaceRgb;
-  key: string | null;
-  config: TerrainSurfaceColorConfig | null;
-}
-
-export interface TerrainSurfaceData {
-  bounds: TerrainSurfaceBounds;
-  imageData: ImageData;
-  raycastTarget: THREE.Object3D;
 }

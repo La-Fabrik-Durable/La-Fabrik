@@ -28,11 +28,11 @@ They are under `src/managers/stores/` because they are shared runtime state, not
 
 ## Store Responsibilities
 
-| Store              | Responsibility                                                    |
-| ------------------ | ----------------------------------------------------------------- |
-| `useGameStore`     | Durable game progression, mission steps, cinematic input lock     |
-| `useSettingsStore` | Menu visibility, volumes, subtitle options, repair-runtime toggle |
-| `useSubtitleStore` | Currently displayed subtitle cue                                  |
+| Store              | Responsibility                                                |
+| ------------------ | ------------------------------------------------------------- |
+| `useGameStore`     | Durable game progression, mission steps, cinematic input lock |
+| `useSettingsStore` | Menu visibility, volumes, and subtitle options                |
+| `useSubtitleStore` | Currently displayed subtitle cue                              |
 
 ## Managers vs Stores
 

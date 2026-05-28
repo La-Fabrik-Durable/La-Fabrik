@@ -6,7 +6,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { Vector3Tuple } from "@/types/three/three";
 import { optimizeGLTFSceneTextures } from "@/utils/three/optimizeGLTFScene";
 
-interface MergedStaticMapModelProps {
+export interface MergedStaticMapModelProps {
   modelPath: string;
   position: Vector3Tuple;
   rotation: Vector3Tuple;

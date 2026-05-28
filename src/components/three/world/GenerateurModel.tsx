@@ -1,17 +1,12 @@
 import { useGLTF } from "@react-three/drei";
-import { MergedStaticMapModel } from "@/components/three/world/MergedStaticMapModel";
-import type { Vector3Tuple } from "@/types/three/three";
+import {
+  MergedStaticMapModel,
+  type MergedStaticMapModelProps,
+} from "@/components/three/world/MergedStaticMapModel";
 
 const GENERATEUR_MODEL_PATH = "/models/generateur/model.gltf";
 
-interface GenerateurModelProps {
-  position: Vector3Tuple;
-  rotation: Vector3Tuple;
-  scale: Vector3Tuple;
-  castShadow?: boolean;
-  receiveShadow?: boolean;
-  onLoaded?: () => void;
-}
+type GenerateurModelProps = Omit<MergedStaticMapModelProps, "modelPath">;
 
 export function GenerateurModel(
   props: GenerateurModelProps,

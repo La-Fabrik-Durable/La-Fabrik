@@ -56,10 +56,10 @@ The mission config now carries the mission-specific variations. `ebike` repairs 
 - `src/components/three/gameplay/RepairPromptVideo.tsx` renders `.webm` prompts inside the 3D scene.
 - `src/components/three/gameplay/RepairScanSequence.tsx` keeps the exploded model visible and advances the scan from part to part.
 - `src/components/three/gameplay/RepairScanVisual.tsx` renders the scan halo and scan line around the active part.
-- `src/components/ui/RepairMovementLockIndicator.tsx` renders the HTML indicator intended for repair movement lock.
+- `src/components/ui/RepairMovementLockIndicator.tsx` renders the HTML repair movement-lock indicator.
 - `src/hooks/gameplay/useRepairFragmentationInput.ts` handles the `inspected -> fragmented` two-fists input and can optionally bind keyboard input for non-trigger flows.
 - `src/hooks/gameplay/useRepairMissionStep.ts` reads the active mission step from the game store.
-- `src/hooks/gameplay/useRepairMovementLocked.ts` exposes the shared repair movement-lock rule used by the player controller and UI indicator, but currently returns `false`.
+- `src/hooks/gameplay/useRepairMovementLocked.ts` exposes the shared repair movement-lock rule used by the player controller and UI indicator.
 - `src/hooks/handTracking/useBothFistsHold.ts` detects the reusable two-fists hold gesture.
 - `src/components/three/gameplay/RepairCaseModel.tsx` renders and animates the case model, and exposes `placeholder_*` transforms when the GLTF provides them.
 - `src/components/three/models/ExplodableModel.tsx` renders selectable models with split/exploded visualization.

@@ -107,7 +107,7 @@ const saveSrtPlugin = (): Plugin => ({
       }
 
       try {
-        const data = JSON.parse(Buffer.concat(chunks).toString()) as unknown;
+        const data: unknown = JSON.parse(Buffer.concat(chunks).toString());
         if (!isSrtPayload(data)) {
           sendJson(res, 400, { error: "Invalid SRT payload" });
           return;
@@ -189,7 +189,7 @@ const saveDialogueManifestPlugin = (): Plugin => ({
       }
 
       try {
-        const data = JSON.parse(Buffer.concat(chunks).toString()) as unknown;
+        const data: unknown = JSON.parse(Buffer.concat(chunks).toString());
         parseDialogueManifestData(data);
 
         const manifestPath = path.resolve(
@@ -235,7 +235,7 @@ const saveCinematicManifestPlugin = (): Plugin => ({
       }
 
       try {
-        const data = JSON.parse(Buffer.concat(chunks).toString()) as unknown;
+        const data: unknown = JSON.parse(Buffer.concat(chunks).toString());
         const manifest = parseCinematicManifestData(data);
         const dialogueManifest = await loadDialogueManifestData();
         validateCinematicDialogueCues(manifest, dialogueManifest);
@@ -304,15 +304,14 @@ interface CinematicKeyframeData {
 }
 
 function isSrtPayload(data: unknown): data is SrtPayload {
-  if (!data || typeof data !== "object") return false;
+  if (!isRecord(data)) return false;
 
-  const payload = data as Partial<SrtPayload>;
   return (
-    typeof payload.voice === "string" &&
-    SRT_VOICES.has(payload.voice) &&
-    typeof payload.language === "string" &&
-    SRT_LANGUAGES.has(payload.language) &&
-    typeof payload.content === "string"
+    typeof data.voice === "string" &&
+    SRT_VOICES.has(data.voice) &&
+    typeof data.language === "string" &&
+    SRT_LANGUAGES.has(data.language) &&
+    typeof data.content === "string"
   );
 }
 

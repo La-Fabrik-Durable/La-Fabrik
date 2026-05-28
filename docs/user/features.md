@@ -37,7 +37,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Input lock while the settings menu is open
 - Input lock while a cinematic is playing
 - Octree collision against dedicated map collision nodes, currently scoped to the `terrain` node
-- Repair movement-lock hook and indicator exist, but the hook currently returns `false`, so movement is not locked during repair on the current branch
+- Repair movement lock during focused repair steps, with a matching UI indicator
 
 ## Physics And Collision
 
@@ -108,12 +108,11 @@ This document lists the user-visible and developer-facing features implemented i
 - Music, SFX, and dialogue volume sliders
 - Subtitle visibility toggle
 - Subtitle language choice between French and English
-- Repair-runtime choice between JavaScript and Python modes stored in settings
 - Quit action that clears browser-accessible cookies and returns to `/`
 - Crosshair overlay
 - Interaction prompt
 - Subtitle overlay
-- Repair movement-lock indicator component, currently inactive because the lock hook returns `false`
+- Repair movement-lock indicator
 - Debug overlay layout
 - Scene loading overlay
 
@@ -192,7 +191,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Debug game-state panel
 - Debug hand-tracking panel
 - Physics test scene with floor, grabbable object, trigger object, repair zones, and animated model preview
-- Animated `electricienne_animated` model preview restored in the debug physics scene
+- Animated `electricienne-animated` model preview restored in the debug physics scene
 
 ## Map And Content Editor
 
@@ -230,7 +229,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Technical docs for architecture, scene runtime, repair game, interaction, editor, audio, hand tracking, Zustand, Three debugging, animation, and target architecture
 - User docs for implemented features, main feature, editor usage, and code-review preparation
 
-## Not Implemented Or Incomplete
+## Known Gaps
 
 - Complete production mission manager/orchestrator
 - Full mission HUD or minimap

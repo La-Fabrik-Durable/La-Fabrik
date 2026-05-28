@@ -5,7 +5,6 @@ export function DocsArchitecturePage(): React.JSX.Element {
   return (
     <DocsDocument
       content={architecture}
-      frContent={architecture}
       meta="02"
       title="Current Architecture"
     />

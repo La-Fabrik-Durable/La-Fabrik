@@ -1,7 +1,10 @@
-import { DEFAULT_CATEGORY_VOLUMES } from "@/data/audioConfig";
+import {
+  DEFAULT_CATEGORY_VOLUMES,
+  type AudioCategory,
+} from "@/data/audioConfig";
 import { logger } from "@/utils/core/Logger";
 
-export type AudioCategory = "music" | "sfx" | "dialogue";
+export type { AudioCategory } from "@/data/audioConfig";
 export type OneShotAudioCategory = Exclude<AudioCategory, "music">;
 
 interface AudioContextWindow extends Window {

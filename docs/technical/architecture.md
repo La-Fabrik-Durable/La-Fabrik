@@ -297,8 +297,7 @@ public/models/{name}/model.gltf
 - The repository is still a prototype.
 - There is no central production `GameManager`.
 - The repair game is implemented, but broader mission orchestration is still light.
-- `useRepairMovementLocked()` currently returns `false`, so repair movement lock is disabled even though the rule and UI component exist.
-- The repair-runtime setting is stored in settings but not consumed by the repair-game implementation.
+- `useRepairMovementLocked()` locks player movement during focused repair steps.
 - Player collision and Rapier gameplay physics are separate systems.
 - Editor persistence is local development tooling only.
 - Debug systems are still part of active scene composition and should remain easy to identify.

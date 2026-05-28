@@ -496,10 +496,16 @@ export function EditorSrtPanel(): React.JSX.Element {
         setContent(await response.text());
         setStatus(`Charge depuis ${srtPath}`);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!mounted) return;
         setContent(srtTemplate);
-        setStatus("Erreur de chargement, template local cree");
+        setStatus(
+          `Erreur de chargement, template local cree: ${error instanceof Error ? error.message : "Erreur inconnue"}`,
+        );
+        logger.warn("EditorSrt", "Falling back to local SRT template", {
+          srtPath,
+          error: error instanceof Error ? error : String(error),
+        });
       });
 
     return () => {

@@ -6,14 +6,14 @@ interface DocsDocumentProps {
   title: string;
   meta: string;
   content: string;
-  frContent: string;
+  frContent?: string;
 }
 
 export function DocsDocument({
   title,
   meta,
   content,
-  frContent,
+  frContent = content,
 }: DocsDocumentProps): React.JSX.Element {
   const { language, toggleLanguage } = useDocsLanguage();
   const hasAlternateContent = frContent !== content;

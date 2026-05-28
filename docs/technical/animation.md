@@ -46,7 +46,7 @@ It supports:
 The debug physics scene currently uses it to preview:
 
 ```txt
-public/models/electricienne_animated/model.gltf
+public/models/electricienne-animated/model.gltf
 ```
 
 with the `Dance` animation.

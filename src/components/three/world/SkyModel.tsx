@@ -7,8 +7,6 @@ import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 interface SkyModelProps {
   modelPath: string;
   fallbackColor?: string | undefined;
-  fallbackModelPath?: string | undefined;
-  fallbackScale?: number | undefined;
   scale?: number | undefined;
 }
 
@@ -29,7 +27,6 @@ interface SkyModelErrorBoundaryState {
 const SKY_MODEL_SCALE = 1;
 const SKY_MODEL_RENDER_ORDER = -1000;
 const SKYBOX_MODEL_PATH = "/models/skybox/model.gltf";
-const LEGACY_SKY_MODEL_PATH = "/models/sky/model.glb";
 
 class SkyModelErrorBoundary extends Component<
   SkyModelErrorBoundaryProps,
@@ -55,21 +52,12 @@ class SkyModelErrorBoundary extends Component<
 
 export function SkyModel({
   fallbackColor,
-  fallbackModelPath,
-  fallbackScale = SKY_MODEL_SCALE,
   modelPath,
   scale = SKY_MODEL_SCALE,
 }: SkyModelProps): React.JSX.Element {
-  const colorFallback = fallbackColor ? (
+  const fallback = fallbackColor ? (
     <color attach="background" args={[fallbackColor]} />
   ) : null;
-  const fallback = fallbackModelPath ? (
-    <SkyModelErrorBoundary key={fallbackModelPath} fallback={colorFallback}>
-      <SkyModelContent modelPath={fallbackModelPath} scale={fallbackScale} />
-    </SkyModelErrorBoundary>
-  ) : (
-    colorFallback
-  );
 
   return (
     <SkyModelErrorBoundary key={modelPath} fallback={fallback}>
@@ -154,4 +142,3 @@ function disposeSkyModelMaterials(model: THREE.Object3D): void {
 }
 
 useGLTF.preload(SKYBOX_MODEL_PATH);
-useGLTF.preload(LEGACY_SKY_MODEL_PATH);

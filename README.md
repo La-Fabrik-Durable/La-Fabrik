@@ -18,7 +18,7 @@ The current prototype puts the player in a repair-oriented world where they prog
 - Category-based audio manager for music, SFX, and dialogue
 - Dialogue manifest, SRT subtitles, subtitle overlay, and dialogue queueing
 - Cinematic manifest with GSAP camera keyframes and optional dialogue cues
-- In-game settings menu for volumes, subtitles, subtitle language, and the currently staged repair-runtime toggle
+- In-game settings menu for volumes, subtitles, and subtitle language
 - Debug mode with `?debug`, lil-gui controls, game-state panel, hand-tracking panel, debug camera, physics playground, and R3F perf
 - `/editor` route for map transforms, SRT editing, dialogue manifest editing, cinematic manifest editing, preview, validation, export, and dev-server saves
 - `/docs` route that renders the repository documentation inside the app
@@ -154,8 +154,7 @@ WS  ws://localhost:8000/ws
 ## Current Caveats
 
 - This is still a prototype, not a complete game runtime.
-- The repair-runtime toggle is stored in settings and displayed in the UI, but the repair game currently still runs locally in React/Three.
-- `useRepairMovementLocked()` currently returns `false`, so the movement-lock rule and indicator are present but disabled on `develop`.
+- `useRepairMovementLocked()` locks player movement during focused repair steps and drives the repair movement indicator.
 - Production editor persistence does not exist. Save endpoints in `vite.config.ts` are local Vite dev-server helpers.
 - The player uses octree collision while gameplay objects use Rapier. Keep that boundary deliberate unless the whole player controller is migrated.
 
