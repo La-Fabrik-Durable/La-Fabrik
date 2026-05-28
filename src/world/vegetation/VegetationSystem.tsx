@@ -8,15 +8,18 @@ import {
   useMapPerformanceStore,
 } from "@/managers/stores/useMapPerformanceStore";
 import { InstancedVegetation } from "@/world/vegetation/InstancedVegetation";
-import {
-  type VegetationInstance,
-  useVegetationData,
-} from "@/hooks/world/useVegetationData";
+import { useVegetationData } from "@/hooks/world/useVegetationData";
+import type { VegetationInstance } from "@/types/map/mapScene";
 import {
   VEGETATION_TYPE_KEYS,
   VEGETATION_TYPES,
   type VegetationType,
 } from "@/data/world/vegetationConfig";
+
+interface VegetationSystemProps {
+  onlyModelName?: string | null;
+  streaming?: boolean;
+}
 
 interface VegetationChunk {
   key: string;
@@ -26,6 +29,7 @@ interface VegetationChunk {
   castShadow: boolean;
   receiveShadow: boolean;
   windStrength: number;
+  rotationOffset: readonly [number, number, number];
   centerX: number;
   centerZ: number;
   instances: VegetationInstance[];
@@ -73,6 +77,7 @@ function createVegetationChunks(
       castShadow: config.castShadow,
       receiveShadow: config.receiveShadow,
       windStrength: config.windStrength,
+      rotationOffset: config.rotationOffset,
       centerX: center.x / chunkInstances.length,
       centerZ: center.z / chunkInstances.length,
       instances: chunkInstances,
@@ -80,20 +85,28 @@ function createVegetationChunks(
   });
 }
 
-export function VegetationSystem(): React.JSX.Element | null {
+export function VegetationSystem({
+  onlyModelName = null,
+  streaming = true,
+}: VegetationSystemProps): React.JSX.Element | null {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const groups = useMapPerformanceStore((state) => state.groups);
   const models = useMapPerformanceStore((state) => state.models);
   const { data, isLoading } = useVegetationData();
   const streamingEnabled =
-    CHUNK_CONFIG.enabled && sceneMode === "game" && cameraMode === "player";
+    streaming &&
+    CHUNK_CONFIG.enabled &&
+    sceneMode === "game" &&
+    cameraMode === "player";
 
   const chunks = useMemo(() => {
     if (!data) return [];
 
     return VEGETATION_TYPE_KEYS.flatMap((type) => {
       const config = VEGETATION_TYPES[type];
+
+      if (onlyModelName && config.mapName !== onlyModelName) return [];
 
       if (!config.enabled) return [];
       if (!isMapModelVisible(config.mapName, { groups, models })) return [];
@@ -103,7 +116,7 @@ export function VegetationSystem(): React.JSX.Element | null {
 
       return createVegetationChunks(type, entry.instances);
     });
-  }, [data, groups, models]);
+  }, [data, groups, models, onlyModelName]);
 
   const visibleChunks = useVisibleWorldChunks(chunks, streamingEnabled);
 
@@ -122,6 +135,7 @@ export function VegetationSystem(): React.JSX.Element | null {
             castShadow={chunk.castShadow}
             receiveShadow={chunk.receiveShadow}
             windStrength={chunk.windStrength}
+            rotationOffset={chunk.rotationOffset}
           />
         </Suspense>
       ))}

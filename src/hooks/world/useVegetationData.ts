@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { INSTANCED_MAP_EXCEPTIONS } from "@/data/world/vegetationConfig";
-import type { MapNode } from "@/types/map/mapScene";
-import {
-  type MapNodeInstanceTransform,
-  mapNodeToInstanceTransform,
-} from "@/utils/map/mapInstanceTransform";
+import type { MapNode, VegetationInstance } from "@/types/map/mapScene";
+import { mapNodeToInstanceTransform } from "@/utils/map/mapInstanceTransform";
 import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
-
-export type VegetationInstance = MapNodeInstanceTransform;
+import {
+  createPotagerMapNode,
+  isPotagerSourceMapNode,
+  POTAGER_MAP_NAME,
+} from "@/utils/map/potagerMapNodes";
 
 interface InstancedMapEntry {
   modelPath: string;
@@ -17,11 +17,34 @@ interface InstancedMapEntry {
 
 export type VegetationData = Map<string, InstancedMapEntry>;
 
+function createPositionKey(node: MapNode): string {
+  return node.position.map((value) => value.toFixed(3)).join(":");
+}
+
 function extractVegetationData(
   mapNodes: MapNode[],
   models: Map<string, string>,
 ): VegetationData {
   const data: VegetationData = new Map();
+
+  function addInstance(
+    mapName: string,
+    modelPath: string,
+    node: MapNode,
+  ): void {
+    const entry = data.get(mapName);
+    const instance = mapNodeToInstanceTransform(node);
+
+    if (entry) {
+      entry.instances.push(instance);
+      return;
+    }
+
+    data.set(mapName, {
+      modelPath,
+      instances: [instance],
+    });
+  }
 
   for (const node of mapNodes) {
     if (node.type !== "Object3D") continue;
@@ -30,16 +53,36 @@ function extractVegetationData(
     const modelPath = models.get(node.name);
     if (!modelPath) continue;
 
-    const entry = data.get(node.name);
+    addInstance(node.name, modelPath, node);
+  }
 
-    if (entry) {
-      entry.instances.push(mapNodeToInstanceTransform(node));
-    } else {
-      data.set(node.name, {
-        modelPath,
-        instances: [mapNodeToInstanceTransform(node)],
-      });
+  const existingPotagerPositionKeys = new Set(
+    mapNodes
+      .filter((node) => node.name === POTAGER_MAP_NAME)
+      .map(createPositionKey),
+  );
+
+  for (const node of mapNodes) {
+    if (!isPotagerSourceMapNode(node)) continue;
+    if (existingPotagerPositionKeys.has(createPositionKey(node))) continue;
+
+    addInstance(
+      POTAGER_MAP_NAME,
+      "/models/potager/potager.gltf",
+      createPotagerMapNode(node),
+    );
+  }
+
+  const potagerEntry = data.get(POTAGER_MAP_NAME);
+  if (potagerEntry) {
+    const uniqueInstances = new Map<string, VegetationInstance>();
+    for (const instance of potagerEntry.instances) {
+      uniqueInstances.set(
+        instance.position.map((value) => value.toFixed(3)).join(":"),
+        instance,
+      );
     }
+    potagerEntry.instances = [...uniqueInstances.values()];
   }
 
   return data;
@@ -64,6 +107,11 @@ export function useVegetationData(): {
         logger.error("Vegetation", "Failed to load vegetation data", {
           error: error instanceof Error ? error : String(error),
         });
+        if (!cancelled) {
+          setData(null);
+          setIsLoading(false);
+        }
+        return;
       }
 
       if (!cancelled) {

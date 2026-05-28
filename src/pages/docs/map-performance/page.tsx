@@ -3,11 +3,6 @@ import { DocsDocument } from "@/components/docs/DocsDocument";
 
 export function DocsMapPerformancePage(): React.JSX.Element {
   return (
-    <DocsDocument
-      content={mapPerformance}
-      frContent={mapPerformance}
-      meta="12"
-      title="Map Performance"
-    />
+    <DocsDocument content={mapPerformance} meta="12" title="Map Performance" />
   );
 }

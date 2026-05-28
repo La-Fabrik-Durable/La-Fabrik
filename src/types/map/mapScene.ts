@@ -9,6 +9,15 @@ export interface MapNode {
   sourcePath?: number[];
 }
 
+export interface MapNodeInstanceTransform {
+  position: Vector3Tuple;
+  rotation: Vector3Tuple;
+  scale: Vector3Tuple;
+}
+
+export type MapAssetInstance = MapNodeInstanceTransform;
+export type VegetationInstance = MapNodeInstanceTransform;
+
 export interface HierarchicalMapNode extends MapNode {
   role?: "group";
   children?: HierarchicalMapNode[];

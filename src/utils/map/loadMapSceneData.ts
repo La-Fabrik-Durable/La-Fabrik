@@ -3,7 +3,13 @@ import type {
   MapNode,
   SceneData,
 } from "@/types/map/mapScene";
+import { logger } from "@/utils/core/Logger";
 import { parseMapData } from "@/utils/map/mapNodeValidation";
+import {
+  createPotagerMapNode,
+  isPotagerSourceMapNode,
+  POTAGER_MAP_NAME,
+} from "@/utils/map/potagerMapNodes";
 
 const MAP_JSON_PATH = "/map.json";
 const MODEL_FILE_NAMES = ["model.glb", "model.gltf"];
@@ -59,9 +65,101 @@ async function loadMapSceneDataInternal(): Promise<SceneData | null> {
 export async function createSceneDataFromMapPayload(
   mapPayload: unknown,
 ): Promise<SceneData> {
-  const { mapNodes, mapTree } = parseMapData(mapPayload);
+  const { mapTree } = parseMapData(mapPayload);
+  const mapTreeWithPotagers = ensurePotagerMapTree(mapTree);
+  const mapNodes = flattenMapTree(mapTreeWithPotagers);
   const deduplicatedNodes = deduplicateMapNodes(mapNodes);
-  return createSceneData(deduplicatedNodes, mapTree);
+  return createSceneData(deduplicatedNodes, mapTreeWithPotagers);
+}
+
+function isSamePosition(a: MapNode, b: MapNode): boolean {
+  return a.position.every((value, index) => {
+    const otherValue = b.position[index];
+    return otherValue !== undefined && Math.abs(value - otherValue) < 0.0001;
+  });
+}
+
+function cloneMapTree(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+): HierarchicalMapNode | HierarchicalMapNode[] {
+  return JSON.parse(JSON.stringify(mapTree)) as
+    | HierarchicalMapNode
+    | HierarchicalMapNode[];
+}
+
+function flattenMapNode(node: HierarchicalMapNode, path: number[]): MapNode[] {
+  const childNodes =
+    node.children?.flatMap((child, index) =>
+      flattenMapNode(child, [...path, index]),
+    ) ?? [];
+
+  if (node.role === "group" || node.type === "Mesh") {
+    return childNodes;
+  }
+
+  return [
+    {
+      name: node.name,
+      type: node.type,
+      position: node.position,
+      rotation: node.rotation,
+      scale: node.scale,
+      sourcePath: path,
+    },
+    ...childNodes,
+  ];
+}
+
+function flattenMapTree(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+): MapNode[] {
+  return Array.isArray(mapTree)
+    ? mapTree.flatMap((node, index) => flattenMapNode(node, [index]))
+    : flattenMapNode(mapTree, []);
+}
+
+function collectExplicitPotagerNodes(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+): MapNode[] {
+  return flattenMapTree(mapTree).filter(
+    (node) => node.name === POTAGER_MAP_NAME,
+  );
+}
+
+function ensurePotagerMapTree(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+): HierarchicalMapNode | HierarchicalMapNode[] {
+  const nextTree = cloneMapTree(mapTree);
+  const explicitPotagers = collectExplicitPotagerNodes(nextTree);
+
+  function visit(node: HierarchicalMapNode): void {
+    if (!node.children) return;
+
+    const nextChildren: HierarchicalMapNode[] = [];
+    node.children.forEach((child) => {
+      nextChildren.push(child);
+      visit(child);
+
+      if (!isPotagerSourceMapNode(child)) return;
+
+      const hasMatchingPotager = explicitPotagers.some((potager) =>
+        isSamePosition(potager, child),
+      );
+      if (hasMatchingPotager) return;
+
+      nextChildren.push(createPotagerMapNode(child));
+    });
+
+    node.children = nextChildren;
+  }
+
+  if (Array.isArray(nextTree)) {
+    nextTree.forEach((node) => visit(node));
+  } else {
+    visit(nextTree);
+  }
+
+  return nextTree;
 }
 
 function createPositionKey(node: MapNode): string {
@@ -124,7 +222,7 @@ async function loadMapModelUrls(
 }
 
 async function loadModelEntry(modelName: string): Promise<ModelEntry | null> {
-  for (const fileName of MODEL_FILE_NAMES) {
+  for (const fileName of [...MODEL_FILE_NAMES, `${modelName}.gltf`]) {
     const modelUrl = `/models/${modelName}/${fileName}`;
 
     try {
@@ -133,7 +231,12 @@ async function loadModelEntry(modelName: string): Promise<ModelEntry | null> {
       if (response.ok && !contentType.includes(HTML_CONTENT_TYPE)) {
         return [modelName, modelUrl];
       }
-    } catch {
+    } catch (error) {
+      logger.warn("MapSceneData", "Failed to probe map model URL", {
+        modelName,
+        modelUrl,
+        error: error instanceof Error ? error : String(error),
+      });
       continue;
     }
   }

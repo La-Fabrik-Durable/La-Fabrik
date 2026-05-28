@@ -5,7 +5,8 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 1.5,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.08,
+    windStrength: 0.06,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
   sapin: {
@@ -14,7 +15,8 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 4,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.04,
+    windStrength: 0.12,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
   arbre: {
@@ -23,7 +25,8 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.06,
+    windStrength: 0.15,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
   champdeble: {
@@ -32,7 +35,8 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.18,
+    windStrength: 0.15,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
   champdesoja: {
@@ -41,7 +45,8 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.16,
+    windStrength: 0.15,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
   champsdetournesol: {
@@ -50,7 +55,18 @@ export const VEGETATION_TYPES = {
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
-    windStrength: 0.14,
+    windStrength: 0.15,
+    rotationOffset: [0, 0, 0],
+    enabled: true,
+  },
+  potager: {
+    mapName: "potager",
+    modelPath: "/models/potager/potager.gltf",
+    scaleMultiplier: 1,
+    castShadow: true,
+    receiveShadow: true,
+    windStrength: 0,
+    rotationOffset: [0, 0, 0],
     enabled: true,
   },
 } as const;
@@ -62,9 +78,17 @@ export const VEGETATION_TYPE_KEYS = [
   "champdeble",
   "champdesoja",
   "champsdetournesol",
+  "potager",
 ] as const satisfies readonly (keyof typeof VEGETATION_TYPES)[];
 
 export type VegetationType = (typeof VEGETATION_TYPE_KEYS)[number];
+
+export function getVegetationModelScaleMultiplier(name: string): number {
+  return (
+    Object.values(VEGETATION_TYPES).find((config) => config.mapName === name)
+      ?.scaleMultiplier ?? 1
+  );
+}
 
 export const INSTANCED_MAP_EXCEPTIONS = new Set([
   "Scene",

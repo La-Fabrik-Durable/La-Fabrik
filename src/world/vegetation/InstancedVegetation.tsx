@@ -4,7 +4,7 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
-import type { VegetationInstance } from "@/hooks/world/useVegetationData";
+import type { VegetationInstance } from "@/types/map/mapScene";
 import { useWind } from "@/hooks/world/useWind";
 import { optimizeGLTFSceneTextures } from "@/utils/three/optimizeGLTFScene";
 
@@ -15,6 +15,7 @@ interface InstancedVegetationProps {
   castShadow: boolean;
   receiveShadow: boolean;
   windStrength: number;
+  rotationOffset: readonly [number, number, number];
 }
 
 interface MeshData {
@@ -186,6 +187,7 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 function createInstanceMatrices(
   instances: VegetationInstance[],
   scaleMultiplier: number,
+  rotationOffset: readonly [number, number, number],
   geometryBottomY: number,
 ): THREE.Matrix4[] {
   const matrices: THREE.Matrix4[] = [];
@@ -203,7 +205,11 @@ function createInstanceMatrices(
 
     position.set(...instance.position);
     position.y += -geometryBottomY * scaleMultiplier;
-    rotation.set(...instance.rotation);
+    rotation.set(
+      instance.rotation[0] + rotationOffset[0],
+      instance.rotation[1] + rotationOffset[1],
+      instance.rotation[2] + rotationOffset[2],
+    );
     quaternion.setFromEuler(rotation);
     matrix.compose(position, quaternion, scale);
     matrices.push(matrix);
@@ -233,6 +239,7 @@ export function InstancedVegetation({
   castShadow,
   receiveShadow,
   windStrength,
+  rotationOffset,
 }: InstancedVegetationProps): React.JSX.Element | null {
   const { scene } = useGLTF(modelPath);
   const wind = useWind();
@@ -269,9 +276,10 @@ export function InstancedVegetation({
       createInstanceMatrices(
         groundedInstances,
         scaleMultiplier,
+        rotationOffset,
         getMeshBottomY(meshDataList),
       ),
-    [groundedInstances, meshDataList, scaleMultiplier],
+    [groundedInstances, meshDataList, rotationOffset, scaleMultiplier],
   );
 
   const instancedMeshes = useMemo(() => {

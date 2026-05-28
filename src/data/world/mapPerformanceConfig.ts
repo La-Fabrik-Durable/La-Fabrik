@@ -15,6 +15,7 @@ export type MapPerformanceModelName =
   | "champdeble"
   | "champdesoja"
   | "champsdetournesol"
+  | "potager"
   | "ecole"
   | "generateur"
   | "fermeverticale"
@@ -50,6 +51,7 @@ export const MAP_PERFORMANCE_MODEL_NAMES: readonly MapPerformanceModelName[] = [
   "champdeble",
   "champdesoja",
   "champsdetournesol",
+  "potager",
   "ecole",
   "generateur",
   "fermeverticale",
@@ -78,6 +80,7 @@ export const MAP_PERFORMANCE_MODEL_GROUPS: Record<
   champdeble: ["vegetation", "crops"],
   champdesoja: ["vegetation", "crops"],
   champsdetournesol: ["vegetation", "crops"],
+  potager: ["vegetation", "crops"],
   ecole: ["buildings", "landmarks"],
   generateur: ["landmarks"],
   fermeverticale: ["buildings", "landmarks"],

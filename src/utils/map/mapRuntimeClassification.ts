@@ -8,6 +8,7 @@ const RUNTIME_VEGETATION_NODE_NAMES = new Set([
   "champdeble",
   "champdesoja",
   "champsdetournesol",
+  "potager",
   "sapin",
 ]);
 
