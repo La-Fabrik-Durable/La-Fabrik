@@ -13,6 +13,7 @@ import { REPAIR_FRAGMENTATION_SEQUENCE_SECONDS } from "@/data/gameplay/repairGam
 import { REPAIR_MISSIONS } from "@/data/gameplay/repairMissions";
 import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmentationInput";
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
+import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
 import type {
   MissionStep,
   RepairMissionConfig,
@@ -66,6 +67,7 @@ export function RepairGame({
     readonly RepairScannedBrokenPart[]
   >([]);
   const parsedScale = toVector3Scale(scale);
+  const snappedPosition = useTerrainSnappedPosition(position);
   const readyForFragmentation = step === "inspected";
 
   useRepairFragmentationInput({
@@ -105,7 +107,7 @@ export function RepairGame({
   if (step === "locked") return null;
 
   return (
-    <group position={position} rotation={rotation} scale={parsedScale}>
+    <group position={snappedPosition} rotation={rotation} scale={parsedScale}>
       <Suspense fallback={null}>
         <RepairMissionAssetPreloader config={config} />
       </Suspense>
@@ -113,7 +115,7 @@ export function RepairGame({
         {step === "waiting" ? (
           <RepairInspectionObject
             config={config}
-            worldPosition={position}
+            worldPosition={snappedPosition}
             onInspect={() => setMissionStep(mission, "inspected")}
           />
         ) : null}

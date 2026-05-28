@@ -27,11 +27,11 @@ export const GAME_STEPS: readonly GameStep[] = [
 
 const GAME_STEP_VALUES: ReadonlySet<string> = new Set(GAME_STEPS);
 
-export type MainGameState = "intro" | "bike" | "pylone" | "ferme" | "outro";
+export type MainGameState = "intro" | "ebike" | "pylone" | "ferme" | "outro";
 
 export const MAIN_GAME_STATES: readonly MainGameState[] = [
   "intro",
-  "bike",
+  "ebike",
   "pylone",
   "ferme",
   "outro",

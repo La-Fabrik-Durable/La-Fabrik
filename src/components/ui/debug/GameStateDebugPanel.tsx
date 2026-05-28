@@ -18,15 +18,15 @@ function toPascalCase(value: string): string {
 
 export function GameStateDebugPanel(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
-  const bikeStep = useGameStore((state) => state.bike.currentStep);
+  const ebikeStep = useGameStore((state) => state.ebike.currentStep);
   const pyloneStep = useGameStore((state) => state.pylone.currentStep);
   const fermeStep = useGameStore((state) => state.ferme.currentStep);
   const detail = useGameStore((state) => {
     switch (state.mainState) {
       case "intro":
         return state.intro.currentStep;
-      case "bike":
-        return state.bike.currentStep;
+      case "ebike":
+        return state.ebike.currentStep;
       case "pylone":
         return state.pylone.currentStep;
       case "ferme":
@@ -37,7 +37,7 @@ export function GameStateDebugPanel(): React.JSX.Element {
   });
   const setMainState = useGameStore((state) => state.setMainState);
   const setIntroStep = useGameStore((state) => state.setIntroStep);
-  const setBikeState = useGameStore((state) => state.setBikeState);
+  const setEbikeState = useGameStore((state) => state.setEbikeState);
   const setPyloneState = useGameStore((state) => state.setPyloneState);
   const setFermeState = useGameStore((state) => state.setFermeState);
   const setOutroState = useGameStore((state) => state.setOutroState);
@@ -67,8 +67,8 @@ export function GameStateDebugPanel(): React.JSX.Element {
 
     if (!isMissionStep(nextSubState)) return;
 
-    if (mainState === "bike") {
-      setBikeState({ currentStep: nextSubState });
+    if (mainState === "ebike") {
+      setEbikeState({ currentStep: nextSubState });
       return;
     }
 
@@ -86,8 +86,8 @@ export function GameStateDebugPanel(): React.JSX.Element {
   function setDebugMainState(nextMainState: MainGameState): void {
     setMainState(nextMainState);
 
-    if (nextMainState === "bike" && bikeStep === "locked") {
-      setBikeState({ currentStep: "waiting" });
+    if (nextMainState === "ebike" && ebikeStep === "locked") {
+      setEbikeState({ currentStep: "waiting" });
       return;
     }
 

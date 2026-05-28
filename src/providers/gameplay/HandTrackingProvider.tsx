@@ -26,8 +26,8 @@ export function HandTrackingProvider({
   const sceneMode = useSceneMode();
   const repairNeedsHands = useGameStore((state) => {
     switch (state.mainState) {
-      case "bike":
-        return REPAIR_HAND_TRACKING_STEPS.has(state.bike.currentStep);
+      case "ebike":
+        return REPAIR_HAND_TRACKING_STEPS.has(state.ebike.currentStep);
       case "pylone":
         return REPAIR_HAND_TRACKING_STEPS.has(state.pylone.currentStep);
       case "ferme":

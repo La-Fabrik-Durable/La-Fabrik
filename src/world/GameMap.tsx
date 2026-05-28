@@ -301,9 +301,9 @@ function MapNodeInstance({
 }): React.JSX.Element | null {
   const isGeneratedModel = isGeneratedMapModelName(node.name);
   const mainState = useGameStore((state) => state.mainState);
-  const bikeStep = useGameStore((state) => state.bike.currentStep);
+  const ebikeStep = useGameStore((state) => state.ebike.currentStep);
   const hideEbikeMapModel =
-    node.name === "ebike" && mainState === "bike" && bikeStep !== "locked";
+    node.name === "ebike" && mainState === "ebike" && ebikeStep !== "locked";
 
   useEffect(() => {
     if (modelUrl !== null || isGeneratedModel) return;

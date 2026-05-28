@@ -14,8 +14,8 @@ const DEFAULT_REPAIR_CASE = {
 } satisfies RepairMissionCaseConfig;
 
 export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
-  bike: {
-    id: "bike",
+  ebike: {
+    id: "ebike",
     label: "E-bike",
     description:
       "Repair the damaged cooling module before relaunching the bike",
@@ -25,10 +25,10 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
-    requiredReplacementPartId: "bike-cooling-core-replacement",
+    requiredReplacementPartId: "ebike-cooling-core-replacement",
     brokenParts: [
       {
-        id: "bike-cooling-core",
+        id: "ebike-cooling-core",
         label: "Cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
         nodeName: "refroidisseur",
@@ -37,17 +37,17 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     ],
     replacementParts: [
       {
-        id: "bike-cooling-core-replacement",
+        id: "ebike-cooling-core-replacement",
         label: "Replacement cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
       },
       {
-        id: "bike-radio-distractor",
+        id: "ebike-radio-distractor",
         label: "Radio module",
         modelPath: "/models/talkie/model.gltf",
       },
       {
-        id: "bike-glove-distractor",
+        id: "ebike-glove-distractor",
         label: "Insulation glove",
         modelPath: "/models/gant_l/model.gltf",
       },

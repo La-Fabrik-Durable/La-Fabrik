@@ -4,8 +4,8 @@ import type { MissionStep } from "@/types/gameplay/repairMission";
 export function useRepairMovementLocked(): boolean {
   return useGameStore((state) => {
     switch (state.mainState) {
-      case "bike":
-        return isRepairMovementLocked(state.bike.currentStep);
+      case "ebike":
+        return isRepairMovementLocked(state.ebike.currentStep);
       case "pylone":
         return isRepairMovementLocked(state.pylone.currentStep);
       case "ferme":

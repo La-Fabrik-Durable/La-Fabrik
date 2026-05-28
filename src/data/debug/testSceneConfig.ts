@@ -25,8 +25,8 @@ export const TEST_SCENE_REPAIR_ZONE_MARKER_TUBE_RADIUS = 0.045;
 
 export const TEST_SCENE_REPAIR_ZONES = [
   {
-    mission: "bike",
-    label: "Bike",
+    mission: "ebike",
+    label: "E-bike",
     color: "#38bdf8",
     position: [-12, 0, -12],
   },
@@ -43,7 +43,7 @@ export const TEST_SCENE_REPAIR_ZONES = [
     position: [12, 0, -12],
   },
 ] as const satisfies readonly {
-  mission: "bike" | "pylone" | "ferme";
+  mission: "ebike" | "pylone" | "ferme";
   label: string;
   color: string;
   position: Vector3Tuple;

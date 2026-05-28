@@ -1,7 +1,7 @@
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { RepairGame } from "@/components/three/gameplay/RepairGame";
 import {
-  BIKE_REPAIR_POSITION,
+  EBIKE_REPAIR_POSITION,
   REPAIR_MISSION_POSITION_ENTRIES,
 } from "@/data/gameplay/repairMissionAnchors";
 import { useGameStore } from "@/managers/stores/useGameStore";
@@ -34,19 +34,19 @@ function StageAnchor({
 
 function EbikeMissionTrigger(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
-  const bikeStep = useGameStore((state) => state.bike.currentStep);
+  const ebikeStep = useGameStore((state) => state.ebike.currentStep);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
 
-  if (mainState !== "bike" || bikeStep !== "locked") return null;
+  if (mainState !== "ebike" || ebikeStep !== "locked") return null;
 
   return (
-    <group position={BIKE_REPAIR_POSITION}>
+    <group position={EBIKE_REPAIR_POSITION}>
       <InteractableObject
         kind="trigger"
         label="Réparer l'e-bike"
-        position={BIKE_REPAIR_POSITION}
+        position={EBIKE_REPAIR_POSITION}
         radius={4}
-        onPress={() => setMissionStep("bike", "waiting")}
+        onPress={() => setMissionStep("ebike", "waiting")}
       >
         <mesh>
           <sphereGeometry args={[1.3, 16, 16]} />

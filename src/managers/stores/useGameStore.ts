@@ -26,7 +26,7 @@ interface IntroState {
   currentStep: GameStep;
   dialogueAudio: string | null;
   hasCompleted: boolean;
-  isBikeUnlocked: boolean;
+  isEbikeUnlocked: boolean;
 }
 
 interface MissionState {
@@ -46,7 +46,7 @@ export interface GameState {
   isCinematicPlaying: boolean;
   missionFlow: MissionFlowState;
   intro: IntroState;
-  bike: MissionState & {
+  ebike: MissionState & {
     isRepaired: boolean;
   };
   pylone: MissionState & {
@@ -70,13 +70,13 @@ interface GameActions {
   setIntroStep: (step: GameStep) => void;
   setIntroState: (intro: Partial<IntroState>) => void;
   setPlayerName: (playerName: string) => void;
-  setBikeState: (bike: Partial<GameState["bike"]>) => void;
+  setEbikeState: (ebike: Partial<GameState["ebike"]>) => void;
   setPyloneState: (pylone: Partial<GameState["pylone"]>) => void;
   setFermeState: (ferme: Partial<GameState["ferme"]>) => void;
   setOutroState: (outro: Partial<GameState["outro"]>) => void;
   setMissionStep: (mission: RepairMissionId, step: MissionStep) => void;
   completeIntro: () => void;
-  completeBike: () => void;
+  completeEbike: () => void;
   completePylone: () => void;
   completeFerme: () => void;
   completeMission: (mission: RepairMissionId) => void;
@@ -104,24 +104,24 @@ function isBoolean(value: unknown): value is boolean {
 
 function completeIntroState(state: GameState): GameStateUpdate {
   return {
-    mainState: "bike",
+    mainState: "ebike",
     intro: {
       ...state.intro,
       hasCompleted: true,
-      isBikeUnlocked: true,
+      isEbikeUnlocked: true,
     },
-    bike: {
-      ...state.bike,
+    ebike: {
+      ...state.ebike,
       currentStep: "locked",
     },
   };
 }
 
-function completeBikeState(state: GameState): GameStateUpdate {
+function completeEbikeState(state: GameState): GameStateUpdate {
   return {
     mainState: "pylone",
-    bike: {
-      ...state.bike,
+    ebike: {
+      ...state.ebike,
       currentStep: "done",
       isRepaired: true,
     },
@@ -180,8 +180,8 @@ function completeMissionState(
   mission: RepairMissionId,
 ): GameStateUpdate {
   switch (mission) {
-    case "bike":
-      return completeBikeState(state);
+    case "ebike":
+      return completeEbikeState(state);
     case "pylone":
       return completePyloneState(state);
     case "ferme":
@@ -236,9 +236,9 @@ function createInitialGameState(): GameState {
       currentStep: "intro",
       dialogueAudio: null,
       hasCompleted: false,
-      isBikeUnlocked: false,
+      isEbikeUnlocked: false,
     },
-    bike: {
+    ebike: {
       currentStep: "locked",
       dialogueAudio: null,
       isRepaired: false,
@@ -273,9 +273,9 @@ function hydrateIntroState(initial: IntroState, value: unknown): IntroState {
     hasCompleted: isBoolean(value.hasCompleted)
       ? value.hasCompleted
       : initial.hasCompleted,
-    isBikeUnlocked: isBoolean(value.isBikeUnlocked)
-      ? value.isBikeUnlocked
-      : initial.isBikeUnlocked,
+    isEbikeUnlocked: isBoolean(value.isEbikeUnlocked)
+      ? value.isEbikeUnlocked
+      : initial.isEbikeUnlocked,
   };
 }
 
@@ -320,7 +320,7 @@ function hydrateMissionFlowState(
 function hydrateDebugGameState(initial: GameState, value: unknown): GameState {
   if (!isRecord(value)) return initial;
 
-  const bike = hydrateMissionState(initial.bike, value.bike);
+  const ebike = hydrateMissionState(initial.ebike, value.ebike);
   const pylone = hydrateMissionState(initial.pylone, value.pylone);
   const ferme = hydrateMissionState(initial.ferme, value.ferme);
   const outro = isRecord(value.outro) ? value.outro : null;
@@ -337,12 +337,12 @@ function hydrateDebugGameState(initial: GameState, value: unknown): GameState {
       value.missionFlow,
     ),
     intro: hydrateIntroState(initial.intro, value.intro),
-    bike: {
-      ...bike,
+    ebike: {
+      ...ebike,
       isRepaired:
-        isRecord(value.bike) && isBoolean(value.bike.isRepaired)
-          ? value.bike.isRepaired
-          : initial.bike.isRepaired,
+        isRecord(value.ebike) && isBoolean(value.ebike.isRepaired)
+          ? value.ebike.isRepaired
+          : initial.ebike.isRepaired,
     },
     pylone: {
       ...pylone,
@@ -384,7 +384,7 @@ function pickGameState(state: GameStore): GameState {
     isCinematicPlaying: state.isCinematicPlaying,
     missionFlow: state.missionFlow,
     intro: state.intro,
-    bike: state.bike,
+    ebike: state.ebike,
     pylone: state.pylone,
     ferme: state.ferme,
     outro: state.outro,
@@ -415,8 +415,8 @@ export const useGameStore = create<GameStore>()((set) => ({
     set((state) => ({
       missionFlow: { ...state.missionFlow, playerName },
     })),
-  setBikeState: (bike) =>
-    set((state) => ({ bike: { ...state.bike, ...bike } })),
+  setEbikeState: (ebike) =>
+    set((state) => ({ ebike: { ...state.ebike, ...ebike } })),
   setPyloneState: (pylone) =>
     set((state) => ({ pylone: { ...state.pylone, ...pylone } })),
   setFermeState: (ferme) =>
@@ -426,7 +426,7 @@ export const useGameStore = create<GameStore>()((set) => ({
   setMissionStep: (mission, step) =>
     set((state) => setMissionStepState(state, mission, step)),
   completeIntro: () => set(completeIntroState),
-  completeBike: () => set((state) => completeMissionState(state, "bike")),
+  completeEbike: () => set((state) => completeMissionState(state, "ebike")),
   completePylone: () => set((state) => completeMissionState(state, "pylone")),
   completeFerme: () => set((state) => completeMissionState(state, "ferme")),
   completeMission: (mission) =>

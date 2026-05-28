@@ -4,7 +4,7 @@ import type {
   Vector3Tuple,
 } from "@/types/three/three";
 
-export type RepairMissionId = "bike" | "pylone" | "ferme";
+export type RepairMissionId = "ebike" | "pylone" | "ferme";
 
 export interface RepairMissionCaseConfig {
   position: Vector3Tuple;
@@ -54,7 +54,7 @@ export type MissionStep =
   | "reassembling"
   | "done";
 
-const REPAIR_MISSION_IDS = ["bike", "pylone", "ferme"] as const;
+const REPAIR_MISSION_IDS = ["ebike", "pylone", "ferme"] as const;
 const REPAIR_MISSION_ID_VALUES: ReadonlySet<string> = new Set(
   REPAIR_MISSION_IDS,
 );
