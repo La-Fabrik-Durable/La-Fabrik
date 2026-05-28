@@ -1,4 +1,5 @@
 import { RepairGame } from "@/components/three/gameplay/RepairGame";
+import { Ebike } from "@/components/ebike/Ebike";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import type { RepairMissionId } from "@/types/gameplay/repairMission";
 import type { Vector3Tuple } from "@/types/three/three";
@@ -56,6 +57,7 @@ export function GameStageContent(): React.JSX.Element {
       {mainState === "intro" ? (
         <StageAnchor color="#7dd3fc" position={[0, 4, 0]} />
       ) : null}
+      <Ebike position={[0, 10, 0]} />
       {GAME_REPAIR_ZONES.map((zone) => (
         <RepairGame
           key={zone.mission}

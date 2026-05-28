@@ -7,8 +7,13 @@ import {
   type MissionStep,
   type RepairMissionId,
 } from "@/types/gameplay/repairMission";
+import {
+  PLAYER_WALK_SPEED,
+  PLAYER_EBIKE_SPEED,
+} from "@/data/player/playerConfig";
 
 export type MainGameState = "intro" | "bike" | "pylone" | "ferme" | "outro";
+export type PlayerMovementMode = "walk" | "ebike";
 export type { MissionStep, RepairMissionId };
 
 interface IntroState {
@@ -30,10 +35,16 @@ interface MissionFlowState {
   playerName: string;
 }
 
+interface PlayerState {
+  movementMode: PlayerMovementMode;
+  currentSpeed: number;
+}
+
 interface GameState {
   mainState: MainGameState;
   isCinematicPlaying: boolean;
   missionFlow: MissionFlowState;
+  player: PlayerState;
   intro: IntroState;
   bike: MissionState & {
     isRepaired: boolean;
@@ -56,6 +67,7 @@ interface GameActions {
   hideDialog: () => void;
   setActivityCity: (activityCity: boolean) => void;
   setCanMove: (canMove: boolean) => void;
+  setPlayerMovementMode: (mode: PlayerMovementMode) => void;
   setIntroStep: (step: GameStep) => void;
   setIntroState: (intro: Partial<IntroState>) => void;
   setPlayerName: (playerName: string) => void;
@@ -209,6 +221,10 @@ function createInitialGameState(): GameState {
       dialogMessage: null,
       playerName: "",
     },
+    player: {
+      movementMode: "walk",
+      currentSpeed: PLAYER_WALK_SPEED,
+    },
     intro: {
       currentStep: "intro",
       dialogueAudio: null,
@@ -248,6 +264,14 @@ export const useGameStore = create<GameStore>()((set) => ({
   setActivityCity: (activityCity) =>
     set((state) => ({
       missionFlow: { ...state.missionFlow, activityCity },
+    })),
+  setPlayerMovementMode: (mode) =>
+    set((state) => ({
+      player: {
+        ...state.player,
+        movementMode: mode,
+        currentSpeed: mode === "ebike" ? PLAYER_EBIKE_SPEED : PLAYER_WALK_SPEED,
+      },
     })),
   setCanMove: (canMove) =>
     set((state) => ({

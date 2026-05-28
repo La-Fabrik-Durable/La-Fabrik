@@ -30,6 +30,7 @@ import { Player } from "@/world/player/Player";
 import { TestMap } from "@/world/debug/TestMap";
 import { NetTest } from "@/components/three/debug/NetTest";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
+import { EbikeGPSMap } from "@/components/ebike/EbikeGPSMap";
 
 interface WorldProps {
   onLoadingStateChange?: SceneLoadingChangeHandler | undefined;
@@ -100,7 +101,6 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
         </>
       ) : (
         <TestMap onOctreeReady={handleOctreeReady} />
-        <NetTest />
       )}
 
       {sceneMode !== "game" && spawnPlayer ? (
