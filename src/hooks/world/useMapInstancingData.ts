@@ -4,15 +4,10 @@ import {
   MAP_INSTANCING_ASSET_TYPES,
   type MapInstancingAssetType,
 } from "@/data/world/mapInstancingConfig";
-import type { MapNode } from "@/types/map/mapScene";
-import {
-  type MapNodeInstanceTransform,
-  mapNodeToInstanceTransform,
-} from "@/utils/map/mapInstanceTransform";
+import type { MapAssetInstance, MapNode } from "@/types/map/mapScene";
+import { mapNodeToInstanceTransform } from "@/utils/map/mapInstanceTransform";
 import { logger } from "@/utils/core/Logger";
 import { getMapNodes, loadMapSceneData } from "@/utils/map/loadMapSceneData";
-
-export type MapAssetInstance = MapNodeInstanceTransform;
 
 export type MapInstancingData = Map<MapInstancingAssetType, MapAssetInstance[]>;
 
@@ -65,6 +60,11 @@ export function useMapInstancingData(): {
         logger.error("MapInstancing", "Failed to load map instancing data", {
           error: error instanceof Error ? error : String(error),
         });
+        if (!cancelled) {
+          setData(null);
+          setIsLoading(false);
+        }
+        return;
       }
 
       const nodes = getMapNodes();

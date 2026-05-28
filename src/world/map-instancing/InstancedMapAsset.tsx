@@ -7,12 +7,13 @@ import {
   normalizeMapScale,
   useTerrainHeightSampler,
 } from "@/hooks/three/useTerrainHeight";
-import type { MapAssetInstance } from "@/hooks/world/useMapInstancingData";
+import type { MapAssetInstance } from "@/types/map/mapScene";
 import { optimizeGLTFSceneTextures } from "@/utils/three/optimizeGLTFScene";
 
 interface InstancedMapAssetProps {
   modelPath: string;
   instances: MapAssetInstance[];
+  scaleMultiplier: number;
   castShadow: boolean;
   receiveShadow: boolean;
 }
@@ -133,6 +134,7 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 function setInstanceMatrices(
   instancedMesh: THREE.InstancedMesh,
   instances: MapAssetInstance[],
+  scaleMultiplier: number,
   geometryBottomY: number,
 ): void {
   const position = new THREE.Vector3();
@@ -148,7 +150,11 @@ function setInstanceMatrices(
     position.set(...instance.position);
     rotation.set(...instance.rotation);
     quaternion.setFromEuler(rotation);
-    scale.set(...instance.scale);
+    scale.set(
+      instance.scale[0] * scaleMultiplier,
+      instance.scale[1] * scaleMultiplier,
+      instance.scale[2] * scaleMultiplier,
+    );
     position.y += -geometryBottomY * scale.y;
     matrix.compose(position, quaternion, scale);
     instancedMesh.setMatrixAt(i, matrix);
@@ -174,6 +180,7 @@ function getMeshBottomY(meshDataList: MeshData[]): number {
 export function InstancedMapAsset({
   modelPath,
   instances,
+  scaleMultiplier,
   castShadow,
   receiveShadow,
 }: InstancedMapAssetProps): React.JSX.Element | null {
@@ -219,7 +226,12 @@ export function InstancedMapAsset({
         groundedInstances.length,
       );
 
-      setInstanceMatrices(instancedMesh, groundedInstances, geometryBottomY);
+      setInstanceMatrices(
+        instancedMesh,
+        groundedInstances,
+        scaleMultiplier,
+        geometryBottomY,
+      );
       instancedMesh.castShadow = castShadow;
       instancedMesh.receiveShadow = receiveShadow;
       instancedMesh.name = `instanced-map-asset-${index}`;
@@ -239,7 +251,13 @@ export function InstancedMapAsset({
         disposeInstancedMapMesh(mesh);
       }
     };
-  }, [castShadow, groundedInstances, meshDataList, receiveShadow]);
+  }, [
+    castShadow,
+    groundedInstances,
+    meshDataList,
+    receiveShadow,
+    scaleMultiplier,
+  ]);
 
   if (instances.length === 0) {
     return null;
