@@ -5,7 +5,6 @@ export function DocsTargetArchitecturePage(): React.JSX.Element {
   return (
     <DocsDocument
       content={targetArchitecture}
-      frContent={targetArchitecture}
       meta="06"
       title="Target Architecture"
     />

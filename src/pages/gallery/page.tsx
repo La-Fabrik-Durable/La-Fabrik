@@ -33,12 +33,10 @@ import {
   AMBIENT_INTENSITY_MAX,
   AMBIENT_INTENSITY_MIN,
   AMBIENT_INTENSITY_STEP,
-  AMBIENT_LIGHT_COLOR,
   LIGHTING_DEFAULTS,
   SUN_INTENSITY_MAX,
   SUN_INTENSITY_MIN,
   SUN_INTENSITY_STEP,
-  SUN_LIGHT_COLOR,
   SUN_X_MAX,
   SUN_X_MIN,
   SUN_X_STEP,
@@ -50,8 +48,8 @@ import {
   SUN_Z_STEP,
 } from "@/data/world/lightingConfig";
 import {
-  GAME_SCENE_FALLBACK_SKY_MODEL_PATH,
-  GAME_SCENE_FALLBACK_SKY_MODEL_SCALE,
+  GAME_SCENE_SKY_FALLBACK_MODEL_PATH,
+  GAME_SCENE_SKY_FALLBACK_MODEL_SCALE,
   GAME_SCENE_SKY_MODEL_PATH,
   GAME_SCENE_SKY_MODEL_SCALE,
 } from "@/data/world/environmentConfig";
@@ -337,8 +335,8 @@ function GalleryScene({
   return (
     <>
       <SkyModel
-        fallbackModelPath={GAME_SCENE_FALLBACK_SKY_MODEL_PATH}
-        fallbackScale={GAME_SCENE_FALLBACK_SKY_MODEL_SCALE}
+        fallbackModelPath={GAME_SCENE_SKY_FALLBACK_MODEL_PATH}
+        fallbackScale={GAME_SCENE_SKY_FALLBACK_MODEL_SCALE}
         materialSide={THREE.DoubleSide}
         modelPath={GAME_SCENE_SKY_MODEL_PATH}
         scale={GAME_SCENE_SKY_MODEL_SCALE}
@@ -374,12 +372,12 @@ function GalleryLighting({
     <>
       <ambientLight
         intensity={lighting.ambientIntensity}
-        color={AMBIENT_LIGHT_COLOR}
+        color={LIGHTING_DEFAULTS.ambientColor}
       />
       <directionalLight
         position={[lighting.sunX, lighting.sunY, lighting.sunZ]}
         intensity={lighting.sunIntensity}
-        color={SUN_LIGHT_COLOR}
+        color={LIGHTING_DEFAULTS.sunColor}
       />
     </>
   );

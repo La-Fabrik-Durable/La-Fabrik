@@ -1,21 +1,35 @@
 import { create } from "zustand";
-import type { GameStep } from "@/types/game";
+import { isGameStep, isMainGameState } from "@/data/game/gameStateConfig";
 import {
-  isRepairMissionId,
   getNextMissionStep,
   getPreviousMissionStep,
+  isMissionStep,
+  isRepairMissionId,
+} from "@/data/gameplay/repairMissionState";
+import {
+  PLAYER_EBIKE_SPEED,
+  PLAYER_WALK_SPEED,
+} from "@/data/player/playerConfig";
+import type { GameStep, MainGameState } from "@/types/game";
+import {
   type MissionStep,
   type RepairMissionId,
 } from "@/types/gameplay/repairMission";
+import {
+  clearDebugGameStateCookie,
+  readDebugGameStateCookie,
+  writeDebugGameStateCookie,
+} from "@/utils/debug/debugGameStateCookie";
+import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 
-export type MainGameState = "intro" | "bike" | "pylone" | "ferme" | "outro";
+export type PlayerMovementMode = "walk" | "ebike";
 export type { MissionStep, RepairMissionId };
 
 interface IntroState {
   currentStep: GameStep;
   dialogueAudio: string | null;
   hasCompleted: boolean;
-  isBikeUnlocked: boolean;
+  isEbikeUnlocked: boolean;
 }
 
 interface MissionState {
@@ -30,18 +44,19 @@ interface MissionFlowState {
   playerName: string;
 }
 
-interface GameState {
+export interface GameState {
   mainState: MainGameState;
   isCinematicPlaying: boolean;
   missionFlow: MissionFlowState;
+  player: PlayerState;
   intro: IntroState;
-  bike: MissionState & {
+  ebike: MissionState & {
     isRepaired: boolean;
   };
-  pylone: MissionState & {
+  pylon: MissionState & {
     isPowered: boolean;
   };
-  ferme: MissionState & {
+  farm: MissionState & {
     irrigationFixed: boolean;
   };
   outro: {
@@ -50,24 +65,30 @@ interface GameState {
   };
 }
 
+interface PlayerState {
+  movementMode: PlayerMovementMode;
+  currentSpeed: number;
+}
+
 interface GameActions {
   setMainState: (mainState: MainGameState) => void;
   setCinematicPlaying: (isCinematicPlaying: boolean) => void;
   hideDialog: () => void;
   setActivityCity: (activityCity: boolean) => void;
   setCanMove: (canMove: boolean) => void;
+  setPlayerMovementMode: (mode: PlayerMovementMode) => void;
   setIntroStep: (step: GameStep) => void;
   setIntroState: (intro: Partial<IntroState>) => void;
   setPlayerName: (playerName: string) => void;
-  setBikeState: (bike: Partial<GameState["bike"]>) => void;
-  setPyloneState: (pylone: Partial<GameState["pylone"]>) => void;
-  setFermeState: (ferme: Partial<GameState["ferme"]>) => void;
+  setEbikeState: (ebike: Partial<GameState["ebike"]>) => void;
+  setPylonState: (pylon: Partial<GameState["pylon"]>) => void;
+  setFarmState: (farm: Partial<GameState["farm"]>) => void;
   setOutroState: (outro: Partial<GameState["outro"]>) => void;
   setMissionStep: (mission: RepairMissionId, step: MissionStep) => void;
   completeIntro: () => void;
-  completeBike: () => void;
-  completePylone: () => void;
-  completeFerme: () => void;
+  completeEbike: () => void;
+  completePylon: () => void;
+  completeFarm: () => void;
   completeMission: (mission: RepairMissionId) => void;
   startOutro: () => void;
   advanceGameState: () => void;
@@ -79,56 +100,76 @@ interface GameActions {
 type GameStore = GameState & GameActions;
 type GameStateUpdate = Partial<GameState>;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isStringOrNull(value: unknown): value is string | null {
+  return typeof value === "string" || value === null;
+}
+
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isPlayerMovementMode(value: unknown): value is PlayerMovementMode {
+  return value === "walk" || value === "ebike";
+}
+
 function completeIntroState(state: GameState): GameStateUpdate {
   return {
-    mainState: "bike",
+    mainState: "ebike",
     intro: {
       ...state.intro,
       hasCompleted: true,
-      isBikeUnlocked: true,
+      isEbikeUnlocked: true,
     },
-    bike: {
-      ...state.bike,
-      currentStep: "waiting",
+    missionFlow: {
+      ...state.missionFlow,
+      canMove: true,
+    },
+    ebike: {
+      ...state.ebike,
+      currentStep: "locked",
     },
   };
 }
 
-function completeBikeState(state: GameState): GameStateUpdate {
+function completeEbikeState(state: GameState): GameStateUpdate {
   return {
-    mainState: "pylone",
-    bike: {
-      ...state.bike,
+    mainState: "pylon",
+    ebike: {
+      ...state.ebike,
       currentStep: "done",
       isRepaired: true,
     },
-    pylone: {
-      ...state.pylone,
+    pylon: {
+      ...state.pylon,
       currentStep: "waiting",
     },
   };
 }
 
-function completePyloneState(state: GameState): GameStateUpdate {
+function completePylonState(state: GameState): GameStateUpdate {
   return {
-    mainState: "ferme",
-    pylone: {
-      ...state.pylone,
+    mainState: "farm",
+    pylon: {
+      ...state.pylon,
       currentStep: "done",
       isPowered: true,
     },
-    ferme: {
-      ...state.ferme,
+    farm: {
+      ...state.farm,
       currentStep: "waiting",
     },
   };
 }
 
-function completeFermeState(state: GameState): GameStateUpdate {
+function completeFarmState(state: GameState): GameStateUpdate {
   return {
     mainState: "outro",
-    ferme: {
-      ...state.ferme,
+    farm: {
+      ...state.farm,
       currentStep: "done",
       irrigationFixed: true,
     },
@@ -157,12 +198,12 @@ function completeMissionState(
   mission: RepairMissionId,
 ): GameStateUpdate {
   switch (mission) {
-    case "bike":
-      return completeBikeState(state);
-    case "pylone":
-      return completePyloneState(state);
-    case "ferme":
-      return completeFermeState(state);
+    case "ebike":
+      return completeEbikeState(state);
+    case "pylon":
+      return completePylonState(state);
+    case "farm":
+      return completeFarmState(state);
   }
 }
 
@@ -209,23 +250,27 @@ function createInitialGameState(): GameState {
       dialogMessage: null,
       playerName: "",
     },
+    player: {
+      movementMode: "walk",
+      currentSpeed: PLAYER_WALK_SPEED,
+    },
     intro: {
       currentStep: "intro",
       dialogueAudio: null,
       hasCompleted: false,
-      isBikeUnlocked: false,
+      isEbikeUnlocked: false,
     },
-    bike: {
+    ebike: {
       currentStep: "locked",
       dialogueAudio: null,
       isRepaired: false,
     },
-    pylone: {
+    pylon: {
       currentStep: "locked",
       dialogueAudio: null,
       isPowered: false,
     },
-    ferme: {
+    farm: {
       currentStep: "locked",
       dialogueAudio: null,
       irrigationFixed: false,
@@ -237,8 +282,155 @@ function createInitialGameState(): GameState {
   };
 }
 
+function hydrateIntroState(initial: IntroState, value: unknown): IntroState {
+  if (!isRecord(value)) return initial;
+
+  return {
+    currentStep: isGameStep(value.currentStep)
+      ? value.currentStep
+      : initial.currentStep,
+    dialogueAudio: isStringOrNull(value.dialogueAudio)
+      ? value.dialogueAudio
+      : initial.dialogueAudio,
+    hasCompleted: isBoolean(value.hasCompleted)
+      ? value.hasCompleted
+      : initial.hasCompleted,
+    isEbikeUnlocked: isBoolean(value.isEbikeUnlocked)
+      ? value.isEbikeUnlocked
+      : initial.isEbikeUnlocked,
+  };
+}
+
+function hydrateMissionState(
+  initial: MissionState,
+  value: unknown,
+): MissionState {
+  if (!isRecord(value)) return initial;
+
+  return {
+    currentStep:
+      typeof value.currentStep === "string" && isMissionStep(value.currentStep)
+        ? value.currentStep
+        : initial.currentStep,
+    dialogueAudio: isStringOrNull(value.dialogueAudio)
+      ? value.dialogueAudio
+      : initial.dialogueAudio,
+  };
+}
+
+function hydrateMissionFlowState(
+  initial: MissionFlowState,
+  value: unknown,
+): MissionFlowState {
+  if (!isRecord(value)) return initial;
+
+  return {
+    activityCity: isBoolean(value.activityCity)
+      ? value.activityCity
+      : initial.activityCity,
+    canMove: isBoolean(value.canMove) ? value.canMove : initial.canMove,
+    dialogMessage: isStringOrNull(value.dialogMessage)
+      ? value.dialogMessage
+      : initial.dialogMessage,
+    playerName:
+      typeof value.playerName === "string"
+        ? value.playerName
+        : initial.playerName,
+  };
+}
+
+function hydratePlayerState(initial: PlayerState, value: unknown): PlayerState {
+  if (!isRecord(value)) return initial;
+
+  return {
+    movementMode: isPlayerMovementMode(value.movementMode)
+      ? value.movementMode
+      : initial.movementMode,
+    currentSpeed:
+      typeof value.currentSpeed === "number"
+        ? value.currentSpeed
+        : initial.currentSpeed,
+  };
+}
+
+function hydrateDebugGameState(initial: GameState, value: unknown): GameState {
+  if (!isRecord(value)) return initial;
+
+  const ebike = hydrateMissionState(initial.ebike, value.ebike);
+  const pylon = hydrateMissionState(initial.pylon, value.pylon);
+  const farm = hydrateMissionState(initial.farm, value.farm);
+  const outro = isRecord(value.outro) ? value.outro : null;
+
+  return {
+    mainState: isMainGameState(value.mainState)
+      ? value.mainState
+      : initial.mainState,
+    isCinematicPlaying: isBoolean(value.isCinematicPlaying)
+      ? value.isCinematicPlaying
+      : initial.isCinematicPlaying,
+    missionFlow: hydrateMissionFlowState(
+      initial.missionFlow,
+      value.missionFlow,
+    ),
+    player: hydratePlayerState(initial.player, value.player),
+    intro: hydrateIntroState(initial.intro, value.intro),
+    ebike: {
+      ...ebike,
+      isRepaired:
+        isRecord(value.ebike) && isBoolean(value.ebike.isRepaired)
+          ? value.ebike.isRepaired
+          : initial.ebike.isRepaired,
+    },
+    pylon: {
+      ...pylon,
+      isPowered:
+        isRecord(value.pylon) && isBoolean(value.pylon.isPowered)
+          ? value.pylon.isPowered
+          : initial.pylon.isPowered,
+    },
+    farm: {
+      ...farm,
+      irrigationFixed:
+        isRecord(value.farm) && isBoolean(value.farm.irrigationFixed)
+          ? value.farm.irrigationFixed
+          : initial.farm.irrigationFixed,
+    },
+    outro: {
+      dialogueAudio:
+        outro && isStringOrNull(outro.dialogueAudio)
+          ? outro.dialogueAudio
+          : initial.outro.dialogueAudio,
+      hasStarted:
+        outro && isBoolean(outro.hasStarted)
+          ? outro.hasStarted
+          : initial.outro.hasStarted,
+    },
+  };
+}
+
+function createInitialDebugGameState(): GameState {
+  const initialState = createInitialGameState();
+  if (!isDebugEnabled()) return initialState;
+
+  return hydrateDebugGameState(initialState, readDebugGameStateCookie());
+}
+
+function pickGameState(state: GameStore): GameState {
+  return {
+    mainState: state.mainState,
+    isCinematicPlaying: state.isCinematicPlaying,
+    missionFlow: state.missionFlow,
+    player: state.player,
+    intro: state.intro,
+    ebike: state.ebike,
+    pylon: state.pylon,
+    farm: state.farm,
+    outro: state.outro,
+  };
+}
+
 export const useGameStore = create<GameStore>()((set) => ({
-  ...createInitialGameState(),
+  ...createInitialDebugGameState(),
   setMainState: (mainState) => set({ mainState }),
   setCinematicPlaying: (isCinematicPlaying) => set({ isCinematicPlaying }),
   hideDialog: () =>
@@ -248,6 +440,14 @@ export const useGameStore = create<GameStore>()((set) => ({
   setActivityCity: (activityCity) =>
     set((state) => ({
       missionFlow: { ...state.missionFlow, activityCity },
+    })),
+  setPlayerMovementMode: (mode) =>
+    set((state) => ({
+      player: {
+        ...state.player,
+        movementMode: mode,
+        currentSpeed: mode === "ebike" ? PLAYER_EBIKE_SPEED : PLAYER_WALK_SPEED,
+      },
     })),
   setCanMove: (canMove) =>
     set((state) => ({
@@ -261,20 +461,20 @@ export const useGameStore = create<GameStore>()((set) => ({
     set((state) => ({
       missionFlow: { ...state.missionFlow, playerName },
     })),
-  setBikeState: (bike) =>
-    set((state) => ({ bike: { ...state.bike, ...bike } })),
-  setPyloneState: (pylone) =>
-    set((state) => ({ pylone: { ...state.pylone, ...pylone } })),
-  setFermeState: (ferme) =>
-    set((state) => ({ ferme: { ...state.ferme, ...ferme } })),
+  setEbikeState: (ebike) =>
+    set((state) => ({ ebike: { ...state.ebike, ...ebike } })),
+  setPylonState: (pylon) =>
+    set((state) => ({ pylon: { ...state.pylon, ...pylon } })),
+  setFarmState: (farm) =>
+    set((state) => ({ farm: { ...state.farm, ...farm } })),
   setOutroState: (outro) =>
     set((state) => ({ outro: { ...state.outro, ...outro } })),
   setMissionStep: (mission, step) =>
     set((state) => setMissionStepState(state, mission, step)),
   completeIntro: () => set(completeIntroState),
-  completeBike: () => set((state) => completeMissionState(state, "bike")),
-  completePylone: () => set((state) => completeMissionState(state, "pylone")),
-  completeFerme: () => set((state) => completeMissionState(state, "ferme")),
+  completeEbike: () => set((state) => completeMissionState(state, "ebike")),
+  completePylon: () => set((state) => completeMissionState(state, "pylon")),
+  completeFarm: () => set((state) => completeMissionState(state, "farm")),
   completeMission: (mission) =>
     set((state) => completeMissionState(state, mission)),
   startOutro: () => set(startOutroState),
@@ -302,9 +502,18 @@ export const useGameStore = create<GameStore>()((set) => ({
 
       return { outro: { ...state.outro, hasStarted: false } };
     }),
-  resetGame: () => set(createInitialGameState()),
+  resetGame: () => {
+    set(createInitialGameState());
+    clearDebugGameStateCookie();
+  },
   showDialog: (dialogMessage) =>
     set((state) => ({
       missionFlow: { ...state.missionFlow, dialogMessage },
     })),
 }));
+
+if (isDebugEnabled()) {
+  useGameStore.subscribe((state) => {
+    writeDebugGameStateCookie(pickGameState(state));
+  });
+}

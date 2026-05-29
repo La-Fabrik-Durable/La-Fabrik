@@ -1,18 +1,15 @@
 import { RotateCcw, StepBack, StepForward } from "lucide-react";
 import {
-  type MainGameState,
-  useGameStore,
-} from "@/managers/stores/useGameStore";
-import { isMissionStep, MISSION_STEPS } from "@/types/gameplay/repairMission";
-import { GAME_STEPS, type GameStep } from "@/types/game";
-
-const MAIN_STATES: MainGameState[] = [
-  "intro",
-  "bike",
-  "pylone",
-  "ferme",
-  "outro",
-];
+  GAME_STEPS,
+  isGameStep,
+  MAIN_GAME_STATES,
+} from "@/data/game/gameStateConfig";
+import {
+  isMissionStep,
+  MISSION_STEPS,
+} from "@/data/gameplay/repairMissionState";
+import { useGameStore } from "@/managers/stores/useGameStore";
+import type { MainGameState } from "@/types/game";
 
 function toPascalCase(value: string): string {
   return value
@@ -24,28 +21,28 @@ function toPascalCase(value: string): string {
 
 export function GameStateDebugPanel(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
-  const bikeStep = useGameStore((state) => state.bike.currentStep);
-  const pyloneStep = useGameStore((state) => state.pylone.currentStep);
-  const fermeStep = useGameStore((state) => state.ferme.currentStep);
+  const ebikeStep = useGameStore((state) => state.ebike.currentStep);
+  const pylonStep = useGameStore((state) => state.pylon.currentStep);
+  const farmStep = useGameStore((state) => state.farm.currentStep);
   const detail = useGameStore((state) => {
     switch (state.mainState) {
       case "intro":
         return state.intro.currentStep;
-      case "bike":
-        return state.bike.currentStep;
-      case "pylone":
-        return state.pylone.currentStep;
-      case "ferme":
-        return state.ferme.currentStep;
+      case "ebike":
+        return state.ebike.currentStep;
+      case "pylon":
+        return state.pylon.currentStep;
+      case "farm":
+        return state.farm.currentStep;
       case "outro":
         return state.outro.hasStarted ? "started" : "waiting";
     }
   });
   const setMainState = useGameStore((state) => state.setMainState);
   const setIntroStep = useGameStore((state) => state.setIntroStep);
-  const setBikeState = useGameStore((state) => state.setBikeState);
-  const setPyloneState = useGameStore((state) => state.setPyloneState);
-  const setFermeState = useGameStore((state) => state.setFermeState);
+  const setEbikeState = useGameStore((state) => state.setEbikeState);
+  const setPylonState = useGameStore((state) => state.setPylonState);
+  const setFarmState = useGameStore((state) => state.setFarmState);
   const setOutroState = useGameStore((state) => state.setOutroState);
   const advanceGameState = useGameStore((state) => state.advanceGameState);
   const rewindGameState = useGameStore((state) => state.rewindGameState);
@@ -60,7 +57,9 @@ export function GameStateDebugPanel(): React.JSX.Element {
 
   function setSubState(nextSubState: string): void {
     if (mainState === "intro") {
-      setIntroStep(nextSubState as GameStep);
+      if (isGameStep(nextSubState)) {
+        setIntroStep(nextSubState);
+      }
       return;
     }
 
@@ -71,18 +70,18 @@ export function GameStateDebugPanel(): React.JSX.Element {
 
     if (!isMissionStep(nextSubState)) return;
 
-    if (mainState === "bike") {
-      setBikeState({ currentStep: nextSubState });
+    if (mainState === "ebike") {
+      setEbikeState({ currentStep: nextSubState });
       return;
     }
 
-    if (mainState === "pylone") {
-      setPyloneState({ currentStep: nextSubState });
+    if (mainState === "pylon") {
+      setPylonState({ currentStep: nextSubState });
       return;
     }
 
-    if (mainState === "ferme") {
-      setFermeState({ currentStep: nextSubState });
+    if (mainState === "farm") {
+      setFarmState({ currentStep: nextSubState });
       return;
     }
   }
@@ -90,18 +89,34 @@ export function GameStateDebugPanel(): React.JSX.Element {
   function setDebugMainState(nextMainState: MainGameState): void {
     setMainState(nextMainState);
 
-    if (nextMainState === "bike" && bikeStep === "locked") {
-      setBikeState({ currentStep: "waiting" });
+    if (
+      nextMainState === "pylon" ||
+      nextMainState === "farm" ||
+      nextMainState === "outro"
+    ) {
+      setEbikeState({ currentStep: "done", isRepaired: true });
+    }
+
+    if (nextMainState === "farm" || nextMainState === "outro") {
+      setPylonState({ currentStep: "done", isPowered: true });
+    }
+
+    if (nextMainState === "outro") {
+      setFarmState({ currentStep: "done", irrigationFixed: true });
+    }
+
+    if (nextMainState === "ebike" && ebikeStep === "locked") {
+      setEbikeState({ currentStep: "waiting" });
       return;
     }
 
-    if (nextMainState === "pylone" && pyloneStep === "locked") {
-      setPyloneState({ currentStep: "waiting" });
+    if (nextMainState === "pylon" && pylonStep === "locked") {
+      setPylonState({ currentStep: "waiting" });
       return;
     }
 
-    if (nextMainState === "ferme" && fermeStep === "locked") {
-      setFermeState({ currentStep: "waiting" });
+    if (nextMainState === "farm" && farmStep === "locked") {
+      setFarmState({ currentStep: "waiting" });
     }
   }
 
@@ -124,7 +139,7 @@ export function GameStateDebugPanel(): React.JSX.Element {
           aria-label="Main states"
           role="group"
         >
-          {MAIN_STATES.map((state) => (
+          {MAIN_GAME_STATES.map((state) => (
             <button
               key={state}
               aria-pressed={state === mainState}

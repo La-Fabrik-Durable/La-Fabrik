@@ -1,4 +1,9 @@
-import type { MapNode } from "../../types/editor/editor";
+import type { HierarchicalMapNode, MapNode } from "@/types/map/mapScene";
+
+export interface ParsedMapNodes {
+  mapNodes: MapNode[];
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[];
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -18,6 +23,7 @@ function isMapNode(value: unknown): value is MapNode {
   }
 
   return (
+    (value.id === undefined || typeof value.id === "string") &&
     typeof value.name === "string" &&
     typeof value.type === "string" &&
     isVector3Tuple(value.position) &&
@@ -26,10 +32,66 @@ function isMapNode(value: unknown): value is MapNode {
   );
 }
 
-export function parseMapNodes(value: unknown): MapNode[] {
-  if (!Array.isArray(value) || !value.every(isMapNode)) {
-    throw new Error("Invalid map node data");
+function isHierarchicalMapNode(value: unknown): value is HierarchicalMapNode {
+  if (!isMapNode(value)) {
+    return false;
   }
 
-  return value;
+  if ("role" in value && value.role !== undefined && value.role !== "group") {
+    return false;
+  }
+
+  if (!("children" in value)) {
+    return true;
+  }
+
+  return (
+    value.children === undefined ||
+    (Array.isArray(value.children) &&
+      value.children.every(isHierarchicalMapNode))
+  );
+}
+
+function flattenMapNode(node: HierarchicalMapNode, path: number[]): MapNode[] {
+  const mapNode: MapNode = {
+    ...(node.id ? { id: node.id } : {}),
+    name: node.name,
+    type: node.type,
+    position: node.position,
+    rotation: node.rotation,
+    scale: node.scale,
+    sourcePath: path,
+  };
+  const childNodes =
+    node.children?.flatMap((child, index) =>
+      flattenMapNode(child, [...path, index]),
+    ) ?? [];
+
+  if (node.role === "group" || node.type === "Mesh") {
+    return childNodes;
+  }
+
+  return [mapNode, ...childNodes];
+}
+
+export function parseMapNodes(value: unknown): MapNode[] {
+  return parseMapData(value).mapNodes;
+}
+
+export function parseMapData(value: unknown): ParsedMapNodes {
+  if (Array.isArray(value) && value.every(isHierarchicalMapNode)) {
+    return {
+      mapNodes: value.flatMap((node, index) => flattenMapNode(node, [index])),
+      mapTree: value,
+    };
+  }
+
+  if (isHierarchicalMapNode(value)) {
+    return {
+      mapNodes: flattenMapNode(value, []),
+      mapTree: value,
+    };
+  }
+
+  throw new Error("Invalid map node data");
 }

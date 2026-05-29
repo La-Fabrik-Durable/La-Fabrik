@@ -3,11 +3,6 @@ import { DocsDocument } from "@/components/docs/DocsDocument";
 
 export function DocsSceneRuntimePage(): React.JSX.Element {
   return (
-    <DocsDocument
-      content={sceneRuntime}
-      frContent={sceneRuntime}
-      meta="03"
-      title="Scene Runtime"
-    />
+    <DocsDocument content={sceneRuntime} meta="03" title="Scene Runtime" />
   );
 }

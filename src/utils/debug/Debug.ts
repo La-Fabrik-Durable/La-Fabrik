@@ -1,6 +1,7 @@
 import GUI from "lil-gui";
 import type { CameraMode, SceneMode } from "@/types/debug/debug";
 import type { HandTrackingSource } from "@/types/handTracking/handTracking";
+import { FOG_CONFIG } from "@/data/world/fogConfig";
 import { EventEmitter } from "@/utils/core/EventEmitter";
 import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 
@@ -14,6 +15,17 @@ interface StoredDebugControls {
 interface DebugEvents {
   change: void;
 }
+
+const DEBUG_FOLDER_ORDER = [
+  "Lighting",
+  "Dynamic Wind",
+  "Environment",
+  "Game",
+  "Interaction",
+  "Hand Tracking",
+  "Map",
+  "Personnages",
+] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -58,6 +70,7 @@ export class Debug {
   private readonly folderRefCounts = new Map<string, number>();
   private readonly controls: {
     cameraMode: CameraMode;
+    fogEnabled: boolean;
     handTrackingSource: HandTrackingSource;
     showDebugOverlay: boolean;
     showHandTrackingSvg: boolean;
@@ -80,7 +93,8 @@ export class Debug {
 
     this.controls = {
       cameraMode: storedControls.cameraMode ?? "player",
-      handTrackingSource: "backend",
+      fogEnabled: FOG_CONFIG.enabled,
+      handTrackingSource: "browser",
       showDebugOverlay: true,
       showHandTrackingSvg: false,
       showInteractionSpheres: false,
@@ -88,14 +102,12 @@ export class Debug {
       sceneMode: storedControls.sceneMode ?? "game",
     };
 
-    this.gui = this.active ? new GUI({ title: "La-Fabrik Debug" }) : null;
+    this.gui = this.active ? new GUI({ title: "La Fabrik" }) : null;
 
     if (this.gui) {
-      const folder = this.createFolder("Debug");
+      this.gui.open();
 
-      if (!folder) return;
-
-      folder
+      this.gui
         .add(this.controls, "cameraMode", { Player: "player", Debug: "debug" })
         .name("Camera Mode")
         .onChange((value: CameraMode) => {
@@ -103,7 +115,7 @@ export class Debug {
           this.saveAndEmit();
         });
 
-      folder
+      this.gui
         .add(this.controls, "sceneMode", { Game: "game", Physics: "physics" })
         .name("Scene")
         .onChange((value: SceneMode) => {
@@ -111,7 +123,7 @@ export class Debug {
           this.saveAndEmit();
         });
 
-      folder
+      this.gui
         .add(this.controls, "showPerf")
         .name("R3F Perf")
         .onChange((value: boolean) => {
@@ -119,13 +131,15 @@ export class Debug {
           this.emit();
         });
 
-      folder
+      this.gui
         .add(this.controls, "showDebugOverlay")
         .name("Debug Overlay")
         .onChange((value: boolean) => {
           this.controls.showDebugOverlay = value;
           this.emit();
         });
+
+      this.createOrderedFolders();
 
       const handTrackingFolder = this.createFolder("Hand Tracking");
 
@@ -139,8 +153,8 @@ export class Debug {
 
       handTrackingFolder
         ?.add(this.controls, "handTrackingSource", {
-          Backend: "backend",
           "Browser JS": "browser",
+          Backend: "backend",
         })
         .name("Source")
         .onChange((value: HandTrackingSource) => {
@@ -154,21 +168,45 @@ export class Debug {
    * Acquires a named GUI folder. Returns the folder on first acquisition and null
    * on subsequent acquisitions so callers only register controls once.
    */
-  createFolder(name: string): GUI | null {
+  createFolder(name: string, options?: { open?: boolean }): GUI | null {
     if (!this.gui) return null;
 
     const existing = this.folders.get(name);
 
     if (existing) {
-      this.folderRefCounts.set(name, (this.folderRefCounts.get(name) ?? 0) + 1);
-      return null;
+      const refCount = this.folderRefCounts.get(name) ?? 0;
+
+      if (refCount > 0) {
+        this.folderRefCounts.set(name, refCount + 1);
+        return null;
+      }
+
+      this.folderRefCounts.set(name, 1);
+      return existing;
     }
 
     const folder = this.gui.addFolder(name);
     this.folders.set(name, folder);
     this.folderRefCounts.set(name, 1);
+    this.sortFolders();
+
+    if (options?.open) {
+      folder.open();
+    } else {
+      folder.close();
+    }
 
     return folder;
+  }
+
+  addFogControl(folder: GUI): void {
+    folder
+      .add(this.controls, "fogEnabled")
+      .name("Fog")
+      .onChange((value: boolean) => {
+        this.controls.fogEnabled = value;
+        this.emit();
+      });
   }
 
   destroyFolder(name: string): void {
@@ -204,6 +242,10 @@ export class Debug {
 
   getHandTrackingSource(): HandTrackingSource {
     return this.controls.handTrackingSource;
+  }
+
+  getFogEnabled(): boolean {
+    return this.controls.fogEnabled;
   }
 
   getShowInteractionSpheres(): boolean {
@@ -246,5 +288,51 @@ export class Debug {
     }
 
     this.emit();
+  }
+
+  private createOrderedFolders(): void {
+    for (const folderName of DEBUG_FOLDER_ORDER) {
+      this.ensureFolder(folderName);
+    }
+  }
+
+  private ensureFolder(name: string): GUI | null {
+    if (!this.gui) return null;
+
+    const existing = this.folders.get(name);
+    if (existing) return existing;
+
+    const folder = this.gui.addFolder(name);
+    folder.close();
+    this.folders.set(name, folder);
+    this.folderRefCounts.set(name, 0);
+    this.sortFolders();
+
+    return folder;
+  }
+
+  private sortFolders(): void {
+    if (!this.gui) return;
+
+    const rootElement = this.gui.domElement.querySelector(".children");
+    if (!rootElement) return;
+
+    const orderedFolders = [...this.folders.entries()].sort(([a], [b]) => {
+      const aIndex = DEBUG_FOLDER_ORDER.indexOf(
+        a as (typeof DEBUG_FOLDER_ORDER)[number],
+      );
+      const bIndex = DEBUG_FOLDER_ORDER.indexOf(
+        b as (typeof DEBUG_FOLDER_ORDER)[number],
+      );
+      const safeAIndex = aIndex === -1 ? DEBUG_FOLDER_ORDER.length : aIndex;
+      const safeBIndex = bIndex === -1 ? DEBUG_FOLDER_ORDER.length : bIndex;
+
+      if (safeAIndex !== safeBIndex) return safeAIndex - safeBIndex;
+      return a.localeCompare(b);
+    });
+
+    for (const [, folder] of orderedFolders) {
+      rootElement.appendChild(folder.domElement);
+    }
   }
 }

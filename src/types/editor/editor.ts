@@ -1,16 +1,14 @@
-import type { Vector3Tuple } from "../three/three";
+import type { CinematicDefinition } from "@/types/cinematics/cinematics";
 
-export interface MapNode {
-  name: string;
-  type: string;
-  position: Vector3Tuple;
-  rotation: Vector3Tuple;
-  scale: Vector3Tuple;
-}
-
-export interface SceneData {
-  mapNodes: MapNode[];
-  models: Map<string, string>;
-}
+export type {
+  HierarchicalMapNode,
+  MapNode,
+  SceneData,
+} from "@/types/map/mapScene";
 
 export type TransformMode = "translate" | "rotate" | "scale";
+
+export interface EditorCinematicPreviewRequest {
+  id: string;
+  cinematic: CinematicDefinition;
+}

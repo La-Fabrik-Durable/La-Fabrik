@@ -1,12 +1,14 @@
-export const AMBIENT_LIGHT_COLOR = "#dbeafe";
-export const SUN_LIGHT_COLOR = "#fff7ed";
+const AMBIENT_LIGHT_COLOR = "#dfe7d8";
+const SUN_LIGHT_COLOR = "#ffe2bf";
 
 export const LIGHTING_DEFAULTS = {
-  ambientIntensity: 1.8,
-  sunIntensity: 2.8,
-  sunX: 60,
-  sunY: 80,
-  sunZ: 30,
+  ambientColor: AMBIENT_LIGHT_COLOR,
+  ambientIntensity: 0.9,
+  sunColor: SUN_LIGHT_COLOR,
+  sunIntensity: 2.2,
+  sunX: 70,
+  sunY: 45,
+  sunZ: 35,
 };
 
 export const AMBIENT_INTENSITY_MIN = 0;

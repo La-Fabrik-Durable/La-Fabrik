@@ -3,11 +3,6 @@ import { DocsDocument } from "@/components/docs/DocsDocument";
 
 export function DocsInteractionPage(): React.JSX.Element {
   return (
-    <DocsDocument
-      content={interaction}
-      frContent={interaction}
-      meta="05"
-      title="Interaction System"
-    />
+    <DocsDocument content={interaction} meta="05" title="Interaction System" />
   );
 }

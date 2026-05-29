@@ -24,17 +24,14 @@ export function HandTrackingProvider({
   children: ReactNode;
 }): React.JSX.Element {
   const sceneMode = useSceneMode();
-  const handTrackingSource = useDebugStore((debug) =>
-    debug.getHandTrackingSource(),
-  );
   const repairNeedsHands = useGameStore((state) => {
     switch (state.mainState) {
-      case "bike":
-        return REPAIR_HAND_TRACKING_STEPS.has(state.bike.currentStep);
-      case "pylone":
-        return REPAIR_HAND_TRACKING_STEPS.has(state.pylone.currentStep);
-      case "ferme":
-        return REPAIR_HAND_TRACKING_STEPS.has(state.ferme.currentStep);
+      case "ebike":
+        return REPAIR_HAND_TRACKING_STEPS.has(state.ebike.currentStep);
+      case "pylon":
+        return REPAIR_HAND_TRACKING_STEPS.has(state.pylon.currentStep);
+      case "farm":
+        return REPAIR_HAND_TRACKING_STEPS.has(state.farm.currentStep);
       case "intro":
       case "outro":
         return false;
@@ -44,20 +41,34 @@ export function HandTrackingProvider({
   const enabled =
     repairNeedsHands ||
     (sceneMode === "physics" && (nearby || holding || handHolding));
+
+  if (!enabled) {
+    return (
+      <HandTrackingContext value={HAND_TRACKING_IDLE_SNAPSHOT}>
+        {children}
+      </HandTrackingContext>
+    );
+  }
+
+  return <ActiveHandTrackingProvider>{children}</ActiveHandTrackingProvider>;
+}
+
+function ActiveHandTrackingProvider({
+  children,
+}: {
+  children: ReactNode;
+}): React.JSX.Element {
+  const handTrackingSource = useDebugStore((debug) =>
+    debug.getHandTrackingSource(),
+  );
   const backendSnapshot = useRemoteHandTracking({
-    enabled: enabled && handTrackingSource === "backend",
+    enabled: handTrackingSource === "backend",
   });
   const browserSnapshot = useBrowserHandTracking({
-    enabled: enabled && handTrackingSource === "browser",
+    enabled: handTrackingSource === "browser",
   });
   const snapshot =
     handTrackingSource === "browser" ? browserSnapshot : backendSnapshot;
 
-  return (
-    <HandTrackingContext
-      value={enabled ? snapshot : HAND_TRACKING_IDLE_SNAPSHOT}
-    >
-      {children}
-    </HandTrackingContext>
-  );
+  return <HandTrackingContext value={snapshot}>{children}</HandTrackingContext>;
 }

@@ -7,6 +7,8 @@ import {
 import { HomePage } from "@/pages/page";
 import { EditorPage } from "@/pages/editor/page";
 import { GalleryPage } from "@/pages/gallery/page";
+import { WaypointEditorPage } from "@/pages/waypoint/page";
+import { BackgroundMapPage } from "@/pages/backgroundmap/page";
 import {
   DocsAnimationRoute,
   DocsAudioRoute,
@@ -19,6 +21,7 @@ import {
   DocsInteractionRoute,
   DocsLayoutRoute,
   DocsMainFeatureRoute,
+  DocsMapPerformanceRoute,
   DocsMissionFlowRoute,
   DocsReadmeRoute,
   DocsRepairGameRoute,
@@ -51,6 +54,18 @@ const galleryRoute = createRoute({
   component: GalleryPage,
 });
 
+const waypointRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/waypoint",
+  component: WaypointEditorPage,
+});
+
+const backgroundMapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/backgroundmap",
+  component: BackgroundMapPage,
+});
+
 const docsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/docs",
@@ -70,6 +85,7 @@ const docsChildRoutes = [
   { path: "hand-tracking", component: DocsHandTrackingRoute },
   { path: "zustand", component: DocsZustandRoute },
   { path: "three-debugging", component: DocsThreeDebuggingRoute },
+  { path: "map-performance", component: DocsMapPerformanceRoute },
   { path: "features", component: DocsFeaturesRoute },
   { path: "main-feature", component: DocsMainFeatureRoute },
   { path: "editor", component: DocsEditorRoute },
@@ -88,6 +104,8 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   editorRoute,
   galleryRoute,
+  waypointRoute,
+  backgroundMapRoute,
   docsRoute.addChildren(docsChildRoutes),
 ]);
 

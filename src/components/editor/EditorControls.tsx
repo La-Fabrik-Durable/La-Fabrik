@@ -8,33 +8,52 @@ import {
   Lock,
   MousePointer2,
   Move3D,
+  Plus,
   Redo2,
   RotateCw,
   Save,
+  Trash2,
+  ScanSearch,
   Undo2,
   Unlock,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import { EditorCinematicManifestPanel } from "@/components/editor/EditorCinematicManifestPanel";
 import { EditorDialogueManifestPanel } from "@/components/editor/EditorDialogueManifestPanel";
 import { EditorSrtPanel } from "@/components/editor/EditorSrtPanel";
 import type { CinematicDefinition } from "@/types/cinematics/cinematics";
 import type { MapNode, TransformMode } from "@/types/editor/editor";
+import type { Vector3Tuple } from "@/types/three/three";
 
 interface EditorControlsProps {
   transformMode: TransformMode;
   onTransformModeChange: (mode: TransformMode) => void;
   selectedNodeIndex: number | null;
+  selectedNodeIndexes: number[];
   mapNodes: MapNode[];
   nodesCount: number;
   selectedNodeName: string | null;
+  selectedNodeScale: Vector3Tuple | null;
+  lockTerrainSelection: boolean;
+  onLockTerrainSelectionChange: (locked: boolean) => void;
   isSelectionLocked: boolean;
   onSelectionLockToggle: () => void;
   onClearSelection: () => void;
+  snapToTerrain: boolean;
+  onSnapToTerrainToggle: () => void;
+  onSnapAllToTerrain: () => void;
+  newNodeName: string;
+  onNewNodeNameChange: (value: string) => void;
+  onAddNode: () => void;
+  onDeleteSelectedNode: () => void;
+  onSelectedScaleChange: (axis: 0 | 1 | 2, value: number) => void;
   undoCount: number;
   redoCount: number;
   onUndo: () => void;
   onRedo: () => void;
+  cameraActionLabel: string;
+  onCameraAction: () => void;
   onExportJson: () => void;
   onSaveToServer?: (() => void | Promise<void>) | undefined;
   onPlayerMode?: (() => void) | undefined;
@@ -50,9 +69,10 @@ const TRANSFORM_OPTIONS = [
 
 const EDITOR_SHORTCUTS = [
   ["Click", "Select object"],
+  ["Shift + Right click", "Toggle multi-selection"],
   ["T / R / S", "Transform mode"],
   ["Ctrl Z / Y", "Undo / redo"],
-  ["Esc", "Deselect"],
+  ["Esc / X button", "Clear selection"],
   ["WASD", "Move when locked"],
 ] as const;
 
@@ -83,20 +103,80 @@ function EditorPanelGroup({
   );
 }
 
+interface EditorScaleFieldProps {
+  axis: 0 | 1 | 2;
+  label: string;
+  value: number;
+  onCommit: (axis: 0 | 1 | 2, value: number) => void;
+}
+
+function EditorScaleField({
+  axis,
+  label,
+  onCommit,
+  value,
+}: EditorScaleFieldProps): React.JSX.Element {
+  const [draftValue, setDraftValue] = useState(() =>
+    String(Number(value.toFixed(4))),
+  );
+
+  const commitDraftValue = (): void => {
+    const nextValue = Number(draftValue);
+    if (!draftValue.trim() || Number.isNaN(nextValue)) {
+      setDraftValue(String(Number(value.toFixed(4))));
+      return;
+    }
+
+    onCommit(axis, nextValue);
+  };
+
+  return (
+    <label>
+      <span>{label}</span>
+      <input
+        type="number"
+        step="0.01"
+        value={draftValue}
+        onBlur={commitDraftValue}
+        onChange={(event) => setDraftValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
+      />
+    </label>
+  );
+}
+
 export function EditorControls({
   transformMode,
   onTransformModeChange,
   selectedNodeIndex,
+  selectedNodeIndexes,
   mapNodes,
   nodesCount,
   selectedNodeName,
+  selectedNodeScale,
+  lockTerrainSelection,
+  onLockTerrainSelectionChange,
   isSelectionLocked,
   onSelectionLockToggle,
   onClearSelection,
+  snapToTerrain,
+  onSnapToTerrainToggle,
+  onSnapAllToTerrain,
+  newNodeName,
+  onNewNodeNameChange,
+  onAddNode,
+  onDeleteSelectedNode,
+  onSelectedScaleChange,
   undoCount,
   redoCount,
   onUndo,
   onRedo,
+  cameraActionLabel,
+  onCameraAction,
   onExportJson,
   onSaveToServer,
   onPlayerMode,
@@ -105,6 +185,10 @@ export function EditorControls({
 }: EditorControlsProps): React.JSX.Element {
   const viewModeLabel = isPlayerMode ? "View locked" : "Lock view";
   const jsonPreview = getJsonPreview(mapNodes, selectedNodeIndex);
+  const selectedNode =
+    selectedNodeIndex !== null ? mapNodes[selectedNodeIndex] : null;
+  const selectionCount = selectedNodeIndexes.length;
+  const transformValues = getTransformValues(selectedNode ?? null);
 
   return (
     <>
@@ -155,7 +239,10 @@ export function EditorControls({
                   aria-pressed={transformMode === mode}
                 >
                   <Icon size={16} aria-hidden="true" />
-                  <span>{label}</span>
+                  <span className="editor-transform-label">
+                    <span>{label}</span>
+                    <small>{transformValues[mode]}</small>
+                  </span>
                   <kbd>{shortcut}</kbd>
                 </button>
               ))}
@@ -181,6 +268,24 @@ export function EditorControls({
                 <span>{redoCount}</span>
               </button>
             </div>
+
+            <label className="editor-checkbox-row">
+              <input
+                type="checkbox"
+                checked={snapToTerrain}
+                onChange={onSnapToTerrainToggle}
+              />
+              <span>Snap terrain on move</span>
+            </label>
+
+            <button
+              type="button"
+              className="editor-history-button"
+              onClick={onSnapAllToTerrain}
+            >
+              <ScanSearch size={15} aria-hidden="true" />
+              Snap all to terrain
+            </button>
           </section>
 
           <section
@@ -197,13 +302,25 @@ export function EditorControls({
                 <Box size={17} aria-hidden="true" />
                 <div>
                   <strong>
-                    {selectedNodeName || `Node ${selectedNodeIndex + 1}`}
+                    {selectionCount > 1
+                      ? `${selectionCount} selected nodes`
+                      : selectedNodeName || `Node ${selectedNodeIndex + 1}`}
                   </strong>
                   <span>
-                    Index {selectedNodeIndex + 1} of {nodesCount}
+                    {selectionCount > 1
+                      ? `Primary index ${selectedNodeIndex + 1} of ${nodesCount}`
+                      : `Index ${selectedNodeIndex + 1} of ${nodesCount}`}
                   </span>
                 </div>
                 <div className="editor-selected-actions">
+                  <button
+                    type="button"
+                    onClick={onDeleteSelectedNode}
+                    aria-label="Delete selected node"
+                    title="Delete selected node"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
                   <button
                     type="button"
                     onClick={onSelectionLockToggle}
@@ -230,6 +347,19 @@ export function EditorControls({
                     <X size={14} aria-hidden="true" />
                   </button>
                 </div>
+                {selectedNodeScale ? (
+                  <div className="editor-scale-fields">
+                    {selectedNodeScale.map((value, axis) => (
+                      <EditorScaleField
+                        key={`${axis}:${value}`}
+                        axis={axis as 0 | 1 | 2}
+                        label={["X", "Y", "Z"][axis] ?? "?"}
+                        value={value}
+                        onCommit={onSelectedScaleChange}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="editor-no-selection">
@@ -237,6 +367,32 @@ export function EditorControls({
                 No object selected
               </div>
             )}
+          </section>
+
+          <section
+            className="editor-control-section"
+            aria-labelledby="add-node-heading"
+          >
+            <div className="editor-section-heading">
+              <h3 id="add-node-heading">Add Node</h3>
+            </div>
+
+            <div className="editor-add-node-row">
+              <input
+                type="text"
+                value={newNodeName}
+                onChange={(event) => onNewNodeNameChange(event.target.value)}
+                placeholder="model-folder-name"
+              />
+              <button
+                type="button"
+                className="editor-action-button"
+                onClick={onAddNode}
+              >
+                <Plus size={16} aria-hidden="true" />
+                Add cube
+              </button>
+            </div>
           </section>
 
           <section
@@ -257,6 +413,25 @@ export function EditorControls({
                 {viewModeLabel}
               </button>
             )}
+
+            <button className="editor-action-button" onClick={onCameraAction}>
+              <ScanSearch size={16} aria-hidden="true" />
+              {cameraActionLabel}
+            </button>
+
+            <label className="editor-checkbox-row">
+              <input
+                type="checkbox"
+                checked={lockTerrainSelection}
+                onChange={(event) =>
+                  onLockTerrainSelectionChange(event.currentTarget.checked)
+                }
+              />
+              <span>
+                <strong>Lock terrain</strong>
+                <small>Keep terrain visible but ignore terrain clicks</small>
+              </span>
+            </label>
           </section>
 
           <section
@@ -329,6 +504,42 @@ export function EditorControls({
   );
 }
 
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatVector(values: readonly [number, number, number]): string {
+  return `X ${formatNumber(values[0])} · Y ${formatNumber(values[1])} · Z ${formatNumber(values[2])}`;
+}
+
+function formatRotation(values: readonly [number, number, number]): string {
+  const degrees = values.map((value) => (value * 180) / Math.PI) as [
+    number,
+    number,
+    number,
+  ];
+
+  return `X ${formatNumber(degrees[0])}° · Y ${formatNumber(degrees[1])}° · Z ${formatNumber(degrees[2])}°`;
+}
+
+function getTransformValues(
+  node: MapNode | null,
+): Record<TransformMode, string> {
+  if (!node) {
+    return {
+      translate: "No selection",
+      rotate: "No selection",
+      scale: "No selection",
+    };
+  }
+
+  return {
+    translate: formatVector(node.position),
+    rotate: formatRotation(node.rotation),
+    scale: formatVector(node.scale),
+  };
+}
+
 interface JsonPreviewLine {
   number: number;
   content: string;
@@ -378,7 +589,14 @@ function formatMapNodesWithRanges(mapNodes: MapNode[]): {
   const ranges: Array<{ start: number; end: number }> = [];
 
   mapNodes.forEach((node, index) => {
-    const objectLines = JSON.stringify(node, null, 2)
+    const serializableNode = {
+      name: node.name,
+      position: node.position,
+      rotation: node.rotation,
+      scale: node.scale,
+      type: node.type,
+    };
+    const objectLines = JSON.stringify(serializableNode, null, 2)
       .split("\n")
       .map((line) => `  ${line}`);
 

@@ -6,12 +6,11 @@ import { DialogMessage } from "@/components/ui/DialogMessage";
 import { GameUI } from "@/components/ui/GameUI";
 import { BienvenueDisplay, IntroUI } from "@/components/ui/IntroUI";
 import { SceneLoadingOverlay } from "@/components/ui/SceneLoadingOverlay";
+import { INITIAL_SCENE_LOADING_STATE } from "@/data/world/sceneLoadingConfig";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { HandTrackingProvider } from "@/providers/gameplay/HandTrackingProvider";
-import {
-  INITIAL_SCENE_LOADING_STATE,
-  type SceneLoadingState,
-} from "@/types/world/sceneLoading";
+import type { SceneLoadingState } from "@/types/world/sceneLoading";
+import { logger } from "@/utils/core/Logger";
 import { World } from "@/world/World";
 
 export function HomePage(): React.JSX.Element {
@@ -51,11 +50,43 @@ export function HomePage(): React.JSX.Element {
     [],
   );
 
+  const handleCanvasCreated = useCallback(
+    ({ gl }: { gl: THREE.WebGLRenderer }) => {
+      const canvas = gl.domElement;
+
+      gl.shadowMap.enabled = true;
+      gl.shadowMap.type = THREE.PCFShadowMap;
+      gl.shadowMap.autoUpdate = true;
+
+      const handleContextLost = (event: Event) => {
+        event.preventDefault();
+        logger.error("WebGL", "Context lost - GPU resources exhausted");
+      };
+
+      const handleContextRestored = () => {
+        gl.shadowMap.enabled = true;
+        gl.shadowMap.type = THREE.PCFShadowMap;
+        gl.shadowMap.autoUpdate = true;
+        logger.info("WebGL", "Context restored");
+      };
+
+      canvas.addEventListener("webglcontextlost", handleContextLost);
+      canvas.addEventListener("webglcontextrestored", handleContextRestored);
+    },
+    [],
+  );
+
   return (
     <HandTrackingProvider>
       <Canvas
         camera={{ position: [85, 60, 85], fov: 42 }}
         shadows={{ type: THREE.PCFShadowMap }}
+        gl={{
+          powerPreference: "high-performance",
+          antialias: true,
+          stencil: false,
+        }}
+        onCreated={handleCanvasCreated}
       >
         <Suspense fallback={null}>
           <World onLoadingStateChange={handleSceneLoadingStateChange} />

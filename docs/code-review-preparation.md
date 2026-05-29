@@ -19,7 +19,7 @@ La-Fabrik est une expérience web 3D en React, Vite, Three.js et React Three Fib
 Le joueur est dans un monde 3D et avance dans une progression de réparation :
 
 ```txt
-intro -> bike -> pylone -> ferme -> outro
+intro -> ebike -> pylon -> farm -> outro
 ```
 
 Les trois piliers à connaître pour la review :
@@ -62,7 +62,7 @@ HomePage
     -> World
       -> GameMap
       -> GameStageContent
-        -> RepairGame bike/pylone/ferme
+        -> RepairGame ebike/pylon/farm
       -> GameMusic
       -> GameDialogues
       -> Player
@@ -121,7 +121,7 @@ Phrase à retenir :
 
 Piège à connaître :
 
-`useRepairMovementLocked()` retourne actuellement `false`. Le lock de mouvement est prévu dans le code et l'UI, mais il est désactivé sur `develop`.
+`useRepairMovementLocked()` lit maintenant l'étape de mission active et verrouille le déplacement pendant les phases de réparation qui doivent immobiliser le joueur.
 
 ### Interaction
 
@@ -324,7 +324,7 @@ Ouvrir dans cet ordre :
 `RepairGame` reçoit une mission :
 
 ```tsx
-<RepairGame mission="bike" position={[8, 0, -6]} />
+<RepairGame mission="ebike" position={[42.2399, 4.5484, 34.6468]} />
 ```
 
 Puis il vérifie :
@@ -347,7 +347,7 @@ Les variations mission sont dans `repairMissions.ts` :
 ### Pourquoi c'est bien
 
 - Un seul flow réutilisable.
-- Moins de duplication entre `bike`, `pylone`, `ferme`.
+- Moins de duplication entre `ebike`, `pylon`, `farm`.
 - Les règles générales restent dans les composants.
 - Les variations restent dans la data.
 - Le debug panel peut tester les mêmes steps que le vrai jeu.
@@ -471,9 +471,9 @@ Main states :
 
 ```txt
 intro
-bike
-pylone
-ferme
+ebike
+pylon
+farm
 outro
 ```
 
@@ -509,12 +509,7 @@ Gère :
 - menu ouvert/fermé ;
 - volumes ;
 - sous-titres ;
-- langue ;
-- `repairRuntime`.
-
-Piège :
-
-`repairRuntime` est stocké et affiché, mais pas encore utilisé par `RepairGame`.
+- langue.
 
 ### Subtitle store
 
@@ -531,16 +526,15 @@ Phrase simple :
 
 Si on te pose une question précise, réponds vrai.
 
-| Sujet                     | Réponse honnête                                                          |
-| ------------------------- | ------------------------------------------------------------------------ |
-| Lock mouvement réparation | Le hook existe mais retourne `false`, donc pas actif actuellement.       |
-| `repairRuntime` JS/Python | Le choix est stocké dans settings, mais pas consommé par le repair game. |
-| Old debug flags           | `noMusic`, `noMap`, `noDialogues`, etc. ne sont plus branchés.           |
-| Player physics            | Le joueur n'est pas Rapier, il utilise capsule + octree.                 |
-| Collision map             | L'octree vient de nodes dédiés, actuellement `terrain`.                  |
-| Editor save               | Ce sont des endpoints Vite dev, pas une API de prod.                     |
-| Cinematics                | `GameCinematics` est monté seulement pendant `outro` dans `World`.       |
-| Hand tracking depth       | Le `z` MediaPipe est relatif, pas une vraie profondeur monde stable.     |
+| Sujet                     | Réponse honnête                                                      |
+| ------------------------- | -------------------------------------------------------------------- |
+| Lock mouvement réparation | Les étapes repair actives bloquent le déplacement via le hook dédié. |
+| Old debug flags           | `noMusic`, `noMap`, `noDialogues`, etc. ne sont plus branchés.       |
+| Player physics            | Le joueur n'est pas Rapier, il utilise capsule + octree.             |
+| Collision map             | L'octree vient de nodes dédiés, actuellement `terrain`.              |
+| Editor save               | Ce sont des endpoints Vite dev, pas une API de prod.                 |
+| Cinematics                | `GameCinematics` est monté seulement pendant `outro` dans `World`.   |
+| Hand tracking depth       | Le `z` MediaPipe est relatif, pas une vraie profondeur monde stable. |
 
 ## Si l'évaluateur ouvre un fichier au hasard
 
@@ -833,8 +827,6 @@ Pour réutiliser le même flow sur plusieurs missions et garder les variations d
 ### Qu'est-ce qui est incomplet ?
 
 - pas de vrai `GameManager` global ;
-- lock mouvement réparation désactivé ;
-- `repairRuntime` pas consommé ;
 - editor save uniquement en dev ;
 - hand tracking encore approximatif sur profondeur et smoothing.
 
@@ -869,8 +861,7 @@ Fichiers à avoir en tête :
 
 Réponses pièges à réviser :
 
-- lock mouvement repair désactivé actuellement ;
-- `repairRuntime` pas consommé ;
+- lock mouvement repair actif sur les étapes dédiées ;
 - player pas Rapier ;
 - save editor pas production ;
 - old boot flags non branchés.

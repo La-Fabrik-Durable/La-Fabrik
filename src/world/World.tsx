@@ -5,6 +5,9 @@ import {
   PLAYER_SPAWN_POSITION_PHYSICS,
 } from "@/data/player/playerConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
+import { useEnvironmentDebug } from "@/hooks/debug/useEnvironmentDebug";
+import { useMapPerformanceDebug } from "@/hooks/debug/useMapPerformanceDebug";
+import { useCharacterDebug } from "@/hooks/debug/useCharacterDebug";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { useHandTrackingSnapshot } from "@/hooks/handTracking/useHandTrackingSnapshot";
 import { useWorldSceneLoading } from "@/hooks/world/useWorldSceneLoading";
@@ -26,6 +29,7 @@ import { GameMusic } from "@/world/GameMusic";
 import { Lighting } from "@/world/Lighting";
 import { GameMap } from "@/world/GameMap";
 import { GameStageContent } from "@/world/GameStageContent";
+import { CharacterSystem } from "@/world/characters/CharacterSystem";
 import { Player } from "@/world/player/Player";
 import { TestMap } from "@/world/debug/TestMap";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
@@ -35,6 +39,10 @@ interface WorldProps {
 }
 
 export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
+  useEnvironmentDebug();
+  useMapPerformanceDebug();
+  useCharacterDebug();
+
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
   const mainState = useGameStore((state) => state.mainState);
@@ -82,6 +90,7 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
             onLoadingStateChange={onLoadingStateChange}
             onOctreeReady={handleOctreeReady}
           />
+          {showGameStage && mainState !== "ebike" ? <CharacterSystem /> : null}
           {showGameStage ? (
             <Physics>
               <GameStageLoaded onLoaded={handleGameStageLoaded} />

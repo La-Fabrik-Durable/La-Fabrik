@@ -5,7 +5,6 @@ export function DocsTechnicalEditorPage(): React.JSX.Element {
   return (
     <DocsDocument
       content={technicalEditor}
-      frContent={technicalEditor}
       meta="07"
       title="Editor Technical Notes"
     />

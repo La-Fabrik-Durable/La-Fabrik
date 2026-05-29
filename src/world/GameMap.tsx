@@ -4,33 +4,47 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import * as THREE from "three";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
+import {
+  getObjectBottomOffset,
+  normalizeMapScale,
+  useTerrainHeightSampler,
+} from "@/hooks/three/useTerrainHeight";
+import { TerrainModel } from "@/components/three/world/TerrainModel";
+import {
+  isMapModelVisible,
+  useMapPerformanceStore,
+} from "@/managers/stores/useMapPerformanceStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
 import { GameMapCollision } from "@/world/GameMapCollision";
+import { GeneratedMapNodeInstance } from "@/world/map-generated/GeneratedMapNodeInstance";
+import { isGeneratedMapModelName } from "@/data/world/generatedMapModelConfig";
+import { getMapSingleModelScaleMultiplier } from "@/data/world/mapInstancingConfig";
+import { MapInstancingSystem } from "@/world/map-instancing/MapInstancingSystem";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 import { logger } from "@/utils/core/Logger";
 import { loadMapSceneData } from "@/utils/map/loadMapSceneData";
+import {
+  getTerrainMapNode,
+  isRuntimeCollisionMapNode,
+  isRuntimeSingleMapNode,
+} from "@/utils/map/mapRuntimeClassification";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
-import type { MapNode } from "@/types/editor/editor";
+import { getRepairMissionMapAnchors } from "@/utils/map/repairMissionMapAnchors";
+import type { MapNode } from "@/types/map/mapScene";
 import type { OctreeReadyHandler } from "@/types/three/three";
 
 interface LoadedMapNode {
   node: MapNode;
   modelUrl: string | null;
 }
-
-const MAP_STRUCTURE_NODE_NAMES = new Set(["Scene", "blocking"]);
-const LITE_MAP_SKIPPED_NODE_NAMES = new Set([
-  "arbre",
-  "buissons",
-  "champdeble",
-  "champdesoja",
-  "champsdetournesol",
-  "sapin",
-]);
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -94,10 +108,19 @@ export function GameMap({
   onOctreeReady,
 }: GameMapProps): React.JSX.Element {
   const settledMapNodesRef = useRef(new Set<number>());
-  const [mapNodes, setMapNodes] = useState<LoadedMapNode[]>([]);
+  const groups = useMapPerformanceStore((state) => state.groups);
+  const models = useMapPerformanceStore((state) => state.models);
+  const [renderMapNodes, setRenderMapNodes] = useState<LoadedMapNode[]>([]);
+  const [collisionMapNodes, setCollisionMapNodes] = useState<LoadedMapNode[]>(
+    [],
+  );
+  const [terrainNode, setTerrainNode] = useState<MapNode | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [settledMapNodeCount, setSettledMapNodeCount] = useState(0);
-  const mapReady = mapLoaded && settledMapNodeCount >= mapNodes.length;
+  const setRepairMissionAnchors = useRepairMissionAnchorStore(
+    (state) => state.setAnchors,
+  );
+  const mapReady = mapLoaded;
 
   const handleMapNodeSettled = useCallback((index: number) => {
     if (settledMapNodesRef.current.has(index)) return;
@@ -108,7 +131,9 @@ export function GameMap({
 
   const showEmptyMap = useCallback(
     (currentStep: string) => {
-      setMapNodes([]);
+      setRenderMapNodes([]);
+      setCollisionMapNodes([]);
+      setTerrainNode(null);
       setMapLoaded(true);
       settledMapNodesRef.current.clear();
       setSettledMapNodeCount(0);
@@ -123,7 +148,7 @@ export function GameMap({
 
   useEffect(() => {
     onLoadingStateChange?.({
-      currentStep: "Récupération blocking",
+      currentStep: "Chargement de la carte",
       progress: 0.05,
       status: "loading",
     });
@@ -138,12 +163,14 @@ export function GameMap({
         }
 
         onLoadingStateChange?.({
-          currentStep: "Importation des models",
+          currentStep: "Importation des modèles",
           progress: 0.18,
           status: "loading",
         });
 
-        const visibleMapNodes = sceneData.mapNodes.filter(liteMap);
+        const visibleMapNodes = sceneData.mapNodes.filter(
+          isRuntimeSingleMapNode,
+        );
         const skippedMapNodeCount =
           sceneData.mapNodes.length - visibleMapNodes.length;
 
@@ -157,6 +184,16 @@ export function GameMap({
           const modelUrl = sceneData.models.get(node.name);
           return { node, modelUrl: modelUrl ?? null };
         });
+        const loadedCollisionNodes = sceneData.mapNodes
+          .filter(isRuntimeCollisionMapNode)
+          .map((node) => {
+            const modelUrl = sceneData.models.get(node.name);
+            return { node, modelUrl: modelUrl ?? null };
+          });
+        const loadedTerrainNode = getTerrainMapNode(sceneData.mapNodes);
+        const repairMissionAnchors = getRepairMissionMapAnchors(
+          sceneData.mapNodes,
+        );
         const missingModelCount = loadedMapNodes.filter(
           (mapNode) => mapNode.modelUrl === null,
         ).length;
@@ -171,7 +208,10 @@ export function GameMap({
           );
         }
 
-        setMapNodes(loadedMapNodes);
+        setRenderMapNodes(loadedMapNodes);
+        setCollisionMapNodes(loadedCollisionNodes);
+        setTerrainNode(loadedTerrainNode);
+        setRepairMissionAnchors(repairMissionAnchors);
         setMapLoaded(true);
         settledMapNodesRef.current.clear();
         setSettledMapNodeCount(0);
@@ -189,24 +229,26 @@ export function GameMap({
     };
 
     loadMap();
-  }, [onLoadingStateChange, showEmptyMap]);
+  }, [onLoadingStateChange, setRepairMissionAnchors, showEmptyMap]);
 
   useEffect(() => {
-    if (mapNodes.length === 0) return;
+    if (renderMapNodes.length === 0) return;
 
     const renderProgress =
-      mapNodes.length === 0 ? 1 : settledMapNodeCount / mapNodes.length;
+      renderMapNodes.length === 0
+        ? 1
+        : settledMapNodeCount / renderMapNodes.length;
     onLoadingStateChange?.({
       currentStep: "Chargement des modèles de la map",
       progress: 0.25 + renderProgress * 0.45,
       status: "loading",
     });
-  }, [mapNodes.length, onLoadingStateChange, settledMapNodeCount]);
+  }, [renderMapNodes.length, onLoadingStateChange, settledMapNodeCount]);
 
   return (
     <>
       <group>
-        {mapNodes.map((mapNode, index) => (
+        {renderMapNodes.map((mapNode, index) => (
           <ModelErrorBoundary
             key={index}
             fallback={<FallbackMapNode node={mapNode.node} />}
@@ -214,18 +256,34 @@ export function GameMap({
             node={mapNode.node}
             onSettled={() => handleMapNodeSettled(index)}
           >
-            <MapNodeInstance
-              node={mapNode.node}
-              modelUrl={mapNode.modelUrl}
-              onSettled={() => handleMapNodeSettled(index)}
-            />
+            {isMapModelVisible(mapNode.node.name, { groups, models }) ? (
+              <MapNodeInstance
+                node={mapNode.node}
+                modelUrl={mapNode.modelUrl}
+                onSettled={() => handleMapNodeSettled(index)}
+              />
+            ) : (
+              <HiddenMapNode onSettled={() => handleMapNodeSettled(index)} />
+            )}
           </ModelErrorBoundary>
         ))}
       </group>
+      <MapInstancingSystem />
+      {isMapModelVisible("terrain", { groups, models }) ? (
+        terrainNode ? (
+          <TerrainModel
+            position={terrainNode.position}
+            rotation={terrainNode.rotation}
+            scale={terrainNode.scale}
+          />
+        ) : (
+          <TerrainModel />
+        )
+      ) : null}
       <GameMapCollision
         buildOctree={buildOctree}
         mapReady={mapReady}
-        nodes={mapNodes}
+        nodes={collisionMapNodes}
         onLoaded={onLoaded}
         onLoadingStateChange={onLoadingStateChange}
         onOctreeReady={onOctreeReady}
@@ -234,24 +292,12 @@ export function GameMap({
   );
 }
 
-/**
- * Temporary development-only map reducer.
- *
- * TODO: replace this with a real map performance pass: merged static geometry,
- * instancing for repeated props, LOD, and/or zone-based loading. For now this
- * keeps the app usable on local machines by not rendering the densest exported
- * nodes from map.json.
- */
-function liteMap(node: MapNode): boolean {
-  if (MAP_STRUCTURE_NODE_NAMES.has(node.name)) {
-    return false;
-  }
+function HiddenMapNode({ onSettled }: { onSettled: () => void }): null {
+  useEffect(() => {
+    onSettled();
+  }, [onSettled]);
 
-  if (node.type === "Mesh") {
-    return false;
-  }
-
-  return !LITE_MAP_SKIPPED_NODE_NAMES.has(node.name);
+  return null;
 }
 
 function MapNodeInstance({
@@ -262,12 +308,36 @@ function MapNodeInstance({
   node: MapNode;
   modelUrl: string | null;
   onSettled: () => void;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
+  const isGeneratedModel = isGeneratedMapModelName(node.name);
+  const mainState = useGameStore((state) => state.mainState);
+  const ebikeStep = useGameStore((state) => state.ebike.currentStep);
+  const hideEbikeMapModel =
+    node.name === "ebike" && mainState === "ebike" && ebikeStep !== "locked";
+
   useEffect(() => {
-    if (modelUrl !== null) return;
+    if (modelUrl !== null || isGeneratedModel) return;
 
     onSettled();
-  }, [modelUrl, onSettled]);
+  }, [isGeneratedModel, modelUrl, onSettled]);
+
+  useEffect(() => {
+    if (!hideEbikeMapModel) return;
+
+    onSettled();
+  }, [hideEbikeMapModel, onSettled]);
+
+  if (hideEbikeMapModel) {
+    return null;
+  }
+
+  if (isGeneratedModel) {
+    return (
+      <Suspense fallback={<FallbackMapNode node={node} />}>
+        <GeneratedMapNodeInstance node={node} onLoaded={onSettled} />
+      </Suspense>
+    );
+  }
 
   if (!modelUrl) {
     return <FallbackMapNode node={node} />;
@@ -290,33 +360,64 @@ function ModelInstance({
   onLoaded: () => void;
 }): React.JSX.Element {
   const { position, rotation, scale } = node;
+  const scaleMultiplier = getMapSingleModelScaleMultiplier(node.name);
+  const baseScale = normalizeMapScale(scale);
+  const normalizedScale = useMemo(
+    () =>
+      [
+        baseScale[0] * scaleMultiplier,
+        baseScale[1] * scaleMultiplier,
+        baseScale[2] * scaleMultiplier,
+      ] satisfies [number, number, number],
+    [baseScale, scaleMultiplier],
+  );
+  const terrainHeight = useTerrainHeightSampler();
   const { scene } = useLoggedGLTF(modelUrl, {
     scope: "GameMap.ModelInstance",
     position,
     rotation,
-    scale,
+    scale: normalizedScale,
   });
   const sceneInstance = useClonedObject(scene);
+  const groundedPosition = useMemo(() => {
+    const [x, y, z] = position;
+    const height = terrainHeight.getHeight(x, z);
+    const bottomOffset = getObjectBottomOffset(sceneInstance, normalizedScale);
+    return [x, height !== null ? height + bottomOffset : y, z] as const;
+  }, [normalizedScale, position, sceneInstance, terrainHeight]);
 
   useEffect(() => {
+    sceneInstance.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
     onLoaded();
-  }, [onLoaded]);
+  }, [onLoaded, sceneInstance]);
 
   return (
     <primitive
       object={sceneInstance}
-      position={position}
+      position={groundedPosition}
       rotation={rotation}
-      scale={scale}
+      scale={normalizedScale}
     />
   );
 }
 
 function FallbackMapNode({ node }: { node: MapNode }): React.JSX.Element {
   const { position, rotation, scale } = node;
+  const normalizedScale = normalizeMapScale(scale);
 
   return (
-    <mesh position={position} rotation={rotation} scale={scale}>
+    <mesh
+      castShadow
+      position={position}
+      receiveShadow
+      rotation={rotation}
+      scale={normalizedScale}
+    >
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color="#64748b" wireframe />
     </mesh>
