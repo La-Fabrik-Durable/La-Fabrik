@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { mergeBufferGeometries } from "three-stdlib";
 import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
 import type { VegetationInstance } from "@/types/map/mapScene";
 import { useWind } from "@/hooks/world/useWind";
@@ -38,6 +37,7 @@ interface VegetationWindUniforms {
 }
 
 const meshDataCache = new Map<string, MeshData[]>();
+const VEGETATION_ALPHA_TEST = 0.35;
 
 function updateVegetationWindUniforms(
   uniforms: VegetationWindUniforms,
@@ -90,6 +90,15 @@ function applyVegetationWindMaterial(
   };
 
   windMaterial.userData.windUniforms = windUniforms;
+  windMaterial.alphaTest = Math.max(
+    windMaterial.alphaTest,
+    VEGETATION_ALPHA_TEST,
+  );
+  windMaterial.transparent = false;
+  windMaterial.depthTest = true;
+  windMaterial.depthWrite = true;
+  windMaterial.side = THREE.DoubleSide;
+  windMaterial.needsUpdate = true;
 
   windMaterial.onBeforeCompile = (shader) => {
     shader.uniforms.uVegetationWindTime = windUniforms.time;
@@ -130,11 +139,25 @@ function applyVegetationWindMaterial(
   return windMaterial;
 }
 
+function hasFinitePositions(geometry: THREE.BufferGeometry): boolean {
+  const position = geometry.getAttribute("position");
+  if (!position) return false;
+
+  for (let index = 0; index < position.count; index++) {
+    if (
+      !Number.isFinite(position.getX(index)) ||
+      !Number.isFinite(position.getY(index)) ||
+      !Number.isFinite(position.getZ(index))
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function extractMeshes(scene: THREE.Group): MeshData[] {
-  const meshesByMaterial = new Map<
-    string,
-    { geometries: THREE.BufferGeometry[]; material: THREE.Material }
-  >();
+  const meshes: MeshData[] = [];
   scene.updateMatrixWorld(true);
 
   scene.traverse((child) => {
@@ -147,41 +170,19 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 
     const geometry = child.geometry.clone();
     geometry.applyMatrix4(child.matrixWorld);
-
-    const existing = meshesByMaterial.get(material.uuid);
-    if (existing) {
-      existing.geometries.push(geometry);
-    } else {
-      meshesByMaterial.set(material.uuid, {
-        geometries: [geometry],
-        material: material.clone(),
-      });
+    if (!hasFinitePositions(geometry)) {
+      geometry.dispose();
+      return;
     }
+    addWindWeightAttribute(geometry);
+
+    meshes.push({
+      geometry,
+      material: applyVegetationWindMaterial(material.clone()),
+    });
   });
 
-  return [...meshesByMaterial.values()]
-    .map(({ geometries, material }) => {
-      const mergedGeometry = mergeBufferGeometries(geometries, false);
-
-      for (const geometry of geometries) {
-        if (geometry !== mergedGeometry) {
-          geometry.dispose();
-        }
-      }
-
-      if (!mergedGeometry) {
-        material.dispose();
-        return null;
-      }
-
-      addWindWeightAttribute(mergedGeometry);
-
-      return {
-        geometry: mergedGeometry,
-        material: applyVegetationWindMaterial(material),
-      };
-    })
-    .filter((meshData): meshData is MeshData => meshData !== null);
+  return meshes;
 }
 
 function createInstanceMatrices(
@@ -194,18 +195,17 @@ function createInstanceMatrices(
   const position = new THREE.Vector3();
   const rotation = new THREE.Euler();
   const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
+  const scale = new THREE.Vector3(
+    scaleMultiplier,
+    scaleMultiplier,
+    scaleMultiplier,
+  );
 
   for (const instance of instances) {
     const matrix = new THREE.Matrix4();
 
     position.set(...instance.position);
-    scale.set(
-      instance.scale[0] * scaleMultiplier,
-      instance.scale[1] * scaleMultiplier,
-      instance.scale[2] * scaleMultiplier,
-    );
-    position.y += -geometryBottomY * scale.y;
+    position.y += -geometryBottomY * scaleMultiplier;
     rotation.set(
       instance.rotation[0] + rotationOffset[0],
       instance.rotation[1] + rotationOffset[1],

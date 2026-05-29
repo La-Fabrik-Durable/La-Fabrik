@@ -3,7 +3,7 @@ export const GRASS_CONFIG = {
   patchSize: 30,
   bladeCount: 32000,
   bladeWidth: 0.08,
-  maxBladeHeight: 0.56,
+  maxBladeHeight: 0.67,
   randomHeightAmount: 0.25,
   surfaceOffset: 0.025,
   heightTextureSize: 128,

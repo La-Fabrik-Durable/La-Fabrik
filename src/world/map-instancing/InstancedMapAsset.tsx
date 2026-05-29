@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { mergeBufferGeometries } from "three-stdlib";
 import {
   normalizeMapScale,
   useTerrainHeightSampler,
@@ -23,11 +22,6 @@ interface MeshData {
   material: THREE.Material | THREE.Material[];
 }
 
-interface MeshMergeGroup {
-  geometries: THREE.BufferGeometry[];
-  material: THREE.Material | THREE.Material[];
-}
-
 const meshDataCache = new Map<string, MeshData[]>();
 
 function cloneMaterial(
@@ -38,46 +32,29 @@ function cloneMaterial(
     : material.clone();
 }
 
-function disposeMaterialOnly(
-  material: THREE.Material | THREE.Material[],
-): void {
-  if (Array.isArray(material)) {
-    for (const item of material) {
-      item.dispose();
-    }
-    return;
-  }
-
-  material.dispose();
-}
-
 function disposeInstancedMapMesh(mesh: THREE.InstancedMesh): void {
   mesh.dispose();
 }
 
-function createGeometrySignature(geometry: THREE.BufferGeometry): string {
-  const attributes = Object.entries(geometry.attributes)
-    .map(([name, attribute]) => {
-      return `${name}:${attribute.itemSize}:${attribute.normalized}`;
-    })
-    .sort()
-    .join("|");
+function hasFinitePositions(geometry: THREE.BufferGeometry): boolean {
+  const position = geometry.getAttribute("position");
+  if (!position) return false;
 
-  return `${geometry.index ? "indexed" : "non-indexed"}:${attributes}`;
-}
-
-function createMaterialKey(
-  material: THREE.Material | THREE.Material[],
-): string {
-  if (Array.isArray(material)) {
-    return material.map((item) => item.uuid).join("|");
+  for (let index = 0; index < position.count; index++) {
+    if (
+      !Number.isFinite(position.getX(index)) ||
+      !Number.isFinite(position.getY(index)) ||
+      !Number.isFinite(position.getZ(index))
+    ) {
+      return false;
+    }
   }
 
-  return material.uuid;
+  return true;
 }
 
 function extractMeshes(scene: THREE.Group): MeshData[] {
-  const groups = new Map<string, MeshMergeGroup>();
+  const meshes: MeshData[] = [];
 
   scene.updateMatrixWorld(true);
   scene.traverse((child) => {
@@ -85,50 +62,18 @@ function extractMeshes(scene: THREE.Group): MeshData[] {
 
     const geometry = child.geometry.clone();
     geometry.applyMatrix4(child.matrixWorld);
-    const material = child.material;
-    const key = `${createMaterialKey(material)}:${createGeometrySignature(geometry)}`;
-    const group = groups.get(key);
-
-    if (group) {
-      group.geometries.push(geometry);
+    if (!hasFinitePositions(geometry)) {
+      geometry.dispose();
       return;
     }
 
-    groups.set(key, {
-      geometries: [geometry],
-      material: cloneMaterial(material),
+    meshes.push({
+      geometry,
+      material: cloneMaterial(child.material),
     });
   });
 
-  return [...groups.values()]
-    .map((group) => {
-      if (group.geometries.length === 1) {
-        const [geometry] = group.geometries;
-        if (!geometry) return null;
-
-        return {
-          geometry,
-          material: group.material,
-        };
-      }
-
-      const mergedGeometry = mergeBufferGeometries(group.geometries, false);
-
-      for (const geometry of group.geometries) {
-        geometry.dispose();
-      }
-
-      if (!mergedGeometry) {
-        disposeMaterialOnly(group.material);
-        return null;
-      }
-
-      return {
-        geometry: mergedGeometry,
-        material: group.material,
-      };
-    })
-    .filter((meshData): meshData is MeshData => meshData !== null);
+  return meshes;
 }
 
 function setInstanceMatrices(
