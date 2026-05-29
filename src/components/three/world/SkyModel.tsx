@@ -1,21 +1,25 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
 import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { logger } from "@/utils/core/Logger";
+import { disposeModelMaterials } from "@/utils/three/dispose";
 
 interface SkyModelProps {
-  fallbackModelScale?: number | undefined;
   fallbackModelPath?: string | undefined;
-  modelPath: string;
+  fallbackScale?: number | undefined;
   fallbackColor?: string | undefined;
+  materialSide?: THREE.Side | undefined;
+  modelPath: string;
   scale?: number | undefined;
+  unlit?: boolean | undefined;
 }
 
 interface SkyModelContentProps {
+  materialSide: THREE.Side;
   modelPath: string;
   scale: number;
+  unlit: boolean;
 }
 
 interface SkyModelErrorBoundaryProps {
@@ -31,7 +35,6 @@ interface SkyModelErrorBoundaryState {
 
 const SKY_MODEL_SCALE = 1;
 const SKY_MODEL_RENDER_ORDER = -1000;
-const SKYBOX_MODEL_PATH = "/models/skybox/model.gltf";
 
 class SkyModelErrorBoundary extends Component<
   SkyModelErrorBoundaryProps,
@@ -68,14 +71,17 @@ class SkyModelErrorBoundary extends Component<
 
 export function SkyModel({
   fallbackColor,
-  fallbackModelScale = SKY_MODEL_SCALE,
   fallbackModelPath,
+  fallbackScale = SKY_MODEL_SCALE,
+  materialSide = THREE.BackSide,
   modelPath,
   scale = SKY_MODEL_SCALE,
+  unlit = false,
 }: SkyModelProps): React.JSX.Element {
   const colorFallback = fallbackColor ? (
     <color attach="background" args={[fallbackColor]} />
   ) : null;
+
   const fallback = fallbackModelPath ? (
     <SkyModelErrorBoundary
       key={fallbackModelPath}
@@ -84,8 +90,10 @@ export function SkyModel({
       modelPath={fallbackModelPath}
     >
       <SkyModelContent
+        materialSide={materialSide}
         modelPath={fallbackModelPath}
-        scale={fallbackModelScale}
+        scale={fallbackScale}
+        unlit={unlit}
       />
     </SkyModelErrorBoundary>
   ) : (
@@ -99,14 +107,21 @@ export function SkyModel({
       label="Primary sky"
       modelPath={modelPath}
     >
-      <SkyModelContent modelPath={modelPath} scale={scale} />
+      <SkyModelContent
+        materialSide={materialSide}
+        modelPath={modelPath}
+        scale={scale}
+        unlit={unlit}
+      />
     </SkyModelErrorBoundary>
   );
 }
 
 function SkyModelContent({
+  materialSide,
   modelPath,
   scale,
+  unlit,
 }: SkyModelContentProps): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const groupRef = useRef<THREE.Group>(null);
@@ -114,11 +129,14 @@ function SkyModelContent({
     scope: "SkyModel",
     scale,
   });
-  const model = useMemo(() => createSkyModel(scene), [scene]);
+  const model = useMemo(
+    () => createSkyModel(scene, materialSide, unlit),
+    [materialSide, scene, unlit],
+  );
 
   useEffect(() => {
     return () => {
-      disposeSkyModelMaterials(model);
+      disposeModelMaterials(model);
     };
   }, [model]);
 
@@ -138,7 +156,11 @@ function SkyModelContent({
   );
 }
 
-function createSkyModel(scene: THREE.Object3D): THREE.Object3D {
+function createSkyModel(
+  scene: THREE.Object3D,
+  materialSide: THREE.Side,
+  unlit: boolean,
+): THREE.Object3D {
   const model = scene.clone(true);
 
   model.traverse((object) => {
@@ -148,35 +170,44 @@ function createSkyModel(scene: THREE.Object3D): THREE.Object3D {
     if (!(object instanceof THREE.Mesh)) return;
 
     object.material = Array.isArray(object.material)
-      ? object.material.map(createSkyMaterial)
-      : createSkyMaterial(object.material);
+      ? object.material.map((material) =>
+          createSkyMaterial(material, materialSide, unlit),
+        )
+      : createSkyMaterial(object.material, materialSide, unlit);
   });
 
   return model;
 }
 
-function createSkyMaterial<T extends THREE.Material>(material: T): T {
-  const skyMaterial = material.clone();
-  skyMaterial.side = THREE.BackSide;
+function createSkyMaterial<T extends THREE.Material>(
+  material: T,
+  materialSide: THREE.Side,
+  unlit: boolean,
+): THREE.Material {
+  const skyMaterial = unlit
+    ? createUnlitSkyMaterial(material)
+    : material.clone();
+  skyMaterial.side = materialSide;
   skyMaterial.depthTest = false;
   skyMaterial.depthWrite = false;
 
-  return skyMaterial as T;
+  return skyMaterial;
 }
 
-function disposeSkyModelMaterials(model: THREE.Object3D): void {
-  model.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
+function createUnlitSkyMaterial(
+  material: THREE.Material,
+): THREE.MeshBasicMaterial {
+  const hasStandardProperties =
+    "isMeshStandardMaterial" in material && material.isMeshStandardMaterial;
+  const sourceMaterial = hasStandardProperties
+    ? (material as THREE.MeshStandardMaterial)
+    : null;
 
-    if (Array.isArray(object.material)) {
-      for (const material of object.material) {
-        material.dispose();
-      }
-      return;
-    }
-
-    object.material.dispose();
+  return new THREE.MeshBasicMaterial({
+    color: sourceMaterial?.color?.clone() ?? new THREE.Color("#ffffff"),
+    map: sourceMaterial?.map ?? null,
+    opacity: material.opacity,
+    toneMapped: false,
+    transparent: material.transparent,
   });
 }
-
-useGLTF.preload(SKYBOX_MODEL_PATH);

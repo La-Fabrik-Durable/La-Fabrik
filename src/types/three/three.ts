@@ -1,4 +1,5 @@
 import type { Octree } from "three-stdlib";
+import type * as THREE from "three";
 
 export type Vector3Tuple = [number, number, number];
 
@@ -13,3 +14,21 @@ export interface ModelTransformProps {
 export type ColliderShape = "cuboid" | "ball" | "hull";
 
 export type OctreeReadyHandler = (octree: Octree) => void;
+
+/**
+ * Keys for texture slots that may exist on various material types.
+ */
+export type TextureMaterialKey = Extract<
+  | keyof THREE.MeshBasicMaterial
+  | keyof THREE.MeshStandardMaterial
+  | keyof THREE.MeshPhysicalMaterial
+  | keyof THREE.MeshToonMaterial,
+  string
+>;
+
+/**
+ * Interface for materials that may have texture slots.
+ * Used for type-safe texture diagnostic access and disposal.
+ */
+export type MaterialWithTextureSlots = THREE.Material &
+  Partial<Record<TextureMaterialKey, THREE.Texture | null>>;

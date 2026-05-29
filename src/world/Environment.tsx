@@ -37,7 +37,7 @@ export function Environment(): React.JSX.Element {
       {showSky ? (
         <SkyModel
           fallbackColor={GAME_SCENE_FALLBACK_BACKGROUND_COLOR}
-          fallbackModelScale={GAME_SCENE_SKY_FALLBACK_MODEL_SCALE}
+          fallbackScale={GAME_SCENE_SKY_FALLBACK_MODEL_SCALE}
           fallbackModelPath={GAME_SCENE_SKY_FALLBACK_MODEL_PATH}
           modelPath={GAME_SCENE_SKY_MODEL_PATH}
           scale={GAME_SCENE_SKY_MODEL_SCALE}

@@ -29,7 +29,22 @@ import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
 import type { Vector3Tuple } from "@/types/three/three";
-import { EBIKE_CAMERA_TRANSFORM } from "@/components/ebike/Ebike";
+import { EBIKE_CAMERA_TRANSFORM } from "@/data/ebike/ebikeConfig";
+
+/** Global window properties used for ebike communication */
+interface EbikeGlobalState {
+  ebikeParkedPosition?: Vector3Tuple;
+  ebikeParkedRotation?: number;
+  ebikeSteerFactor?: number;
+  ebikeVisualGroup?: React.RefObject<THREE.Group>;
+  playerPos?: Vector3Tuple;
+  ebikeAngle?: number;
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Extending Window with EbikeGlobalState properties
+  interface Window extends EbikeGlobalState {}
+}
 
 type Keys = {
   forward: boolean;
@@ -146,12 +161,11 @@ export function PlayerController({
   useEffect(() => {
     movementModeRef.current = movementMode;
   }, [movementMode]);
+  // eslint-disable-next-line react-hooks/immutability -- Three.js camera properties (position, rotation, fov) must be mutated directly; this is the standard pattern for R3F
   useEffect(() => {
     if (movementMode === "ebike") {
-      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [
-        0, 8.2, 0,
-      ];
-      const targetRot: number = (window as any).ebikeParkedRotation || 0;
+      const targetPos: Vector3Tuple = window.ebikeParkedPosition ?? [0, 8.2, 0];
+      const targetRot: number = window.ebikeParkedRotation ?? 0;
 
       const headY = targetPos[1] + PLAYER_EYE_HEIGHT;
       const bottomY = targetPos[1] + PLAYER_CAPSULE_RADIUS;
@@ -189,6 +203,7 @@ export function PlayerController({
       prevMovementModeRef.current === "ebike"
     ) {
       const perspectiveCam = camera as THREE.PerspectiveCamera;
+      // eslint-disable-next-line react-hooks/immutability -- Three.js camera.fov must be mutated directly for dynamic FOV changes
       perspectiveCam.fov = 60;
       perspectiveCam.updateProjectionMatrix();
 
@@ -300,6 +315,7 @@ export function PlayerController({
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/immutability -- Three.js camera properties (position, rotation, fov) must be mutated directly in frame loop; this is the standard pattern for R3F game loops
   useFrame((_, delta) => {
     if (!initializedRef.current) return;
 
@@ -435,17 +451,18 @@ export function PlayerController({
       if (keys.current.left) targetSteer = 1;
       else if (keys.current.right) targetSteer = -1;
 
-      const currentSteer = (window as any).ebikeSteerFactor || 0;
+      const currentSteer = window.ebikeSteerFactor ?? 0;
       const steerFactor = THREE.MathUtils.lerp(
         currentSteer,
         targetSteer,
         8 * dt,
       );
-      (window as any).ebikeSteerFactor = steerFactor;
+      window.ebikeSteerFactor = steerFactor;
 
       const speed = velocity.current.length();
       const targetFov = 60 + Math.min(speed * 0.35, 9);
       const perspectiveCam = camera as THREE.PerspectiveCamera;
+      // eslint-disable-next-line react-hooks/immutability -- Three.js camera.fov must be mutated directly for dynamic FOV changes during frame updates
       perspectiveCam.fov = THREE.MathUtils.lerp(
         perspectiveCam.fov,
         targetFov,
@@ -482,7 +499,7 @@ export function PlayerController({
       );
       camera.rotation.set(pitchRad, yawRad, rollRad, "YXZ");
 
-      const ebikeVisual = (window as any).ebikeVisualGroup?.current;
+      const ebikeVisual = window.ebikeVisualGroup?.current;
       if (ebikeVisual) {
         ebikeVisual.position.set(
           capsule.current.end.x,
@@ -496,12 +513,12 @@ export function PlayerController({
       camera.position.copy(capsule.current.end);
     }
 
-    (window as any).playerPos = [
+    window.playerPos = [
       capsule.current.end.x,
       capsule.current.end.y,
       capsule.current.end.z,
     ];
-    (window as any).ebikeAngle = ebikeAngle.current;
+    window.ebikeAngle = ebikeAngle.current;
   });
 
   return null;

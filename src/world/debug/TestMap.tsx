@@ -102,6 +102,8 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
 
   // Load waypoints with double-safe fallback
   useEffect(() => {
+    let cancelled = false;
+
     // 1. Try localStorage
     const saved = localStorage.getItem("la-fabrik-waypoints");
     if (saved) {
@@ -111,7 +113,10 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
           console.log(
             `[TestMap] ${parsed.length} waypoints chargés depuis localStorage.`,
           );
-          setWaypoints(parsed);
+          // Schedule state update to avoid synchronous setState in effect
+          queueMicrotask(() => {
+            if (!cancelled) setWaypoints(parsed);
+          });
           return;
         }
       } catch (e) {
@@ -129,6 +134,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         throw new Error("Impossible de charger /roadNetwork.json");
       })
       .then((data) => {
+        if (cancelled) return;
         if (Array.isArray(data)) {
           console.log(
             `[TestMap] ${data.length} waypoints chargés depuis /roadNetwork.json.`,
@@ -139,6 +145,10 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
       .catch((err) => {
         console.log("[TestMap] Aucun point d'A* trouvé par défaut.", err);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

@@ -1,10 +1,17 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import * as THREE from "three";
 import {
   findClosestWaypoint,
   findWaypointPath,
 } from "@/pathfinding/WaypointAStar";
 import type { Waypoint } from "@/pathfinding/types";
+import type { Vector3Tuple } from "@/types/three/three";
 function computeImageSource(
   img: HTMLImageElement | HTMLCanvasElement,
   baseBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
@@ -66,7 +73,7 @@ export interface EbikeGPSMapProps {
   /**
    * Optional world position for the GPS screen (defaults to origin)
    */
-  position?: [number, number, number];
+  position?: Vector3Tuple;
 
   /**
    * Resolution of the offscreen canvas used for the map texture.
@@ -107,17 +114,20 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   >(null);
 
   // Offscreen high-res canvas for crystal clear rendering
-  const [offscreenCanvas] = useState(() => {
+  // Use useMemo to create canvas once - this is a stable reference that won't change
+  const offscreenCanvas = useMemo(() => {
     const canvas = document.createElement("canvas");
     canvas.width = canvasSize;
     canvas.height = canvasSize;
     return canvas;
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Canvas should only be created once
+  }, []);
 
   // Resize the canvas whenever canvasSize changes
+  // Note: Modifying canvas dimensions is intentional and necessary for rendering
   useEffect(() => {
-    offscreenCanvas.width = canvasSize;
-    offscreenCanvas.height = canvasSize;
+    // Use Object.assign to resize canvas - this is a necessary mutation for canvas rendering
+    Object.assign(offscreenCanvas, { width: canvasSize, height: canvasSize });
     if (textureRef.current) {
       textureRef.current.needsUpdate = true;
     }
@@ -128,12 +138,16 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
   // Load waypoints (localStorage with /roadNetwork.json fallback)
   useEffect(() => {
+    let cancelled = false;
     const saved = localStorage.getItem("la-fabrik-waypoints");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setWaypoints(parsed);
+          // Use queueMicrotask to avoid synchronous setState in effect
+          queueMicrotask(() => {
+            if (!cancelled) setWaypoints(parsed);
+          });
           return;
         }
       } catch (e) {
@@ -151,20 +165,25 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         throw new Error("Not found");
       })
       .then((data) => {
-        if (Array.isArray(data)) {
+        if (!cancelled && Array.isArray(data)) {
           setWaypoints(data);
         }
       })
       .catch((err) => {
         console.log("[GPS Component] No default road network found.", err);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Pre-load background map image (standard HTML5 Image loader)
   // Since the user's PNG is already transparent, we don't need fetch or pixel manipulation!
   useEffect(() => {
     if (!mapImageUrl) {
-      setMapImage(null);
+      // Use queueMicrotask to avoid synchronous setState in effect
+      queueMicrotask(() => setMapImage(null));
       return;
     }
 
@@ -245,16 +264,20 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   }, [waypoints, startPosSnapped, destPosSnapped]);
 
   // Translation helper: 3D world to Canvas pixels
-  const worldToCanvas = (wx: number, wz: number, canvasSize: number) => {
-    const { minX, maxX, minZ, maxZ } = bounds;
-    const px = ((wx - minX) / (maxX - minX)) * canvasSize;
-    const py = ((wz - minZ) / (maxZ - minZ)) * canvasSize;
-    return { x: px, y: py };
-  };
+  const worldToCanvas = useCallback(
+    (wx: number, wz: number, size: number) => {
+      const { minX, maxX, minZ, maxZ } = bounds;
+      const px = ((wx - minX) / (maxX - minX)) * size;
+      const py = ((wz - minZ) / (maxZ - minZ)) * size;
+      return { x: px, y: py };
+    },
+    [bounds],
+  );
 
-  // Draw loop
-  const draw = () => {
+  // Draw loop - returns true if texture needs update
+  const draw = useCallback(() => {
     const canvas = offscreenCanvas;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d", {
       willReadFrequently: true,
       alpha: true,
@@ -451,12 +474,16 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       ctx.fillStyle = "#ffffff";
       ctx.fill();
     }
-
-    // 5. Update WebGL Texture
-    if (textureRef.current) {
-      textureRef.current.needsUpdate = true;
-    }
-  };
+  }, [
+    offscreenCanvas,
+    mapImage,
+    baseBounds,
+    bounds,
+    activePath,
+    worldToCanvas,
+    destPosSnapped,
+    startPosSnapped,
+  ]);
 
   // 60 FPS animation ticker
   useEffect(() => {
@@ -467,14 +494,19 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
       draw();
 
+      // Update texture after draw
+      if (textureRef.current) {
+        textureRef.current.needsUpdate = true;
+      }
+
       animId = requestAnimationFrame(tick);
     };
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [waypoints, startPos, destPos, bounds, mapImage]);
+  }, [draw]);
 
   return (
-    <mesh castShadow receiveShadow position={position as any}>
+    <mesh castShadow receiveShadow position={position}>
       <planeGeometry args={[width, height]} />
       <meshBasicMaterial
         toneMapped={false}

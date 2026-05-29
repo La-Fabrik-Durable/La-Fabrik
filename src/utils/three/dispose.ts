@@ -1,21 +1,18 @@
 import * as THREE from "three";
-
-type TextureMaterialKey = Extract<
-  | keyof THREE.MeshBasicMaterial
-  | keyof THREE.MeshStandardMaterial
-  | keyof THREE.MeshPhysicalMaterial
-  | keyof THREE.MeshToonMaterial,
-  string
->;
-
-type MaterialWithTextureSlots = THREE.Material &
-  Partial<Record<TextureMaterialKey, THREE.Texture | null>>;
+import type {
+  MaterialWithTextureSlots,
+  TextureMaterialKey,
+} from "@/types/three/three";
 
 interface DisposeObject3DOptions {
   disposeTextures?: boolean;
 }
 
-const MATERIAL_TEXTURE_KEYS = [
+/**
+ * Common texture slot keys found on Three.js materials.
+ * Exported for use in texture diagnostics and disposal.
+ */
+export const MATERIAL_TEXTURE_KEYS = [
   "alphaMap",
   "aoMap",
   "bumpMap",
@@ -40,6 +37,8 @@ const MATERIAL_TEXTURE_KEYS = [
   "transmissionMap",
 ] as const satisfies readonly TextureMaterialKey[];
 
+export type { MaterialWithTextureSlots };
+
 export function disposeObject3D(
   object: THREE.Object3D,
   options: DisposeObject3DOptions = {},
@@ -48,6 +47,25 @@ export function disposeObject3D(
     if (!(child instanceof THREE.Mesh)) return;
 
     child.geometry?.dispose();
+
+    if (Array.isArray(child.material)) {
+      child.material.forEach((material) => disposeMaterial(material, options));
+    } else if (child.material) {
+      disposeMaterial(child.material, options);
+    }
+  });
+}
+
+/**
+ * Disposes only materials (not geometry) from an Object3D and its children.
+ * Useful for cloned models where you want to preserve the original geometry.
+ */
+export function disposeModelMaterials(
+  object: THREE.Object3D,
+  options: DisposeObject3DOptions = {},
+): void {
+  object.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
 
     if (Array.isArray(child.material)) {
       child.material.forEach((material) => disposeMaterial(material, options));

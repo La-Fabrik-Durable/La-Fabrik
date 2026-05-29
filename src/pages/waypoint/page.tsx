@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import type { ThreeEvent } from "@react-three/fiber";
 import {
   useGLTF,
   OrthographicCamera,
@@ -159,7 +160,7 @@ const EditorScene: React.FC<EditorSceneProps> = ({
       {/* 1. Terrain Mesh (Raycasted for adding/dragging) */}
       <primitive
         object={scene}
-        onClick={(e: any) => {
+        onClick={(e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
           // Only click-to-create a new node if they are not actively dragging a link
           if (dragStartNodeId === null && e.point) {
@@ -256,7 +257,7 @@ const WaypointMarkers: React.FC<WaypointMarkersProps> = ({
             onPointerOut={() => {
               setHoveredNodeId(null);
             }}
-            onPointerDown={(e: any) => {
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
               e.stopPropagation();
               if (e.button === 0) {
                 // Left click start drag link connection
@@ -388,7 +389,33 @@ const ConnectionLines: React.FC<ConnectionLinesProps> = ({
 // ==========================================
 
 export const WaypointEditorPage: React.FC = () => {
-  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+  // Use lazy initialization to load from localStorage on mount
+  const [waypoints, setWaypoints] = useState<Waypoint[]>(() => {
+    console.log(
+      "[Initialisation] Chargement des waypoints depuis localStorage...",
+    );
+    const saved = localStorage.getItem("la-fabrik-waypoints");
+    if (saved) {
+      try {
+        const list = JSON.parse(saved);
+        console.log(
+          `[Initialisation] ${list.length} waypoints chargés avec succès !`,
+        );
+        return list;
+      } catch (e) {
+        console.error(
+          "[Initialisation] Erreur de parsing du stockage local",
+          e,
+        );
+        return [];
+      }
+    } else {
+      console.log(
+        "[Initialisation] Aucun point enregistré en localStorage. Démarrage à vide.",
+      );
+      return [];
+    }
+  });
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
 
@@ -425,36 +452,33 @@ export const WaypointEditorPage: React.FC = () => {
     number | null
   >(null);
 
-  // Load from localstorage on mount
-  useEffect(() => {
-    console.log(
-      "[Initialisation] Chargement des waypoints depuis localStorage...",
-    );
-    const saved = localStorage.getItem("la-fabrik-waypoints");
-    if (saved) {
-      try {
-        const list = JSON.parse(saved);
-        console.log(
-          `[Initialisation] ${list.length} waypoints chargés avec succès !`,
-        );
-        setWaypoints(list);
-      } catch (e) {
-        console.error(
-          "[Initialisation] Erreur de parsing du stockage local",
-          e,
-        );
-      }
-    } else {
-      console.log(
-        "[Initialisation] Aucun point enregistré en localStorage. Démarrage à vide.",
-      );
-    }
-  }, []);
-
   // Save to localstorage when waypoints change
   const saveWaypoints = (list: Waypoint[]) => {
     setWaypoints(list);
     localStorage.setItem("la-fabrik-waypoints", JSON.stringify(list));
+  };
+
+  // Delete current selected node
+  const handleDeleteNode = (id: number) => {
+    console.log(
+      `[Suppression] Action de suppression définitive du Point : ID = ${id}`,
+    );
+    setWaypoints((currentWaypoints) => {
+      const updatedList = currentWaypoints
+        .filter((wp) => wp.id !== id)
+        .map((wp) => ({
+          ...wp,
+          connections: wp.connections.filter((cId) => cId !== id),
+        }));
+      console.log(
+        `[Suppression] Point ${id} supprimé. ${updatedList.length} points restants.`,
+      );
+      localStorage.setItem("la-fabrik-waypoints", JSON.stringify(updatedList));
+      return updatedList;
+    });
+    setSelectedId((currentSelected) =>
+      currentSelected === id ? null : currentSelected,
+    );
   };
 
   // Delete a specific connection (break the link)
@@ -671,29 +695,6 @@ export const WaypointEditorPage: React.FC = () => {
       }
       setDragStartNodeId(null);
     }
-  };
-
-  // Delete current selected node
-  const handleDeleteNode = (id: number) => {
-    console.log(
-      `[Suppression] Action de suppression définitive du Point : ID = ${id}`,
-    );
-    setWaypoints((currentWaypoints) => {
-      const updatedList = currentWaypoints
-        .filter((wp) => wp.id !== id)
-        .map((wp) => ({
-          ...wp,
-          connections: wp.connections.filter((cId) => cId !== id),
-        }));
-      console.log(
-        `[Suppression] Point ${id} supprimé. ${updatedList.length} points restants.`,
-      );
-      localStorage.setItem("la-fabrik-waypoints", JSON.stringify(updatedList));
-      return updatedList;
-    });
-    setSelectedId((currentSelected) =>
-      currentSelected === id ? null : currentSelected,
-    );
   };
 
   // Connect Mode Trigger

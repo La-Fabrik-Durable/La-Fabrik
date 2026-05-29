@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { HomePage } from "@/pages/page";
 import { EditorPage } from "@/pages/editor/page";
+import { GalleryPage } from "@/pages/gallery/page";
 import { WaypointEditorPage } from "@/pages/waypoint/page";
 import { BackgroundMapPage } from "@/pages/backgroundmap/page";
 import {
@@ -15,6 +16,7 @@ import {
   DocsCodeReviewRoute,
   DocsEditorRoute,
   DocsFeaturesRoute,
+  DocsGalleryRoute,
   DocsHandTrackingRoute,
   DocsInteractionRoute,
   DocsLayoutRoute,
@@ -44,6 +46,12 @@ const editorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/editor",
   component: EditorPage,
+});
+
+const galleryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/gallery",
+  component: GalleryPage,
 });
 
 const waypointRoute = createRoute({
@@ -82,6 +90,7 @@ const docsChildRoutes = [
   { path: "main-feature", component: DocsMainFeatureRoute },
   { path: "editor", component: DocsEditorRoute },
   { path: "animation", component: DocsAnimationRoute },
+  { path: "gallery", component: DocsGalleryRoute },
   { path: "code-review", component: DocsCodeReviewRoute },
 ].map(({ path, component }) =>
   createRoute({
@@ -94,6 +103,7 @@ const docsChildRoutes = [
 const routeTree = rootRoute.addChildren([
   indexRoute,
   editorRoute,
+  galleryRoute,
   waypointRoute,
   backgroundMapRoute,
   docsRoute.addChildren(docsChildRoutes),

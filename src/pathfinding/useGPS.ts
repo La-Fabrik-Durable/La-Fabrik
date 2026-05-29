@@ -38,8 +38,6 @@ export function useGPS({
   // Initialize the pathfinding grid
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError(null);
 
     async function initGrid() {
       try {
@@ -63,9 +61,13 @@ export function useGPS({
           colorMapImgRef.current = colorMapImg;
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (active) {
-          setError(err.message || "Failed to initialize GPS system");
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Failed to initialize GPS system";
+          setError(message);
           setLoading(false);
         }
       }
