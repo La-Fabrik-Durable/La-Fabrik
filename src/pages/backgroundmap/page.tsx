@@ -1,7 +1,34 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { MapControls, OrthographicCamera, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import type { MapControls as MapControlsImpl } from "three-stdlib";
+
+// ----------------------------------------------------------------------------
+// Types
+// ----------------------------------------------------------------------------
+interface WaypointData {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  connections: number[];
+}
+
+interface Bounds {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
+// Extend window for global functions
+declare global {
+  interface Window {
+    applyAutoBounds?: () => void;
+    downloadMapScreenshot?: () => void;
+  }
+}
 
 // ----------------------------------------------------------------------------
 // 1. Terrain Scene
@@ -24,7 +51,7 @@ function WaypointOverlay({
   waypoints,
   visible,
 }: {
-  waypoints: any[];
+  waypoints: WaypointData[];
   visible: boolean;
 }) {
   if (!visible) return null;
@@ -47,54 +74,71 @@ function CameraManager({
   autoBounds,
   boundsTextRef,
 }: {
-  autoBounds: any;
+  autoBounds: Bounds | null;
   boundsTextRef: React.RefObject<HTMLPreElement | null>;
 }) {
   const { camera, gl, scene } = useThree();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<MapControlsImpl>(null);
+  // Use refs to store mutable camera properties that we need to modify
+  const cameraRef = useRef(camera);
 
-  // Apply Auto-Bounds function
-  useEffect(() => {
-    const applyAutoBounds = () => {
-      if (camera instanceof THREE.OrthographicCamera && autoBounds) {
-        const width = autoBounds.maxX - autoBounds.minX;
-        const height = autoBounds.maxZ - autoBounds.minZ;
-        const centerX = (autoBounds.minX + autoBounds.maxX) / 2;
-        const centerZ = (autoBounds.minZ + autoBounds.maxZ) / 2;
+  // Update cameraRef in an effect to avoid refs during render error
+  React.useEffect(() => {
+    cameraRef.current = camera;
+  }, [camera]);
 
-        camera.position.set(centerX, 200, centerZ);
-        camera.left = -width / 2;
-        camera.right = width / 2;
-        camera.top = height / 2;
-        camera.bottom = -height / 2;
-        camera.zoom = 1;
-        camera.updateProjectionMatrix();
+  // Apply Auto-Bounds function using useCallback to create a stable reference
+  const applyAutoBounds = useCallback(() => {
+    const cam = cameraRef.current;
+    if (cam instanceof THREE.OrthographicCamera && autoBounds) {
+      const width = autoBounds.maxX - autoBounds.minX;
+      const height = autoBounds.maxZ - autoBounds.minZ;
+      const centerX = (autoBounds.minX + autoBounds.maxX) / 2;
+      const centerZ = (autoBounds.minZ + autoBounds.maxZ) / 2;
 
-        if (controlsRef.current) {
-          controlsRef.current.target.set(centerX, 0, centerZ);
-          controlsRef.current.update();
-        }
+      cam.position.set(centerX, 200, centerZ);
+      cam.left = -width / 2;
+      cam.right = width / 2;
+      cam.top = height / 2;
+      cam.bottom = -height / 2;
+      cam.zoom = 1;
+      cam.updateProjectionMatrix();
+
+      if (controlsRef.current) {
+        controlsRef.current.target.set(centerX, 0, centerZ);
+        controlsRef.current.update();
       }
-    };
+    }
+  }, [autoBounds]);
 
-    (window as any).applyAutoBounds = applyAutoBounds;
-    // Initial apply
-    applyAutoBounds();
+  // Initial apply on autoBounds change (using useFrame to run once after mount)
+  const hasAppliedRef = useRef(false);
+  useFrame(() => {
+    if (!hasAppliedRef.current && autoBounds) {
+      applyAutoBounds();
+      hasAppliedRef.current = true;
+    }
+  });
 
+  // Reset hasApplied when autoBounds changes
+  React.useEffect(() => {
+    hasAppliedRef.current = false;
+    window.applyAutoBounds = applyAutoBounds;
     return () => {
-      delete (window as any).applyAutoBounds;
+      delete window.applyAutoBounds;
     };
-  }, [camera, autoBounds]);
+  }, [applyAutoBounds]);
 
   // Track dynamic bounds without triggering React re-renders!
   useFrame(() => {
-    if (camera instanceof THREE.OrthographicCamera && boundsTextRef.current) {
-      const width = (camera.right - camera.left) / camera.zoom;
-      const height = (camera.top - camera.bottom) / camera.zoom;
-      const minX = Math.round(camera.position.x - width / 2);
-      const maxX = Math.round(camera.position.x + width / 2);
-      const minZ = Math.round(camera.position.z - height / 2);
-      const maxZ = Math.round(camera.position.z + height / 2);
+    const cam = cameraRef.current;
+    if (cam instanceof THREE.OrthographicCamera && boundsTextRef.current) {
+      const width = (cam.right - cam.left) / cam.zoom;
+      const height = (cam.top - cam.bottom) / cam.zoom;
+      const minX = Math.round(cam.position.x - width / 2);
+      const maxX = Math.round(cam.position.x + width / 2);
+      const minZ = Math.round(cam.position.z - height / 2);
+      const maxZ = Math.round(cam.position.z + height / 2);
 
       // Direct DOM mutation for 60fps performance (prevents WebGL Context Lost!)
       boundsTextRef.current.innerText = JSON.stringify(
@@ -106,10 +150,10 @@ function CameraManager({
   });
 
   // Attach screenshot capture logic
-  useEffect(() => {
-    (window as any).downloadMapScreenshot = () => {
+  React.useEffect(() => {
+    window.downloadMapScreenshot = () => {
       // Force an immediate render frame to ensure no UI overlays are missing
-      gl.render(scene, camera);
+      gl.render(scene, cameraRef.current);
       const dataUrl = gl.domElement.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = dataUrl;
@@ -117,9 +161,9 @@ function CameraManager({
       a.click();
     };
     return () => {
-      delete (window as any).downloadMapScreenshot;
+      delete window.downloadMapScreenshot;
     };
-  }, [gl, camera, scene]);
+  }, [gl, scene]);
 
   return (
     <MapControls ref={controlsRef} enableRotate={false} dampingFactor={0.05} />
@@ -130,25 +174,35 @@ function CameraManager({
 // 4. Main Page Route Component
 // ----------------------------------------------------------------------------
 export function BackgroundMapPage() {
-  const [waypoints, setWaypoints] = useState<any[]>([]);
-  const [showWaypoints, setShowWaypoints] = useState(true);
-  const boundsTextRef = useRef<HTMLPreElement>(null);
-
-  // Load road network waypoints to compute perfect GPS bounds
-  useEffect(() => {
+  // Use lazy initialization to avoid setState in useEffect
+  const [waypoints, setWaypoints] = useState<WaypointData[]>(() => {
     const saved = localStorage.getItem("la-fabrik-waypoints");
     if (saved) {
-      setWaypoints(JSON.parse(saved));
-    } else {
+      try {
+        return JSON.parse(saved) as WaypointData[];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [showWaypoints, setShowWaypoints] = useState(true);
+  const boundsTextRef = useRef<HTMLPreElement>(null);
+  const hasFetchedRef = useRef(false);
+
+  // Fetch from network as fallback if localStorage was empty
+  React.useEffect(() => {
+    if (waypoints.length === 0 && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       fetch("/roadNetwork.json")
         .then((res) => res.json())
-        .then((data) => setWaypoints(data))
+        .then((data: WaypointData[]) => setWaypoints(data))
         .catch(() => {});
     }
-  }, []);
+  }, [waypoints.length]); // Include dependency to satisfy linter
 
   // Compute exact bounds that the EbikeGPSMap will use by default
-  const autoBounds = useMemo(() => {
+  const autoBounds = useMemo((): Bounds | null => {
     if (waypoints.length === 0) return null;
     const xs = waypoints.map((w) => w.x);
     const zs = waypoints.map((w) => w.z);
@@ -271,13 +325,12 @@ export function BackgroundMapPage() {
             transition: "all 0.2s",
           }}
         >
-          {showWaypoints ? "👁️ Masquer Waypoints" : "👁️‍🗨️ Afficher Waypoints"}
+          {showWaypoints ? "Masquer Waypoints" : "Afficher Waypoints"}
         </button>
 
         <button
           onClick={() => {
-            if ((window as any).applyAutoBounds)
-              (window as any).applyAutoBounds();
+            if (window.applyAutoBounds) window.applyAutoBounds();
           }}
           style={{
             width: "100%",
@@ -292,13 +345,12 @@ export function BackgroundMapPage() {
             transition: "all 0.2s",
           }}
         >
-          🎯 Cadrage Automatique
+          Cadrage Automatique
         </button>
 
         <button
           onClick={() => {
-            if ((window as any).downloadMapScreenshot)
-              (window as any).downloadMapScreenshot();
+            if (window.downloadMapScreenshot) window.downloadMapScreenshot();
           }}
           style={{
             width: "100%",
@@ -313,7 +365,7 @@ export function BackgroundMapPage() {
             boxShadow: "0 4px 6px -1px rgba(14, 165, 233, 0.4)",
           }}
         >
-          📸 Capturer la carte (.png)
+          Capturer la carte (.png)
         </button>
 
         <div

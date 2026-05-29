@@ -23,8 +23,6 @@ export function useWaypointGPS({
   // Load waypoint list and background color map image
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError(null);
 
     async function initGPS() {
       try {
@@ -49,9 +47,13 @@ export function useWaypointGPS({
           colorMapImgRef.current = colorMapImg;
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (active) {
-          setError(err.message || "Failed to initialize Waypoint GPS");
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Failed to initialize Waypoint GPS";
+          setError(message);
           setLoading(false);
         }
       }

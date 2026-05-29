@@ -181,10 +181,12 @@ function playCinematic(
 let cameraTransitionTimeline: gsap.core.Timeline | null = null;
 let globalCamera: THREE.Camera | null = null;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function setGlobalCamera(camera: THREE.Camera | null): void {
   globalCamera = camera;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function animateCameraTransition(
   targetPosition: Vector3Tuple,
   targetLookAt: Vector3Tuple,
@@ -234,6 +236,7 @@ export function animateCameraTransition(
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function animateCameraTransformTransition(
   targetPosition: Vector3Tuple,
   targetRotation: Vector3Tuple,

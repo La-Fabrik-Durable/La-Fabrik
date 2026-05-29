@@ -53,6 +53,11 @@ import {
   GAME_SCENE_SKY_MODEL_PATH,
   GAME_SCENE_SKY_MODEL_SCALE,
 } from "@/data/world/environmentConfig";
+import {
+  disposeModelMaterials,
+  MATERIAL_TEXTURE_KEYS,
+  type MaterialWithTextureSlots,
+} from "@/utils/three/dispose";
 
 interface GalleryModelProps {
   model: GalleryModel;
@@ -89,10 +94,8 @@ interface TextureDiagnostic {
   summary: string;
 }
 
-interface GalleryModelScene extends THREE.Object3D {
-  userData: THREE.Object3D["userData"] & {
-    hiddenExportPlaneCount?: number;
-  };
+interface GalleryModelSceneUserData extends Record<string, unknown> {
+  hiddenExportPlaneCount?: number;
 }
 
 interface GalleryViewerErrorBoundaryProps {
@@ -103,16 +106,6 @@ interface GalleryViewerErrorBoundaryProps {
 interface GalleryViewerErrorBoundaryState {
   hasError: boolean;
 }
-
-const TEXTURE_SLOTS = [
-  "map",
-  "normalMap",
-  "roughnessMap",
-  "metalnessMap",
-  "aoMap",
-  "emissiveMap",
-  "alphaMap",
-] as const;
 
 const LOADING_TEXTURE_DIAGNOSTIC: TextureDiagnostic = {
   modelId: null,
@@ -221,7 +214,7 @@ function GalleryModelPreview({
 
   useEffect(() => {
     return () => {
-      disposeGalleryModelMaterials(modelScene);
+      disposeModelMaterials(modelScene);
     };
   }, [modelScene]);
 
@@ -253,7 +246,7 @@ function GalleryModelPreview({
 }
 
 function createGalleryModelScene(scene: THREE.Object3D): THREE.Object3D {
-  const modelScene = scene.clone(true) as GalleryModelScene;
+  const modelScene = scene.clone(true);
   const exportPlaneMeshes: THREE.Mesh[] = [];
 
   modelScene.traverse((object) => {
@@ -273,7 +266,8 @@ function createGalleryModelScene(scene: THREE.Object3D): THREE.Object3D {
     mesh.parent?.remove(mesh);
   }
 
-  modelScene.userData.hiddenExportPlaneCount = exportPlaneMeshes.length;
+  const userData = modelScene.userData as GalleryModelSceneUserData;
+  userData.hiddenExportPlaneCount = exportPlaneMeshes.length;
 
   return modelScene;
 }
@@ -298,33 +292,21 @@ function isExportPlaneMesh(mesh: THREE.Mesh): boolean {
 
 function createGalleryMaterial(material: THREE.Material): THREE.Material {
   const galleryMaterial = material.clone();
-  const materialWithNormalMap = galleryMaterial as THREE.Material & {
-    normalMap?: THREE.Texture | null;
-  };
 
   galleryMaterial.side = THREE.DoubleSide;
 
-  if (materialWithNormalMap.normalMap) {
-    materialWithNormalMap.normalMap = null;
+  if (hasNormalMap(galleryMaterial)) {
+    galleryMaterial.normalMap = null;
     galleryMaterial.needsUpdate = true;
   }
 
   return galleryMaterial;
 }
 
-function disposeGalleryModelMaterials(modelScene: THREE.Object3D): void {
-  modelScene.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
-
-    if (Array.isArray(object.material)) {
-      for (const material of object.material) {
-        material.dispose();
-      }
-      return;
-    }
-
-    object.material.dispose();
-  });
+function hasNormalMap(
+  material: THREE.Material,
+): material is THREE.Material & { normalMap: THREE.Texture | null } {
+  return "normalMap" in material && material.normalMap !== undefined;
 }
 
 function GalleryScene({
@@ -491,8 +473,8 @@ function getTextureDiagnostic(
 ): TextureDiagnostic {
   let textureCount = 0;
   let missingTextureImageCount = 0;
-  const hiddenExportPlaneCount =
-    (modelScene as GalleryModelScene).userData.hiddenExportPlaneCount ?? 0;
+  const userData = modelScene.userData as GalleryModelSceneUserData;
+  const hiddenExportPlaneCount = userData.hiddenExportPlaneCount ?? 0;
 
   modelScene.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
@@ -502,10 +484,10 @@ function getTextureDiagnostic(
       : [object.material];
 
     for (const material of materials) {
-      const materialRecord = material as unknown as Record<string, unknown>;
+      const texturedMaterial = material as MaterialWithTextureSlots;
 
-      for (const textureSlot of TEXTURE_SLOTS) {
-        const texture = materialRecord[textureSlot];
+      for (const textureSlot of MATERIAL_TEXTURE_KEYS) {
+        const texture = texturedMaterial[textureSlot];
         if (!(texture instanceof THREE.Texture)) continue;
 
         textureCount += 1;
@@ -559,14 +541,13 @@ export function GalleryPage(): React.JSX.Element {
   );
 
   const modelCount = galleryModels.length;
-  const activeModel = galleryModels[activeModelIndex] ?? galleryModels[0];
+  const activeModel = galleryModels[activeModelIndex];
 
   const activeTextureDiagnostic =
     activeModel && textureDiagnostic.modelId === activeModel.id
       ? textureDiagnostic
       : LOADING_TEXTURE_DIAGNOSTIC;
 
-  // Preload adjacent models for smoother navigation
   useEffect(() => {
     if (modelCount <= 1) return;
 
@@ -586,7 +567,6 @@ export function GalleryPage(): React.JSX.Element {
     }
   }, [activeModelIndex, modelCount]);
 
-  // Memoized callbacks to prevent unnecessary re-renders
   const goToPreviousModel = useCallback((): void => {
     setActiveModelIndex((currentIndex) =>
       currentIndex === 0 ? modelCount - 1 : currentIndex - 1,

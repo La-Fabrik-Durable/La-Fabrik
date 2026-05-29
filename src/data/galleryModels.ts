@@ -4,10 +4,6 @@ export interface GalleryModel {
   path: string;
 }
 
-/**
- * List of 3D models available in the gallery.
- * Only includes models that exist in `/public/models/`.
- */
 export const galleryModels: GalleryModel[] = [
   { id: "arbre", name: "Arbre", path: "/models/arbre/model.gltf" },
   { id: "blocking", name: "Blocking", path: "/models/blocking/terrain.gltf" },

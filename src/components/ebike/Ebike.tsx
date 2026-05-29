@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { EbikeGPSMap } from "@/components/ebike/EbikeGPSMap";
@@ -9,24 +9,14 @@ import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { animateCameraTransformTransition } from "@/world/GameCinematics";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { PLAYER_EYE_HEIGHT } from "@/data/player/playerConfig";
+import {
+  EBIKE_CAMERA_TRANSFORM,
+  EBIKE_DROP_PLAYER_TRANSFORM,
+} from "@/data/ebike/ebikeConfig";
 import type { Vector3Tuple } from "@/types/three/three";
+import "@/types/ebike/ebikeWindow";
 
 const EBIKE_MODEL_PATH = "/models/ebike/model.gltf";
-
-export interface CameraTransform {
-  position: Vector3Tuple;
-  rotation: Vector3Tuple;
-}
-
-export const EBIKE_CAMERA_TRANSFORM: CameraTransform = {
-  position: [-3.5, 6, 0],
-  rotation: [-10, -90, 0],
-};
-
-const EBIKE_DROP_PLAYER_TRANSFORM: CameraTransform = {
-  position: [0, 1.5, -3],
-  rotation: [0, 0, 0],
-};
 
 interface EbikeProps {
   position: Vector3Tuple;
@@ -71,13 +61,23 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
     new THREE.Vector3(...position),
   );
 
-  const restingPosition = useRef<Vector3Tuple>([
+  // Use ref for internal state, and state for debug visualization (to avoid ref access during render)
+  const restingPositionRef = useRef<Vector3Tuple>([
     position[0],
     position[1] - PLAYER_EYE_HEIGHT,
     position[2],
   ]);
-  const restingRotation = useRef<number>(0);
+  const restingRotationRef = useRef<number>(0);
   const forkRef = useRef<THREE.Object3D | null>(null);
+
+  // State for debug visualization (synced from refs during useFrame)
+  const [showCameraPoints, setShowCameraPoints] = useState(true);
+  const [debugRestingPosition, setDebugRestingPosition] =
+    useState<Vector3Tuple>([
+      position[0],
+      position[1] - PLAYER_EYE_HEIGHT,
+      position[2],
+    ]);
 
   useEffect(() => {
     if (model) {
@@ -89,28 +89,28 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   }, [model]);
 
   useEffect(() => {
-    (window as any).ebikeVisualGroup = groupRef;
-    (window as any).ebikeParkedPosition = restingPosition.current;
-    (window as any).ebikeParkedRotation = restingRotation.current;
+    window.ebikeVisualGroup = groupRef;
+    window.ebikeParkedPosition = restingPositionRef.current;
+    window.ebikeParkedRotation = restingRotationRef.current;
     return () => {
-      (window as any).ebikeVisualGroup = null;
-      (window as any).ebikeParkedPosition = null;
-      (window as any).ebikeParkedRotation = null;
+      window.ebikeVisualGroup = null;
+      window.ebikeParkedPosition = null;
+      window.ebikeParkedRotation = null;
     };
   }, []);
 
   useFrame((_, delta) => {
     if (groupRef.current) {
       if (movementMode === "ebike") {
-        restingPosition.current = [
+        restingPositionRef.current = [
           groupRef.current.position.x,
           groupRef.current.position.y,
           groupRef.current.position.z,
         ];
-        restingRotation.current = groupRef.current.rotation.y;
+        restingRotationRef.current = groupRef.current.rotation.y;
 
         // Smoothly rotate the front fork ("fourche") up to 15 degrees in its own Z axis
-        const steerFactor = (window as any).ebikeSteerFactor || 0;
+        const steerFactor = window.ebikeSteerFactor ?? 0;
         if (forkRef.current) {
           // 15 degrees is 0.26 radians
           const targetForkRotation = steerFactor * 0.26;
@@ -127,51 +127,57 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           lastGpsUpdatePos.current.copy(currentPos);
           setGpsStartPos({ x: currentPos.x, y: currentPos.y, z: currentPos.z });
         }
+
+        // Sync debug visualization state (throttled to avoid excessive re-renders)
+        if (showCameraPoints) {
+          setDebugRestingPosition([...restingPositionRef.current]);
+        }
       } else {
-        groupRef.current.position.set(...restingPosition.current);
-        groupRef.current.rotation.set(0, restingRotation.current, 0);
+        groupRef.current.position.set(...restingPositionRef.current);
+        groupRef.current.rotation.set(0, restingRotationRef.current, 0);
 
         // Reset fork rotation when parked
         if (forkRef.current) {
           forkRef.current.rotation.z = 0;
         }
       }
-      (window as any).ebikeParkedPosition = restingPosition.current;
-      (window as any).ebikeParkedRotation = restingRotation.current;
+      window.ebikeParkedPosition = restingPositionRef.current;
+      window.ebikeParkedRotation = restingRotationRef.current;
     }
   });
 
+  // Debug visualization positions computed from state (not refs)
   const camPointPos: Vector3Tuple = [
-    restingPosition.current[0] + EBIKE_CAMERA_TRANSFORM.position[0],
-    restingPosition.current[1] + EBIKE_CAMERA_TRANSFORM.position[1],
-    restingPosition.current[2] + EBIKE_CAMERA_TRANSFORM.position[2],
+    debugRestingPosition[0] + EBIKE_CAMERA_TRANSFORM.position[0],
+    debugRestingPosition[1] + EBIKE_CAMERA_TRANSFORM.position[1],
+    debugRestingPosition[2] + EBIKE_CAMERA_TRANSFORM.position[2],
   ];
   const dropPointPos: Vector3Tuple = [
-    restingPosition.current[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
-    restingPosition.current[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
-    restingPosition.current[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
+    debugRestingPosition[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
+    debugRestingPosition[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
+    debugRestingPosition[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
   ];
 
-  const handleInteract = (): void => {
+  const handleInteract = useCallback((): void => {
     if (movementMode === "walk") {
       const cameraOffset = new THREE.Vector3(
         ...EBIKE_CAMERA_TRANSFORM.position,
       );
       cameraOffset.applyAxisAngle(
         new THREE.Vector3(0, 1, 0),
-        restingRotation.current,
+        restingRotationRef.current,
       );
 
       const targetCamPos: Vector3Tuple = [
-        restingPosition.current[0] + cameraOffset.x,
-        restingPosition.current[1] + cameraOffset.y,
-        restingPosition.current[2] + cameraOffset.z,
+        restingPositionRef.current[0] + cameraOffset.x,
+        restingPositionRef.current[1] + cameraOffset.y,
+        restingPositionRef.current[2] + cameraOffset.z,
       ];
 
       const targetRotation: Vector3Tuple = [
         EBIKE_CAMERA_TRANSFORM.rotation[0],
         EBIKE_CAMERA_TRANSFORM.rotation[1] +
-          THREE.MathUtils.radToDeg(restingRotation.current),
+          THREE.MathUtils.radToDeg(restingRotationRef.current),
         EBIKE_CAMERA_TRANSFORM.rotation[2],
       ];
 
@@ -207,27 +213,28 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         useGameStore.getState().setPlayerMovementMode("walk");
       });
     }
-  };
+  }, [movementMode, camera, position]);
 
+  // Store handleInteract in a ref for use in debug folder callback
   const handleInteractRef = useRef(handleInteract);
-  handleInteractRef.current = handleInteract;
+  useEffect(() => {
+    handleInteractRef.current = handleInteract;
+  }, [handleInteract]);
 
-  const debugRef = useRef({ showCameraPoints: true });
-  const debugActions = useRef({
-    toggleRide: () => {
-      handleInteractRef.current();
-    },
-  });
+  // Mutable object for lil-gui binding
+  const debugState = useRef({ showCameraPoints: true });
 
   useDebugFolder("Ebike", (folder) => {
     folder
-      .add(debugRef.current, "showCameraPoints")
+      .add(debugState.current, "showCameraPoints")
       .name("Show Camera Points")
       .onChange((value: boolean) => {
-        debugRef.current.showCameraPoints = value;
+        setShowCameraPoints(value);
       });
 
-    folder.add(debugActions.current, "toggleRide").name("Monter / Descendre");
+    folder
+      .add({ toggleRide: () => handleInteractRef.current() }, "toggleRide")
+      .name("Monter / Descendre");
   });
 
   return (
@@ -268,7 +275,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         </group>
       </group>
 
-      {debugRef.current.showCameraPoints && (
+      {showCameraPoints && (
         <>
           <mesh position={camPointPos}>
             <sphereGeometry args={[0.3, 16, 16]} />
