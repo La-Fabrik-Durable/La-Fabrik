@@ -37,7 +37,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Input lock while the settings menu is open
 - Input lock while a cinematic is playing
 - Octree collision against dedicated map collision nodes, currently scoped to the `terrain` node
-- Repair movement-lock hook and indicator exist, but the hook currently returns `false`, so movement is not locked during repair on the current branch
+- Repair movement lock during focused repair steps, with a matching UI indicator
 
 ## Physics And Collision
 
@@ -63,12 +63,12 @@ This document lists the user-visible and developer-facing features implemented i
 
 ## Repair Gameplay
 
-- Reusable `RepairGame` mounted for `bike`, `pylone`, and `ferme`
+- Reusable `RepairGame` mounted for `ebike`, `pylon`, and `farm`
 - Mission progression driven by Zustand and shared `MissionStep` types
 - Production repair positions:
-  - `bike` at `[8, 0, -6]`
-  - `pylone` at `[64, 0, -66]`
-  - `ferme` at `[-24, 0, 42]`
+  - `ebike` at `[42.2399, 4.5484, 34.6468]`
+  - `pylon` at `[64, 0, -66]`
+  - `farm` at `[-24, 0, 42]`
 - Debug physics repair playground zones for all three missions
 - Data-driven mission config in `src/data/gameplay/repairMissions.ts`
 - Mission flow: `locked -> waiting -> inspected -> fragmented -> scanning -> repairing -> reassembling -> done`
@@ -80,9 +80,9 @@ This document lists the user-visible and developer-facing features implemented i
 - Fragmentation through repair-case trigger or two-fists hand gesture
 - Exploded model visualization through `ExplodableModel`
 - Scan visual that steps through exploded parts
-- Broken-part detection by configured `nodeName`, with fallback to first scanned parts
+- Broken-part detection by configured `nodeName`, with diagnostics when configured parts are missing
 - Persistent broken-part highlight and broken-part prompt after discovery
-- Grabbable replacement part choices, including decoys
+- Grabbable replacement part choices, including distractor parts
 - Grabbable broken parts that must be deposited back into the case
 - Snap-to-placeholder placement
 - Correct-part, wrong-part, and stored-part visual feedback
@@ -95,7 +95,7 @@ This document lists the user-visible and developer-facing features implemented i
 ## Game Progression Store
 
 - Zustand `useGameStore` for durable gameplay progression
-- Main states: `intro`, `bike`, `pylone`, `ferme`, `outro`
+- Main states: `intro`, `ebike`, `pylon`, `farm`, `outro`
 - Per-mission repair step state
 - Per-mission completion flags
 - Generic mission helpers: `setMissionStep`, `completeMission`, `advanceGameState`, `rewindGameState`, `resetGame`
@@ -108,12 +108,11 @@ This document lists the user-visible and developer-facing features implemented i
 - Music, SFX, and dialogue volume sliders
 - Subtitle visibility toggle
 - Subtitle language choice between French and English
-- Repair-runtime choice between JavaScript and Python modes stored in settings
 - Quit action that clears browser-accessible cookies and returns to `/`
 - Crosshair overlay
 - Interaction prompt
 - Subtitle overlay
-- Repair movement-lock indicator component, currently inactive because the lock hook returns `false`
+- Repair movement-lock indicator
 - Debug overlay layout
 - Scene loading overlay
 
@@ -192,7 +191,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Debug game-state panel
 - Debug hand-tracking panel
 - Physics test scene with floor, grabbable object, trigger object, repair zones, and animated model preview
-- Animated `electricienne_animated` model preview restored in the debug physics scene
+- Animated `electricienne-animated` model preview restored in the debug physics scene
 
 ## Map And Content Editor
 
@@ -230,7 +229,7 @@ This document lists the user-visible and developer-facing features implemented i
 - Technical docs for architecture, scene runtime, repair game, interaction, editor, audio, hand tracking, Zustand, Three debugging, animation, and target architecture
 - User docs for implemented features, main feature, editor usage, and code-review preparation
 
-## Not Implemented Or Incomplete
+## Known Gaps
 
 - Complete production mission manager/orchestrator
 - Full mission HUD or minimap

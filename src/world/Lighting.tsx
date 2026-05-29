@@ -1,16 +1,13 @@
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import type { AmbientLight, DirectionalLight } from "three";
+import { useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import type { AmbientLight, DirectionalLight, Object3D } from "three";
 import {
   AMBIENT_INTENSITY_MAX,
   AMBIENT_INTENSITY_MIN,
   AMBIENT_INTENSITY_STEP,
-  AMBIENT_LIGHT_COLOR,
-  LIGHTING_DEFAULTS,
   SUN_INTENSITY_MAX,
   SUN_INTENSITY_MIN,
   SUN_INTENSITY_STEP,
-  SUN_LIGHT_COLOR,
   SUN_X_MAX,
   SUN_X_MIN,
   SUN_X_STEP,
@@ -22,22 +19,38 @@ import {
   SUN_Z_STEP,
 } from "@/data/world/lightingConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
+import { LIGHTING_STATE } from "@/world/lightingState";
 
-type LightingState = {
-  ambientIntensity: number;
-  sunIntensity: number;
-  sunX: number;
-  sunY: number;
-  sunZ: number;
-};
-
-const LIGHTING_STATE: LightingState = { ...LIGHTING_DEFAULTS };
+const SHADOW_MAP_SIZE = 2048;
+const SHADOW_CAMERA_SIZE = 95;
+const SHADOW_CAMERA_NEAR = 0.5;
+const SHADOW_CAMERA_FAR = 300;
 
 export function Lighting(): React.JSX.Element {
+  const camera = useThree((state) => state.camera);
   const ambient = useRef<AmbientLight>(null);
   const sun = useRef<DirectionalLight>(null);
+  const sunTarget = useRef<Object3D>(null);
+
+  useEffect(() => {
+    if (!sun.current || !sunTarget.current) return;
+
+    sun.current.target = sunTarget.current;
+    sun.current.shadow.autoUpdate = true;
+    sun.current.shadow.needsUpdate = true;
+    sun.current.shadow.mapSize.width = SHADOW_MAP_SIZE;
+    sun.current.shadow.mapSize.height = SHADOW_MAP_SIZE;
+    sun.current.shadow.camera.left = -SHADOW_CAMERA_SIZE;
+    sun.current.shadow.camera.right = SHADOW_CAMERA_SIZE;
+    sun.current.shadow.camera.top = SHADOW_CAMERA_SIZE;
+    sun.current.shadow.camera.bottom = -SHADOW_CAMERA_SIZE;
+    sun.current.shadow.camera.near = SHADOW_CAMERA_NEAR;
+    sun.current.shadow.camera.far = SHADOW_CAMERA_FAR;
+    sun.current.shadow.camera.updateProjectionMatrix();
+  }, []);
 
   useDebugFolder("Lighting", (folder) => {
+    folder.addColor(LIGHTING_STATE, "ambientColor").name("Ambient Color");
     folder
       .add(
         LIGHTING_STATE,
@@ -56,6 +69,7 @@ export function Lighting(): React.JSX.Element {
         SUN_INTENSITY_STEP,
       )
       .name("Sun Intensity");
+    folder.addColor(LIGHTING_STATE, "sunColor").name("Sun Color");
     folder
       .add(LIGHTING_STATE, "sunX", SUN_X_MIN, SUN_X_MAX, SUN_X_STEP)
       .name("Sun X");
@@ -69,16 +83,22 @@ export function Lighting(): React.JSX.Element {
 
   useFrame(() => {
     if (ambient.current) {
+      ambient.current.color.set(LIGHTING_STATE.ambientColor);
       ambient.current.intensity = LIGHTING_STATE.ambientIntensity;
     }
 
-    if (sun.current) {
+    if (sun.current && sunTarget.current) {
+      sunTarget.current.position.set(camera.position.x, 0, camera.position.z);
+      sunTarget.current.updateMatrixWorld();
       sun.current.position.set(
-        LIGHTING_STATE.sunX,
+        camera.position.x + LIGHTING_STATE.sunX,
         LIGHTING_STATE.sunY,
-        LIGHTING_STATE.sunZ,
+        camera.position.z + LIGHTING_STATE.sunZ,
       );
+      sun.current.color.set(LIGHTING_STATE.sunColor);
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
+      sun.current.updateMatrixWorld();
+      sun.current.shadow.needsUpdate = true;
     }
   });
 
@@ -87,7 +107,7 @@ export function Lighting(): React.JSX.Element {
       <ambientLight
         ref={ambient}
         intensity={LIGHTING_STATE.ambientIntensity}
-        color={AMBIENT_LIGHT_COLOR}
+        color={LIGHTING_STATE.ambientColor}
       />
       <directionalLight
         ref={sun}
@@ -97,9 +117,10 @@ export function Lighting(): React.JSX.Element {
           LIGHTING_STATE.sunZ,
         ]}
         intensity={LIGHTING_STATE.sunIntensity}
-        color={SUN_LIGHT_COLOR}
+        color={LIGHTING_STATE.sunColor}
         castShadow
       />
+      <object3D ref={sunTarget} />
     </>
   );
 }

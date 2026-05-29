@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { Capsule } from "three/addons/math/Capsule.js";
-import type { Octree } from "three/addons/math/Octree.js";
+import { Capsule, type Octree } from "three-stdlib";
 import {
   INTERACT_KEY,
   JUMP_KEY,
@@ -17,12 +16,15 @@ import {
   PLAYER_AIR_CONTROL_FACTOR,
   PLAYER_CAPSULE_RADIUS,
   PLAYER_EYE_HEIGHT,
+  PLAYER_FALL_RESPAWN_DELAY,
+  PLAYER_FALL_RESPAWN_Y,
   PLAYER_GRAVITY,
   PLAYER_JUMP_SPEED,
   PLAYER_MAX_DELTA,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
 import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
+import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
 import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSettingsStore } from "@/managers/stores/useSettingsStore";
@@ -45,6 +47,10 @@ const DEFAULT_KEYS: Keys = {
   jump: false,
 };
 
+const PLAYER_COLLISION_ITERATIONS = 3;
+const PLAYER_FLOOR_NORMAL_MIN = 0.15;
+const PLAYER_GROUND_SNAP_DISTANCE = 0.22;
+
 interface PlayerControllerProps {
   octree: Octree | null;
   spawnPosition: Vector3Tuple;
@@ -56,6 +62,22 @@ const _wishDir = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 const _translateVec = new THREE.Vector3();
 const _collisionCorrection = new THREE.Vector3();
+
+function resetPlayerCapsule(
+  capsule: Capsule,
+  spawnPosition: Vector3Tuple,
+  camera: THREE.Camera,
+  velocity: THREE.Vector3,
+): void {
+  capsule.start.set(
+    spawnPosition[0],
+    spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
+    spawnPosition[2],
+  );
+  capsule.end.set(...spawnPosition);
+  velocity.set(0, 0, 0);
+  camera.position.copy(capsule.end);
+}
 
 function createSpawnCapsule(spawnPosition: Vector3Tuple): Capsule {
   return new Capsule(
@@ -95,15 +117,21 @@ function setMovementKey(keys: Keys, key: string, pressed: boolean): boolean {
   }
 }
 
+function getCapsuleFootY(capsule: Capsule): number {
+  return capsule.start.y - capsule.radius;
+}
+
 export function PlayerController({
   octree,
   spawnPosition,
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
   const movementLocked = useRepairMovementLocked();
+  const terrainHeight = useTerrainHeightSampler();
   const movementLockedRef = useRef(movementLocked);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
+  const fallDuration = useRef(0);
   const onFloor = useRef(false);
   const wantsJump = useRef(false);
   const initializedRef = useRef(false);
@@ -113,38 +141,32 @@ export function PlayerController({
   const movementModeRef = useRef(movementMode);
   const prevMovementModeRef = useRef(movementMode);
   const ebikeAngle = useRef(0);
+  const capsule = useRef(createSpawnCapsule(spawnPosition));
 
   useEffect(() => {
     movementModeRef.current = movementMode;
   }, [movementMode]);
   useEffect(() => {
     if (movementMode === "ebike") {
-      // Teleport player capsule to the bike's current parked position
-      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [0, 8.2, 0];
+      const targetPos: Vector3Tuple = (window as any).ebikeParkedPosition || [
+        0, 8.2, 0,
+      ];
       const targetRot: number = (window as any).ebikeParkedRotation || 0;
 
       const headY = targetPos[1] + PLAYER_EYE_HEIGHT;
       const bottomY = targetPos[1] + PLAYER_CAPSULE_RADIUS;
 
-      capsule.current.start.set(
-        targetPos[0],
-        bottomY,
-        targetPos[2],
-      );
-      capsule.current.end.set(
-        targetPos[0],
-        headY,
-        targetPos[2],
-      );
+      capsule.current.start.set(targetPos[0], bottomY, targetPos[2]);
+      capsule.current.end.set(targetPos[0], headY, targetPos[2]);
       velocity.current.set(0, 0, 0);
       onFloor.current = false;
       wantsJump.current = false;
 
-      // Initialize ebikeAngle to the bike's actual parked orientation!
       ebikeAngle.current = targetRot;
 
-      // Position the camera exactly at the EBIKE_CAMERA_TRANSFORM offset rotated by targetRot
-      const cameraOffset = new THREE.Vector3(...EBIKE_CAMERA_TRANSFORM.position);
+      const cameraOffset = new THREE.Vector3(
+        ...EBIKE_CAMERA_TRANSFORM.position,
+      );
       cameraOffset.applyAxisAngle(_up, targetRot);
 
       const camPos = new THREE.Vector3()
@@ -152,18 +174,24 @@ export function PlayerController({
         .add(cameraOffset);
       camera.position.copy(camPos);
 
-      // Set the camera's exact rotation according to EBIKE_CAMERA_TRANSFORM.rotation + targetRot
-      const pitchRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[0]);
-      const yawRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[1]) + targetRot;
-      const rollRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[2]);
+      const pitchRad = THREE.MathUtils.degToRad(
+        EBIKE_CAMERA_TRANSFORM.rotation[0],
+      );
+      const yawRad =
+        THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[1]) +
+        targetRot;
+      const rollRad = THREE.MathUtils.degToRad(
+        EBIKE_CAMERA_TRANSFORM.rotation[2],
+      );
       camera.rotation.set(pitchRad, yawRad, rollRad, "YXZ");
-    } else if (movementMode === "walk" && prevMovementModeRef.current === "ebike") {
-      // Restore default walk FOV
+    } else if (
+      movementMode === "walk" &&
+      prevMovementModeRef.current === "ebike"
+    ) {
       const perspectiveCam = camera as THREE.PerspectiveCamera;
       perspectiveCam.fov = 60;
       perspectiveCam.updateProjectionMatrix();
 
-      // Dismount! Teleport player capsule 3 units to the right
       const rightDir = new THREE.Vector3();
       camera.getWorldDirection(_forward);
       _forward.setY(0).normalize();
@@ -176,19 +204,16 @@ export function PlayerController({
     prevMovementModeRef.current = movementMode;
   }, [movementMode, camera]);
 
-  const capsule = useRef(createSpawnCapsule(spawnPosition));
-
   useLayoutEffect(() => {
-    capsule.current.start.set(
-      spawnPosition[0],
-      spawnPosition[1] - PLAYER_EYE_HEIGHT + PLAYER_CAPSULE_RADIUS,
-      spawnPosition[2],
+    resetPlayerCapsule(
+      capsule.current,
+      spawnPosition,
+      camera,
+      velocity.current,
     );
-    capsule.current.end.set(...spawnPosition);
-    velocity.current.set(0, 0, 0);
+    fallDuration.current = 0;
     onFloor.current = false;
     wantsJump.current = false;
-    camera.position.copy(capsule.current.end);
     initializedRef.current = true;
   }, [camera, spawnPosition]);
 
@@ -278,6 +303,27 @@ export function PlayerController({
   useFrame((_, delta) => {
     if (!initializedRef.current) return;
 
+    const dt = Math.min(delta, PLAYER_MAX_DELTA);
+
+    if (capsule.current.end.y < PLAYER_FALL_RESPAWN_Y) {
+      fallDuration.current += dt;
+
+      if (fallDuration.current >= PLAYER_FALL_RESPAWN_DELAY) {
+        resetPlayerCapsule(
+          capsule.current,
+          spawnPosition,
+          camera,
+          velocity.current,
+        );
+        fallDuration.current = 0;
+        onFloor.current = false;
+        wantsJump.current = false;
+        return;
+      }
+    } else {
+      fallDuration.current = 0;
+    }
+
     if (isPlayerInputLocked() || !canMove) {
       keys.current = { ...DEFAULT_KEYS };
       velocity.current.set(0, 0, 0);
@@ -285,11 +331,8 @@ export function PlayerController({
       return;
     }
 
-    const dt = Math.min(delta, PLAYER_MAX_DELTA);
-
-    // Rotate camera on Y-axis for ebike steering
     if (movementModeRef.current === "ebike") {
-      const turnSpeed = 1.8; // radians per second
+      const turnSpeed = 1.8;
       if (keys.current.left) {
         ebikeAngle.current += turnSpeed * dt;
       }
@@ -343,17 +386,26 @@ export function PlayerController({
     capsule.current.translate(_translateVec);
 
     if (octree) {
-      const result = octree.capsuleIntersect(capsule.current);
       onFloor.current = false;
 
-      if (result) {
-        onFloor.current = result.normal.y > 0;
+      for (let index = 0; index < PLAYER_COLLISION_ITERATIONS; index++) {
+        const result = octree.capsuleIntersect(capsule.current);
+        if (!result) break;
 
-        if (!onFloor.current) {
-          const vn = result.normal.dot(velocity.current);
-          velocity.current.addScaledVector(result.normal, -vn);
-        } else {
+        const isFloorCollision = result.normal.y > PLAYER_FLOOR_NORMAL_MIN;
+        onFloor.current ||= isFloorCollision;
+        const normalVelocity = result.normal.dot(velocity.current);
+
+        if (!isFloorCollision && normalVelocity < 0) {
+          velocity.current.addScaledVector(result.normal, -normalVelocity);
+        }
+
+        if (isFloorCollision) {
           velocity.current.y = Math.max(0, velocity.current.y);
+          capsule.current.translate(
+            _collisionCorrection.set(0, result.depth / result.normal.y, 0),
+          );
+          continue;
         }
 
         capsule.current.translate(
@@ -362,30 +414,50 @@ export function PlayerController({
       }
     }
 
+    const groundHeight = terrainHeight.getHeight(
+      capsule.current.end.x,
+      capsule.current.end.z,
+    );
+    if (groundHeight !== null && velocity.current.y <= 0) {
+      const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
+
+      if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
+        capsule.current.translate(
+          _collisionCorrection.set(0, -groundOffset, 0),
+        );
+        velocity.current.y = 0;
+        onFloor.current = true;
+      }
+    }
+
     if (movementModeRef.current === "ebike") {
-      // Calculate dynamic steering factor
       let targetSteer = 0;
       if (keys.current.left) targetSteer = 1;
       else if (keys.current.right) targetSteer = -1;
 
       const currentSteer = (window as any).ebikeSteerFactor || 0;
-      const steerFactor = THREE.MathUtils.lerp(currentSteer, targetSteer, 8 * dt);
+      const steerFactor = THREE.MathUtils.lerp(
+        currentSteer,
+        targetSteer,
+        8 * dt,
+      );
       (window as any).ebikeSteerFactor = steerFactor;
 
-      // 1. Dynamic FOV stretch based on speed!
       const speed = velocity.current.length();
-      const targetFov = 60 + Math.min(speed * 0.35, 9); // stretch FOV up to 9 degrees at high speed (halved by two)!
+      const targetFov = 60 + Math.min(speed * 0.35, 9);
       const perspectiveCam = camera as THREE.PerspectiveCamera;
-      perspectiveCam.fov = THREE.MathUtils.lerp(perspectiveCam.fov, targetFov, 6 * dt);
+      perspectiveCam.fov = THREE.MathUtils.lerp(
+        perspectiveCam.fov,
+        targetFov,
+        6 * dt,
+      );
       perspectiveCam.updateProjectionMatrix();
 
-      // 2. Camera lag & dynamic swing trailing
-      const cameraOffset = new THREE.Vector3(...EBIKE_CAMERA_TRANSFORM.position);
+      const cameraOffset = new THREE.Vector3(
+        ...EBIKE_CAMERA_TRANSFORM.position,
+      );
       cameraOffset.applyAxisAngle(_up, ebikeAngle.current);
 
-      // Swing camera to optimize the view for both left and right turns:
-      // Since the camera is on the left (X = -3.5), it naturally trails beautifully in right turns,
-      // but cuts forward in left turns. We compensate by pushing the camera backward (+Z) during left turns!
       const swingX = -Math.abs(steerFactor) * 1.5;
       const swingZ = steerFactor > 0 ? steerFactor * 2.5 : steerFactor * 1.0;
 
@@ -397,35 +469,38 @@ export function PlayerController({
         .copy(capsule.current.end)
         .add(cameraOffset);
 
-      // Smoothly lerp camera position to eliminate rigidity
       camera.position.lerp(targetCamPos, 12 * dt);
 
-      // 3. Dynamic camera roll based on steering!
-      const pitchRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[0]);
-      const yawRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[1]) + ebikeAngle.current;
-      // COMMENTED OUT: Camera roll/tilt during turns (keeping it flat)
-      // const rollRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[2]) - steerFactor * 0.08;
-      const rollRad = THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[2]);
+      const pitchRad = THREE.MathUtils.degToRad(
+        EBIKE_CAMERA_TRANSFORM.rotation[0],
+      );
+      const yawRad =
+        THREE.MathUtils.degToRad(EBIKE_CAMERA_TRANSFORM.rotation[1]) +
+        ebikeAngle.current;
+      const rollRad = THREE.MathUtils.degToRad(
+        EBIKE_CAMERA_TRANSFORM.rotation[2],
+      );
       camera.rotation.set(pitchRad, yawRad, rollRad, "YXZ");
 
-      // 4. Synchronize visual e-bike position and apply leaning!
       const ebikeVisual = (window as any).ebikeVisualGroup?.current;
       if (ebikeVisual) {
         ebikeVisual.position.set(
           capsule.current.end.x,
           capsule.current.end.y - PLAYER_EYE_HEIGHT,
-          capsule.current.end.z
+          capsule.current.end.z,
         );
-        // Lean (roll) the bike sideways in turns (up to 15 degrees)
-        const leanAngle = steerFactor * 0.26; // rotate in direction of turn!
+        const leanAngle = steerFactor * 0.26;
         ebikeVisual.rotation.set(0, ebikeAngle.current, leanAngle, "YXZ");
       }
     } else {
       camera.position.copy(capsule.current.end);
     }
 
-    // Save player capsule end position and camera yaw globally so other components (like Ebike) can access it
-    (window as any).playerPos = [capsule.current.end.x, capsule.current.end.y, capsule.current.end.z];
+    (window as any).playerPos = [
+      capsule.current.end.x,
+      capsule.current.end.y,
+      capsule.current.end.z,
+    ];
     (window as any).ebikeAngle = ebikeAngle.current;
   });
 

@@ -1,32 +1,54 @@
-import { useEffect, useRef } from "react";
-import { OrbitControls } from "@react-three/drei";
+import { Suspense, useCallback, useEffect, useRef } from "react";
+import { Grid, OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import gsap from "gsap";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { EditorMap } from "@/components/editor/scene/EditorMap";
 import { FlyController } from "@/controls/editor/FlyController";
-import type { CinematicDefinition } from "@/types/cinematics/cinematics";
-import type { MapNode, TransformMode, SceneData } from "@/types/editor/editor";
+import type {
+  EditorCinematicPreviewRequest,
+  MapNode,
+  TransformMode,
+  SceneData,
+} from "@/types/editor/editor";
 
-export interface EditorCinematicPreviewRequest {
-  id: string;
-  cinematic: CinematicDefinition;
+const EDITOR_CAMERA_HOME_POSITION = new THREE.Vector3(0, 50, 100);
+const EDITOR_CAMERA_HOME_TARGET = new THREE.Vector3(0, 0, 0);
+
+function isEditableShortcutTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target.isContentEditable
+  );
 }
 
 interface EditorSceneProps {
   sceneData: SceneData;
   selectedNodeIndex: number | null;
+  selectedNodeIndexes: number[];
   onSelectNode: (index: number | null) => void;
+  onToggleNodeSelection: (index: number) => void;
   isSelectionLocked: boolean;
   hoveredNodeIndex: number | null;
   onHoverNode: (index: number | null) => void;
   transformMode: TransformMode;
+  snapToTerrain: boolean;
+  lockTerrainSelection: boolean;
   onTransformModeChange: (mode: TransformMode) => void;
   onTransformStart: () => void;
   onTransformEnd: () => void;
   onNodeTransform: (nodeIndex: number, transform: MapNode) => void;
+  snapAllToTerrainRequest: number;
+  onSnapAllToTerrain: (mapNodes: MapNode[]) => void;
   onUndo: () => void;
   onRedo: () => void;
+  resetCameraRequest: number;
+  focusSelectedCameraRequest: number;
   isPlayerMode?: boolean;
   cinematicPreviewRequest?: EditorCinematicPreviewRequest | null;
   onCinematicPreviewComplete?: (() => void) | undefined;
@@ -35,25 +57,109 @@ interface EditorSceneProps {
 export function EditorScene({
   sceneData,
   selectedNodeIndex,
+  selectedNodeIndexes,
   onSelectNode,
+  onToggleNodeSelection,
   isSelectionLocked,
   hoveredNodeIndex,
   onHoverNode,
   transformMode,
+  snapToTerrain,
+  lockTerrainSelection,
   onTransformModeChange,
   onTransformStart,
   onTransformEnd,
   onNodeTransform,
+  snapAllToTerrainRequest,
+  onSnapAllToTerrain,
   onUndo,
   onRedo,
+  resetCameraRequest,
+  focusSelectedCameraRequest,
   isPlayerMode = false,
   cinematicPreviewRequest = null,
   onCinematicPreviewComplete,
 }: EditorSceneProps): React.JSX.Element {
   const isCinematicPreviewing = cinematicPreviewRequest !== null;
+  const camera = useThree((state) => state.camera);
+  const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
+  const previousSelectedNodeIndexRef = useRef<number | null>(null);
+
+  const focusCameraOnNode = useCallback(
+    (node: MapNode): void => {
+      const controls = orbitControlsRef.current;
+      const target = new THREE.Vector3(...node.position);
+      const currentTarget = controls?.target ?? EDITOR_CAMERA_HOME_TARGET;
+      const cameraOffset = camera.position.clone().sub(currentTarget);
+
+      camera.position.copy(target).add(cameraOffset);
+      camera.lookAt(target);
+      controls?.target.copy(target);
+      controls?.update();
+    },
+    [camera],
+  );
+
+  useEffect(() => {
+    if (selectedNodeIndex === previousSelectedNodeIndexRef.current) return;
+    previousSelectedNodeIndexRef.current = selectedNodeIndex;
+
+    if (selectedNodeIndex === null || isPlayerMode || isCinematicPreviewing) {
+      return;
+    }
+
+    const selectedNode = sceneData.mapNodes[selectedNodeIndex];
+    if (!selectedNode) return;
+
+    focusCameraOnNode(selectedNode);
+  }, [
+    camera,
+    isCinematicPreviewing,
+    isPlayerMode,
+    focusCameraOnNode,
+    sceneData,
+    selectedNodeIndex,
+  ]);
+
+  useEffect(() => {
+    if (
+      focusSelectedCameraRequest === 0 ||
+      selectedNodeIndex === null ||
+      isPlayerMode ||
+      isCinematicPreviewing
+    ) {
+      return;
+    }
+
+    const selectedNode = sceneData.mapNodes[selectedNodeIndex];
+    if (!selectedNode) return;
+
+    focusCameraOnNode(selectedNode);
+  }, [
+    focusSelectedCameraRequest,
+    focusCameraOnNode,
+    isCinematicPreviewing,
+    isPlayerMode,
+    sceneData,
+    selectedNodeIndex,
+  ]);
+
+  useEffect(() => {
+    if (resetCameraRequest === 0 || isPlayerMode || isCinematicPreviewing) {
+      return;
+    }
+
+    const controls = orbitControlsRef.current;
+    camera.position.copy(EDITOR_CAMERA_HOME_POSITION);
+    camera.lookAt(EDITOR_CAMERA_HOME_TARGET);
+    controls?.target.copy(EDITOR_CAMERA_HOME_TARGET);
+    controls?.update();
+  }, [camera, isCinematicPreviewing, isPlayerMode, resetCameraRequest]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditableShortcutTarget(e.target)) return;
+
       if (e.ctrlKey || e.metaKey) {
         if (e.key === "z" || e.key === "Z") {
           e.preventDefault();
@@ -107,6 +213,7 @@ export function EditorScene({
         <FlyController disabled={isCinematicPreviewing} />
       ) : (
         <OrbitControls
+          ref={orbitControlsRef}
           enabled={!isCinematicPreviewing}
           enableDamping
           dampingFactor={0.05}
@@ -118,18 +225,41 @@ export function EditorScene({
         />
       )}
 
-      <EditorMap
-        sceneData={sceneData}
-        selectedNodeIndex={selectedNodeIndex}
-        onSelectNode={onSelectNode}
-        isSelectionLocked={isSelectionLocked}
-        hoveredNodeIndex={hoveredNodeIndex}
-        onHoverNode={onHoverNode}
-        transformMode={transformMode}
-        onTransformStart={onTransformStart}
-        onTransformEnd={onTransformEnd}
-        onNodeTransform={onNodeTransform}
+      <Grid
+        args={[100, 100]}
+        cellSize={1}
+        cellThickness={0.5}
+        cellColor="#242424"
+        sectionSize={5}
+        sectionThickness={1}
+        sectionColor="#3a3a3a"
+        fadeDistance={50}
+        fadeStrength={1}
+        followCamera={false}
+        infiniteGrid={false}
       />
+      <axesHelper args={[10]} />
+
+      <Suspense fallback={null}>
+        <EditorMap
+          sceneData={sceneData}
+          selectedNodeIndex={selectedNodeIndex}
+          selectedNodeIndexes={selectedNodeIndexes}
+          onSelectNode={onSelectNode}
+          onToggleNodeSelection={onToggleNodeSelection}
+          isSelectionLocked={isSelectionLocked}
+          hoveredNodeIndex={hoveredNodeIndex}
+          onHoverNode={onHoverNode}
+          transformMode={transformMode}
+          snapToTerrain={snapToTerrain}
+          lockTerrainSelection={lockTerrainSelection}
+          onTransformStart={onTransformStart}
+          onTransformEnd={onTransformEnd}
+          onNodeTransform={onNodeTransform}
+          snapAllToTerrainRequest={snapAllToTerrainRequest}
+          onSnapAllToTerrain={onSnapAllToTerrain}
+        />
+      </Suspense>
 
       <ambientLight intensity={0.6} />
       <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />

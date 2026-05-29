@@ -1,52 +1,56 @@
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { useProgress } from "@react-three/drei";
+import { useCallback, useEffect, useState } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { EditorControls } from "@/components/editor/EditorControls";
 import { EditorScene } from "@/components/editor/scene/EditorScene";
-import type { EditorCinematicPreviewRequest } from "@/components/editor/scene/EditorScene";
 import { SceneLoadingOverlay } from "@/components/ui/SceneLoadingOverlay";
 import { Subtitles } from "@/components/ui/Subtitles";
 import { useEditorHistory } from "@/hooks/editor/useEditorHistory";
 import type { CinematicDefinition } from "@/types/cinematics/cinematics";
 import { useEditorSceneData } from "@/hooks/editor/useEditorSceneData";
-import type { MapNode, SceneData, TransformMode } from "@/types/editor/editor";
+import type {
+  EditorCinematicPreviewRequest,
+  MapNode,
+  TransformMode,
+} from "@/types/editor/editor";
+import type { SceneLoadingState } from "@/types/world/sceneLoading";
+import { logger } from "@/utils/core/Logger";
 import {
-  INITIAL_SCENE_LOADING_STATE,
-  type SceneLoadingChangeHandler,
-  type SceneLoadingState,
-} from "@/types/world/sceneLoading";
+  addTreeNode,
+  createNewMapNode,
+  mergeFlatNodeTransformsIntoTree,
+  removeEditorMetadata,
+  removeTreeNodeAtPath,
+  serializeMapNodes,
+  updateSceneDataTree,
+  updateTreeNodeAtPath,
+} from "@/utils/editor/editorMapTree";
 
 const SAVE_ERROR_MESSAGE = "Erreur lors de l'enregistrement";
+const DEFAULT_NEW_NODE_NAME = "new-model";
 
-interface EditorSceneLoadingTrackerProps {
-  onLoadingStateChange: SceneLoadingChangeHandler;
-}
-
-function serializeMapNodes(sceneData: SceneData): string {
-  return JSON.stringify(sceneData.mapNodes, null, 2);
-}
-
-function EditorSceneLoadingTracker({
-  onLoadingStateChange,
-}: EditorSceneLoadingTrackerProps): null {
-  const { active, progress } = useProgress();
+function EditorWebGLContextLogger(): null {
+  const gl = useThree((state) => state.gl);
 
   useEffect(() => {
-    if (active) {
-      onLoadingStateChange({
-        currentStep: "Importation des models",
-        progress: 0.2 + (progress / 100) * 0.7,
-        status: "loading",
-      });
-      return;
-    }
+    gl.setClearColor("#050505");
 
-    onLoadingStateChange({
-      currentStep: "Gameplay prêt",
-      progress: 1,
-      status: "ready",
-    });
-  }, [active, onLoadingStateChange, progress]);
+    const canvas = gl.domElement;
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      logger.error("WebGL", "Context lost - GPU resources exhausted");
+    };
+    const handleContextRestored = () => {
+      logger.info("WebGL", "Context restored");
+    };
+
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
+
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
+    };
+  }, [gl]);
 
   return null;
 }
@@ -63,40 +67,33 @@ export function EditorPage(): React.JSX.Element {
   const [selectedNodeIndex, setSelectedNodeIndex] = useState<number | null>(
     null,
   );
+  const [selectedNodeIndexes, setSelectedNodeIndexes] = useState<number[]>([]);
   const [hoveredNodeIndex, setHoveredNodeIndex] = useState<number | null>(null);
   const [transformMode, setTransformMode] =
     useState<TransformMode>("translate");
   const [isPlayerMode, setIsPlayerMode] = useState(false);
   const [isSelectionLocked, setIsSelectionLocked] = useState(false);
-  const [sceneLoadingState, setSceneLoadingState] = useState<SceneLoadingState>(
-    {
-      ...INITIAL_SCENE_LOADING_STATE,
-      currentStep: "Montage progressif des models",
-      progress: 0.2,
-    },
+  const [snapToTerrain, setSnapToTerrain] = useState(true);
+  const [newNodeName, setNewNodeName] = useState(DEFAULT_NEW_NODE_NAME);
+  const [lockTerrainSelection, setLockTerrainSelection] = useState(true);
+  const [resetCameraRequest, setResetCameraRequest] = useState(0);
+  const [snapAllToTerrainRequest, setSnapAllToTerrainRequest] = useState(0);
+  const [focusSelectedCameraRequest, setFocusSelectedCameraRequest] =
+    useState(0);
+  const [cameraViewMode, setCameraViewMode] = useState<"home" | "object">(
+    "home",
   );
-  const handleSceneLoadingStateChange = useCallback(
-    (nextState: SceneLoadingState) => {
-      setSceneLoadingState((currentState) => {
-        const shouldRestartProgress = currentState.status === "ready";
-
-        return {
-          ...nextState,
-          progress: shouldRestartProgress
-            ? nextState.progress
-            : Math.max(currentState.progress, nextState.progress),
-        };
-      });
-    },
-    [],
-  );
-  const editorLoadingState = isMapLoading
+  const editorLoadingState: SceneLoadingState = isMapLoading
     ? {
-        currentStep: "Récupération blocking",
+        currentStep: "Chargement de la carte",
         progress: 0.08,
         status: "loading" as const,
       }
-    : sceneLoadingState;
+    : {
+        currentStep: "Gameplay prêt",
+        progress: 1,
+        status: "ready" as const,
+      };
   const [cinematicPreviewRequest, setCinematicPreviewRequest] =
     useState<EditorCinematicPreviewRequest | null>(null);
 
@@ -111,15 +108,95 @@ export function EditorPage(): React.JSX.Element {
 
   const handleSelectNode = useCallback((index: number | null) => {
     setSelectedNodeIndex(index);
+    setSelectedNodeIndexes(index === null ? [] : [index]);
+
+    if (index !== null) {
+      setCameraViewMode("object");
+      return;
+    }
+
+    setCameraViewMode("home");
+    setResetCameraRequest((request) => request + 1);
   }, []);
+
+  const handleToggleNodeSelection = useCallback(
+    (index: number) => {
+      const isSelected = selectedNodeIndexes.includes(index);
+      const nextIndexes = isSelected
+        ? selectedNodeIndexes.filter((item) => item !== index)
+        : [...selectedNodeIndexes, index];
+
+      setSelectedNodeIndexes(nextIndexes);
+      setSelectedNodeIndex(nextIndexes.at(-1) ?? null);
+      if (nextIndexes.length > 0) {
+        setCameraViewMode("object");
+      } else {
+        setCameraViewMode("home");
+        setResetCameraRequest((request) => request + 1);
+      }
+    },
+    [selectedNodeIndexes],
+  );
 
   const handleClearSelection = useCallback(() => {
     setSelectedNodeIndex(null);
+    setSelectedNodeIndexes([]);
+    setCameraViewMode("home");
+    setResetCameraRequest((request) => request + 1);
   }, []);
 
   const handleSelectionLockToggle = useCallback(() => {
     setIsSelectionLocked((locked) => !locked);
   }, []);
+
+  const handleSnapToTerrainToggle = useCallback(() => {
+    setSnapToTerrain((enabled) => !enabled);
+  }, []);
+
+  const handleSnapAllToTerrainRequest = useCallback(() => {
+    setSnapAllToTerrainRequest((request) => request + 1);
+  }, []);
+
+  const handleSnapAllToTerrain = useCallback(
+    (mapNodes: MapNode[]) => {
+      setSceneData((prev) => {
+        if (!prev) return null;
+
+        const nextSceneData = { ...prev, mapNodes };
+        if (!prev.mapTree) return nextSceneData;
+
+        const mapTree = mergeFlatNodeTransformsIntoTree(nextSceneData);
+        return updateSceneDataTree(nextSceneData, mapTree);
+      });
+    },
+    [setSceneData],
+  );
+
+  const handleNewNodeNameChange = useCallback((value: string) => {
+    setNewNodeName(value);
+  }, []);
+
+  const handleTerrainSelectionLockChange = useCallback(
+    (locked: boolean) => {
+      setLockTerrainSelection(locked);
+
+      if (!locked) return;
+
+      const nextIndexes = selectedNodeIndexes.filter(
+        (index) => sceneData?.mapNodes[index]?.name !== "terrain",
+      );
+      const selectedNode =
+        selectedNodeIndex !== null
+          ? sceneData?.mapNodes[selectedNodeIndex]
+          : null;
+
+      setSelectedNodeIndexes(nextIndexes);
+      setSelectedNodeIndex(
+        selectedNode?.name === "terrain" ? null : selectedNodeIndex,
+      );
+    },
+    [sceneData, selectedNodeIndex, selectedNodeIndexes],
+  );
 
   const handleHoverNode = useCallback((index: number | null) => {
     setHoveredNodeIndex(index);
@@ -167,6 +244,17 @@ export function EditorPage(): React.JSX.Element {
     setIsPlayerMode((prev) => !prev);
   }, []);
 
+  const handleCameraAction = useCallback(() => {
+    if (selectedNodeIndex !== null && cameraViewMode === "home") {
+      setFocusSelectedCameraRequest((request) => request + 1);
+      setCameraViewMode("object");
+      return;
+    }
+
+    setResetCameraRequest((request) => request + 1);
+    setCameraViewMode("home");
+  }, [cameraViewMode, selectedNodeIndex]);
+
   const handlePreviewCinematic = useCallback(
     (cinematic: CinematicDefinition) => {
       setCinematicPreviewRequest({
@@ -185,13 +273,111 @@ export function EditorPage(): React.JSX.Element {
     (nodeIndex: number, updatedNode: MapNode) => {
       setSceneData((prev) => {
         if (!prev) return null;
-        const newMapNodes = [...prev.mapNodes];
-        newMapNodes[nodeIndex] = updatedNode;
-        return { ...prev, mapNodes: newMapNodes };
+        const currentNode = prev.mapNodes[nodeIndex];
+        if (!currentNode) return prev;
+
+        if (!prev.mapTree || !currentNode.sourcePath) {
+          const mapNodes = [...prev.mapNodes];
+          mapNodes[nodeIndex] = updatedNode;
+          return { ...prev, mapNodes };
+        }
+
+        const mapTree = updateTreeNodeAtPath(
+          prev.mapTree,
+          currentNode.sourcePath,
+          (node) => ({
+            ...node,
+            position: updatedNode.position,
+            rotation: updatedNode.rotation,
+            scale: updatedNode.scale,
+          }),
+        );
+        return updateSceneDataTree(prev, mapTree);
       });
     },
     [setSceneData],
   );
+
+  const handleSelectedScaleChange = useCallback(
+    (axis: 0 | 1 | 2, value: number) => {
+      if (selectedNodeIndex === null || Number.isNaN(value)) return;
+
+      setSceneData((prev) => {
+        if (!prev) return null;
+        const currentNode = prev.mapNodes[selectedNodeIndex];
+        if (!currentNode) return prev;
+
+        const nextScale = [...currentNode.scale] as [number, number, number];
+        nextScale[axis] = value;
+
+        if (!prev.mapTree || !currentNode.sourcePath) {
+          const mapNodes = [...prev.mapNodes];
+          mapNodes[selectedNodeIndex] = { ...currentNode, scale: nextScale };
+          return { ...prev, mapNodes };
+        }
+
+        const mapTree = updateTreeNodeAtPath(
+          prev.mapTree,
+          currentNode.sourcePath,
+          (node) => ({ ...node, scale: nextScale }),
+        );
+
+        return updateSceneDataTree(prev, mapTree);
+      });
+    },
+    [selectedNodeIndex, setSceneData],
+  );
+
+  const handleAddNode = useCallback(() => {
+    if (!sceneData) return;
+
+    if (!sceneData.mapTree) {
+      const newNode = createNewMapNode(newNodeName);
+      const mapNodes = [...sceneData.mapNodes, removeEditorMetadata(newNode)];
+      const selectedIndex = mapNodes.length - 1;
+
+      setSceneData({ ...sceneData, mapNodes });
+      setSelectedNodeIndex(selectedIndex);
+      setSelectedNodeIndexes([selectedIndex]);
+      return;
+    }
+
+    const mapTree = addTreeNode(
+      sceneData.mapTree,
+      createNewMapNode(newNodeName),
+    );
+    const nextSceneData = updateSceneDataTree(sceneData, mapTree);
+    const selectedIndex = nextSceneData.mapNodes.length - 1;
+
+    setSceneData(nextSceneData);
+    setSelectedNodeIndex(selectedIndex);
+    setSelectedNodeIndexes([selectedIndex]);
+  }, [newNodeName, sceneData, setSceneData]);
+
+  const handleDeleteSelectedNode = useCallback(() => {
+    if (!sceneData || selectedNodeIndex === null) return;
+
+    const currentNode = sceneData.mapNodes[selectedNodeIndex];
+    if (!currentNode) return;
+
+    if (!sceneData.mapTree || !currentNode.sourcePath) {
+      setSceneData({
+        ...sceneData,
+        mapNodes: sceneData.mapNodes.filter(
+          (_node, index) => index !== selectedNodeIndex,
+        ),
+      });
+    } else {
+      const mapTree = removeTreeNodeAtPath(
+        sceneData.mapTree,
+        currentNode.sourcePath,
+      );
+      setSceneData(updateSceneDataTree(sceneData, mapTree));
+    }
+
+    setSelectedNodeIndex(null);
+    setSelectedNodeIndexes([]);
+  }, [sceneData, selectedNodeIndex, setSceneData]);
 
   if (isMapLoading) {
     return (
@@ -243,33 +429,39 @@ export function EditorPage(): React.JSX.Element {
       <Canvas
         camera={{ position: [0, 50, 100], fov: 50 }}
         style={{ width: "100%", height: "100%" }}
-        onCreated={({ gl }) => {
-          gl.setClearColor("#050505");
+        gl={{
+          powerPreference: "high-performance",
+          antialias: true,
+          stencil: false,
         }}
       >
-        <EditorSceneLoadingTracker
-          onLoadingStateChange={handleSceneLoadingStateChange}
+        <EditorWebGLContextLogger />
+        <EditorScene
+          sceneData={sceneData!}
+          selectedNodeIndex={selectedNodeIndex}
+          selectedNodeIndexes={selectedNodeIndexes}
+          onSelectNode={handleSelectNode}
+          onToggleNodeSelection={handleToggleNodeSelection}
+          isSelectionLocked={isSelectionLocked}
+          hoveredNodeIndex={hoveredNodeIndex}
+          onHoverNode={handleHoverNode}
+          transformMode={transformMode}
+          snapToTerrain={snapToTerrain}
+          lockTerrainSelection={lockTerrainSelection}
+          onTransformModeChange={handleTransformModeChange}
+          onTransformStart={handleTransformStart}
+          onTransformEnd={handleTransformEnd}
+          onNodeTransform={handleNodeTransform}
+          snapAllToTerrainRequest={snapAllToTerrainRequest}
+          onSnapAllToTerrain={handleSnapAllToTerrain}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          resetCameraRequest={resetCameraRequest}
+          focusSelectedCameraRequest={focusSelectedCameraRequest}
+          isPlayerMode={isPlayerMode}
+          cinematicPreviewRequest={cinematicPreviewRequest}
+          onCinematicPreviewComplete={handleCinematicPreviewComplete}
         />
-        <Suspense fallback={null}>
-          <EditorScene
-            sceneData={sceneData!}
-            selectedNodeIndex={selectedNodeIndex}
-            onSelectNode={handleSelectNode}
-            isSelectionLocked={isSelectionLocked}
-            hoveredNodeIndex={hoveredNodeIndex}
-            onHoverNode={handleHoverNode}
-            transformMode={transformMode}
-            onTransformModeChange={handleTransformModeChange}
-            onTransformStart={handleTransformStart}
-            onTransformEnd={handleTransformEnd}
-            onNodeTransform={handleNodeTransform}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            isPlayerMode={isPlayerMode}
-            cinematicPreviewRequest={cinematicPreviewRequest}
-            onCinematicPreviewComplete={handleCinematicPreviewComplete}
-          />
-        </Suspense>
       </Canvas>
 
       <SceneLoadingOverlay state={editorLoadingState} />
@@ -279,6 +471,7 @@ export function EditorPage(): React.JSX.Element {
           transformMode={transformMode}
           onTransformModeChange={handleTransformModeChange}
           selectedNodeIndex={selectedNodeIndex}
+          selectedNodeIndexes={selectedNodeIndexes}
           mapNodes={sceneData.mapNodes}
           nodesCount={sceneData.mapNodes.length}
           selectedNodeName={
@@ -286,13 +479,34 @@ export function EditorPage(): React.JSX.Element {
               ? sceneData.mapNodes[selectedNodeIndex].name || null
               : null
           }
+          selectedNodeScale={
+            selectedNodeIndex !== null && sceneData.mapNodes[selectedNodeIndex]
+              ? sceneData.mapNodes[selectedNodeIndex].scale
+              : null
+          }
+          lockTerrainSelection={lockTerrainSelection}
+          onLockTerrainSelectionChange={handleTerrainSelectionLockChange}
           isSelectionLocked={isSelectionLocked}
           onSelectionLockToggle={handleSelectionLockToggle}
           onClearSelection={handleClearSelection}
+          snapToTerrain={snapToTerrain}
+          onSnapToTerrainToggle={handleSnapToTerrainToggle}
+          onSnapAllToTerrain={handleSnapAllToTerrainRequest}
+          newNodeName={newNodeName}
+          onNewNodeNameChange={handleNewNodeNameChange}
+          onAddNode={handleAddNode}
+          onDeleteSelectedNode={handleDeleteSelectedNode}
+          onSelectedScaleChange={handleSelectedScaleChange}
           undoCount={undoCount}
           redoCount={redoCount}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          cameraActionLabel={
+            selectedNodeIndex !== null && cameraViewMode === "home"
+              ? "Center on object"
+              : "Reset camera"
+          }
+          onCameraAction={handleCameraAction}
           onExportJson={handleExportJson}
           onSaveToServer={import.meta.env.DEV ? handleSaveToServer : undefined}
           onPlayerMode={handlePlayerMode}

@@ -1,4 +1,4 @@
-import { ShaderMaterial, Color, PlaneGeometry, Mesh, Vector2 } from "three";
+import { Mesh, PlaneGeometry, ShaderMaterial } from "three";
 
 export const createNetShader = (): ShaderMaterial => {
   return new ShaderMaterial({

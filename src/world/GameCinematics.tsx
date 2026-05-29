@@ -256,7 +256,7 @@ export function animateCameraTransformTransition(
     THREE.MathUtils.degToRad(targetRotation[0]),
     THREE.MathUtils.degToRad(targetRotation[1]),
     THREE.MathUtils.degToRad(targetRotation[2]),
-    "YXZ"
+    "YXZ",
   );
   const startQuaternion = camera.quaternion.clone();
   const endQuaternion = new THREE.Quaternion().setFromEuler(targetEuler);
@@ -265,7 +265,9 @@ export function animateCameraTransformTransition(
 
   cameraTransitionTimeline = gsap.timeline({
     onUpdate: () => {
-      camera.quaternion.copy(startQuaternion).slerp(endQuaternion, transitionObj.progress);
+      camera.quaternion
+        .copy(startQuaternion)
+        .slerp(endQuaternion, transitionObj.progress);
     },
     onComplete: () => {
       cameraTransitionTimeline = null;

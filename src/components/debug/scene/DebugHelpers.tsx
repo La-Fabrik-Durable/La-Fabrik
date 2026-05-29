@@ -6,12 +6,14 @@ import {
   DEBUG_GRID_SIZE,
   DEBUG_GRID_Y,
 } from "@/data/debug/debugConfig";
+import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { Debug } from "@/utils/debug/Debug";
 
 export function DebugHelpers(): React.JSX.Element | null {
   const debug = Debug.getInstance();
+  const sceneMode = useSceneMode();
 
-  if (!debug.active) {
+  if (!debug.active || sceneMode === "game") {
     return null;
   }
 

@@ -3,11 +3,6 @@ import { DocsDocument } from "@/components/docs/DocsDocument";
 
 export function DocsThreeDebuggingPage(): React.JSX.Element {
   return (
-    <DocsDocument
-      content={threeDebugging}
-      frContent={threeDebugging}
-      meta="11"
-      title="Three Debugging"
-    />
+    <DocsDocument content={threeDebugging} meta="11" title="Three Debugging" />
   );
 }

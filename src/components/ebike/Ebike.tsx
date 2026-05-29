@@ -46,11 +46,11 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   // Map active mainState to target repair zone coordinate
   const destPos = useMemo(() => {
     switch (mainState) {
-      case "bike":
+      case "ebike":
         return { x: 8, y: 0, z: -6 };
-      case "pylone":
+      case "pylon":
         return { x: 64, y: 0, z: -66 };
-      case "ferme":
+      case "farm":
         return { x: -24, y: 0, z: 42 };
       default:
         return undefined;
@@ -58,12 +58,18 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   }, [mainState]);
 
   // Throttled GPS start position to optimize pathfinding A* algorithm execution
-  const [gpsStartPos, setGpsStartPos] = useState<{ x: number; y: number; z: number }>({
+  const [gpsStartPos, setGpsStartPos] = useState<{
+    x: number;
+    y: number;
+    z: number;
+  }>({
     x: position[0],
     y: position[1],
     z: position[2],
   });
-  const lastGpsUpdatePos = useRef<THREE.Vector3>(new THREE.Vector3(...position));
+  const lastGpsUpdatePos = useRef<THREE.Vector3>(
+    new THREE.Vector3(...position),
+  );
 
   const restingPosition = useRef<Vector3Tuple>([
     position[0],
@@ -111,7 +117,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           forkRef.current.rotation.z = THREE.MathUtils.lerp(
             forkRef.current.rotation.z,
             targetForkRotation,
-            12 * delta
+            12 * delta,
           );
         }
 
@@ -148,8 +154,13 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
 
   const handleInteract = (): void => {
     if (movementMode === "walk") {
-      const cameraOffset = new THREE.Vector3(...EBIKE_CAMERA_TRANSFORM.position);
-      cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), restingRotation.current);
+      const cameraOffset = new THREE.Vector3(
+        ...EBIKE_CAMERA_TRANSFORM.position,
+      );
+      cameraOffset.applyAxisAngle(
+        new THREE.Vector3(0, 1, 0),
+        restingRotation.current,
+      );
 
       const targetCamPos: Vector3Tuple = [
         restingPosition.current[0] + cameraOffset.x,
@@ -159,7 +170,8 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
 
       const targetRotation: Vector3Tuple = [
         EBIKE_CAMERA_TRANSFORM.rotation[0],
-        EBIKE_CAMERA_TRANSFORM.rotation[1] + THREE.MathUtils.radToDeg(restingRotation.current),
+        EBIKE_CAMERA_TRANSFORM.rotation[1] +
+          THREE.MathUtils.radToDeg(restingRotation.current),
         EBIKE_CAMERA_TRANSFORM.rotation[2],
       ];
 
@@ -181,7 +193,10 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
       ];
 
       // Get camera's current rotation in degrees so we keep the exact orientation during dismount
-      const currentEuler = new THREE.Euler().setFromQuaternion(camera.quaternion, "YXZ");
+      const currentEuler = new THREE.Euler().setFromQuaternion(
+        camera.quaternion,
+        "YXZ",
+      );
       const targetRotation: Vector3Tuple = [
         THREE.MathUtils.radToDeg(currentEuler.x),
         THREE.MathUtils.radToDeg(currentEuler.y),
@@ -201,7 +216,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   const debugActions = useRef({
     toggleRide: () => {
       handleInteractRef.current();
-    }
+    },
   });
 
   useDebugFolder("Ebike", (folder) => {
@@ -212,9 +227,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         debugRef.current.showCameraPoints = value;
       });
 
-    folder
-      .add(debugActions.current, "toggleRide")
-      .name("Monter / Descendre");
+    folder.add(debugActions.current, "toggleRide").name("Monter / Descendre");
   });
 
   return (

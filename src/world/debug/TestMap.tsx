@@ -17,9 +17,9 @@ import {
   TEST_SCENE_GRABBABLE_METALNESS,
   TEST_SCENE_GRABBABLE_POSITION,
   TEST_SCENE_GRABBABLE_ROUGHNESS,
+  GAME_REPAIR_ZONES,
   TEST_SCENE_REPAIR_ZONE_MARKER_RADIUS,
   TEST_SCENE_REPAIR_ZONE_MARKER_TUBE_RADIUS,
-  TEST_SCENE_REPAIR_ZONES,
   TEST_SCENE_TRIGGER_COLOR,
   TEST_SCENE_TRIGGER_METALNESS,
   TEST_SCENE_TRIGGER_POSITION,
@@ -33,7 +33,7 @@ import type { OctreeReadyHandler } from "@/types/three/three";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
 const ELECTRICIENNE_ANIMATED_MODEL_PATH =
-  "/models/electricienne_animated/model.gltf";
+  "/models/electricienne-animated/model.gltf";
 
 interface TestMapProps {
   onOctreeReady: OctreeReadyHandler;
@@ -103,12 +103,14 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
   // Load waypoints with double-safe fallback
   useEffect(() => {
     // 1. Try localStorage
-    const saved = localStorage.getItem('la-fabrik-waypoints');
+    const saved = localStorage.getItem("la-fabrik-waypoints");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          console.log(`[TestMap] ${parsed.length} waypoints chargés depuis localStorage.`);
+          console.log(
+            `[TestMap] ${parsed.length} waypoints chargés depuis localStorage.`,
+          );
           setWaypoints(parsed);
           return;
         }
@@ -118,15 +120,19 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
     }
 
     // 2. Try public/roadNetwork.json
-    console.log("[TestMap] Tentative de chargement depuis /roadNetwork.json...");
-    fetch('/roadNetwork.json')
+    console.log(
+      "[TestMap] Tentative de chargement depuis /roadNetwork.json...",
+    );
+    fetch("/roadNetwork.json")
       .then((res) => {
         if (res.ok) return res.json();
         throw new Error("Impossible de charger /roadNetwork.json");
       })
       .then((data) => {
         if (Array.isArray(data)) {
-          console.log(`[TestMap] ${data.length} waypoints chargés depuis /roadNetwork.json.`);
+          console.log(
+            `[TestMap] ${data.length} waypoints chargés depuis /roadNetwork.json.`,
+          );
           setWaypoints(data);
         }
       })
@@ -157,7 +163,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
                   key={`route-${wp.id}-${other.id}`}
                   points={[
                     [wp.x, wp.y + 0.3, wp.z],
-                    [other.x, other.y + 0.3, other.z]
+                    [other.x, other.y + 0.3, other.z],
                   ]}
                   color="#10b981" // Beautiful emerald green
                   lineWidth={2.5}
@@ -167,7 +173,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
               );
             }
             return null;
-          })
+          }),
         )}
 
         {/* Render Waypoint Spheres */}
@@ -226,7 +232,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
           </mesh>
         </TriggerObject>
 
-        {TEST_SCENE_REPAIR_ZONES.map((zone) => (
+        {GAME_REPAIR_ZONES.map((zone) => (
           <group key={zone.mission}>
             <group position={zone.position}>
               <RepairPlaygroundZoneMarker color={zone.color} />
@@ -261,10 +267,10 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
             destPos={{ x: -40, y: 0, z: 30 }}
             mapImageUrl="/assets/gps/map_background.png"
             worldBounds={{
-              "minX": -166,
-              "maxX": 163,
-              "minZ": -142,
-              "maxZ": 138
+              minX: -166,
+              maxX: 163,
+              minZ: -142,
+              maxZ: 138,
             }}
             zoom={1}
             canvasSize={900}

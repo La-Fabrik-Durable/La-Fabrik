@@ -1,4 +1,4 @@
-import type { GridNode } from './types';
+import type { GridNode } from "./types";
 
 export class Grid {
   public width: number;
@@ -58,24 +58,27 @@ export class Grid {
   /**
    * Retrieves neighboring nodes. Supports 8-directional movement.
    */
-  public getNeighbors(node: GridNode, allowDiagonals: boolean = true): GridNode[] {
+  public getNeighbors(
+    node: GridNode,
+    allowDiagonals: boolean = true,
+  ): GridNode[] {
     const neighbors: GridNode[] = [];
     const { x, y } = node;
 
     // Relative coordinates of 8 neighbors
     const directions = [
       { dx: 0, dy: -1, isDiagonal: false }, // N
-      { dx: 1, dy: 0, isDiagonal: false },  // E
-      { dx: 0, dy: 1, isDiagonal: false },  // S
+      { dx: 1, dy: 0, isDiagonal: false }, // E
+      { dx: 0, dy: 1, isDiagonal: false }, // S
       { dx: -1, dy: 0, isDiagonal: false }, // W
     ];
 
     if (allowDiagonals) {
       directions.push(
-        { dx: 1, dy: -1, isDiagonal: true },  // NE
-        { dx: 1, dy: 1, isDiagonal: true },   // SE
-        { dx: -1, dy: 1, isDiagonal: true },  // SW
-        { dx: -1, dy: -1, isDiagonal: true }  // NW
+        { dx: 1, dy: -1, isDiagonal: true }, // NE
+        { dx: 1, dy: 1, isDiagonal: true }, // SE
+        { dx: -1, dy: 1, isDiagonal: true }, // SW
+        { dx: -1, dy: -1, isDiagonal: true }, // NW
       );
     }
 
@@ -86,7 +89,8 @@ export class Grid {
         if (dir.isDiagonal) {
           const ortho1 = this.getNode(x + dir.dx, y);
           const ortho2 = this.getNode(x, y + dir.dy);
-          const isBlocked = (!ortho1 || !ortho1.walkable) && (!ortho2 || !ortho2.walkable);
+          const isBlocked =
+            (!ortho1 || !ortho1.walkable) && (!ortho2 || !ortho2.walkable);
           if (isBlocked) {
             continue; // Skip this diagonal neighbor to avoid squeezing through corners
           }

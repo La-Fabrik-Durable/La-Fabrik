@@ -662,6 +662,7 @@ canvas {
 }
 
 .game-settings-menu__choice-group button,
+.game-settings-menu__restart,
 .game-settings-menu__quit {
   width: 100%;
   padding: 11px 12px;
@@ -678,6 +679,16 @@ canvas {
   border-color: #ffffff;
   background: #ffffff;
   color: #050505;
+}
+
+.game-settings-menu__restart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #bfdbfe;
 }
 
 .game-settings-menu__quit {
@@ -1233,7 +1244,7 @@ canvas {
 
 .editor-transform-button {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1251,6 +1262,30 @@ canvas {
     border-color 160ms ease,
     color 160ms ease,
     transform 160ms ease;
+}
+
+.editor-transform-label {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.editor-transform-label span,
+.editor-transform-label small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-transform-label small {
+  color: #8f8f8f;
+  font-size: 0.64rem;
+  font-weight: 620;
+  letter-spacing: 0;
+}
+
+.editor-transform-button.active .editor-transform-label small {
+  color: #555555;
 }
 
 .editor-transform-button.active {
@@ -1336,7 +1371,8 @@ canvas {
     transform 160ms ease;
 }
 
-.editor-action-button + .editor-action-button {
+.editor-action-button + .editor-action-button,
+.editor-player-button + .editor-action-button {
   margin-top: 8px;
 }
 
@@ -1367,6 +1403,42 @@ canvas {
   color: #050505;
 }
 
+.editor-checkbox-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 9px;
+  padding: 10px 11px;
+  background: #101010;
+  border: 1px solid #242424;
+  border-radius: 14px;
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+.editor-checkbox-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: #ffffff;
+}
+
+.editor-checkbox-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.editor-checkbox-row strong {
+  font-size: 0.82rem;
+  line-height: 1.1;
+}
+
+.editor-checkbox-row small {
+  color: #8f8f8f;
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
 .editor-selected-info {
   display: grid;
   grid-template-columns: 17px 1fr auto;
@@ -1377,6 +1449,52 @@ canvas {
   border-radius: 16px;
   padding: 12px;
   color: #050505;
+}
+
+.editor-scale-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.editor-scale-fields label,
+.editor-checkbox-row,
+.editor-add-node-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-scale-fields label {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.editor-scale-fields input,
+.editor-add-node-row input {
+  width: 100%;
+  min-width: 0;
+  color: #f4f4f4;
+  background: #101010;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 8px 9px;
+  font: inherit;
+}
+
+.editor-checkbox-row {
+  color: #d5d5d5;
+  font-size: 0.82rem;
+}
+
+.editor-add-node-row {
+  align-items: stretch;
+}
+
+.editor-add-node-row .editor-action-button {
+  white-space: nowrap;
 }
 
 .editor-selected-actions {

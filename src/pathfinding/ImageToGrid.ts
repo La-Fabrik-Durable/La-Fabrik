@@ -1,4 +1,4 @@
-import { Grid } from './Grid';
+import { Grid } from "./Grid";
 
 /**
  * Loads an image from a URL.
@@ -6,9 +6,10 @@ import { Grid } from './Grid';
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // Enable CORS just in case
+    img.crossOrigin = "anonymous"; // Enable CORS just in case
     img.onload = () => resolve(img);
-    img.onerror = (err) => reject(new Error(`Failed to load image at ${url}: ${err}`));
+    img.onerror = (err) =>
+      reject(new Error(`Failed to load image at ${url}: ${err}`));
     img.src = url;
   });
 }
@@ -17,9 +18,9 @@ function loadImage(url: string): Promise<HTMLImageElement> {
  * Loads a B&W image and scales it to gridWidth x gridHeight.
  * Higher dimensions = higher accuracy but slower pathfinding.
  * Lower dimensions = extremely fast pathfinding.
- * 
+ *
  * Walkable roads should be white (or light gray). Non-walkable areas should be black.
- * 
+ *
  * @param imageUrl The path or URL of the B&W navigation mask.
  * @param gridWidth The target width of our A* pathfinding grid.
  * @param gridHeight The target height of our A* pathfinding grid.
@@ -29,18 +30,18 @@ export async function createGridFromImage(
   imageUrl: string,
   gridWidth: number,
   gridHeight: number,
-  threshold: number = 128
+  threshold: number = 128,
 ): Promise<Grid> {
   const img = await loadImage(imageUrl);
 
   // Create an offscreen canvas to scale and analyze the image
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = gridWidth;
   canvas.height = gridHeight;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
 
   if (!ctx) {
-    throw new Error('Could not get 2D context for offscreen canvas');
+    throw new Error("Could not get 2D context for offscreen canvas");
   }
 
   // Draw and scale the image onto the canvas

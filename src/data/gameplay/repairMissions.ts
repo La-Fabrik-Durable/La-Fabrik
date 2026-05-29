@@ -1,40 +1,8 @@
-import type { RepairMissionId } from "@/types/gameplay/repairMission";
 import type {
-  ModelTransformProps,
-  Vector3Scale,
-  Vector3Tuple,
-} from "@/types/three/three";
-
-export interface RepairMissionCaseConfig {
-  position: Vector3Tuple;
-  rotation: Vector3Tuple;
-  scale: Vector3Scale;
-}
-
-export interface RepairMissionPartConfig {
-  id: string;
-  label: string;
-  nodeName?: string;
-  placeholderName?: string;
-  modelPath?: string;
-}
-
-export interface RepairMissionConfig {
-  id: RepairMissionId;
-  label: string;
-  description: string;
-  modelPath: string;
-  modelScale?: ModelTransformProps["scale"];
-  stageUiPath: string;
-  interactUiPath: string;
-  brokenUiPath: string;
-  case: RepairMissionCaseConfig;
-  reassemblySeconds?: number;
-  requiredReplacementPartId: string;
-  scanPartSeconds?: number;
-  brokenParts: readonly RepairMissionPartConfig[];
-  replacementParts: readonly RepairMissionPartConfig[];
-}
+  RepairMissionCaseConfig,
+  RepairMissionConfig,
+  RepairMissionId,
+} from "@/types/gameplay/repairMission";
 
 const REPAIR_INTERACT_UI_PATH = "/assets/UI/interagir.webm";
 const REPAIR_BROKEN_UI_PATH = "/assets/UI/cassé.webm";
@@ -46,47 +14,47 @@ const DEFAULT_REPAIR_CASE = {
 } satisfies RepairMissionCaseConfig;
 
 export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
-  bike: {
-    id: "bike",
+  ebike: {
+    id: "ebike",
     label: "E-bike",
     description:
       "Repair the damaged cooling module before relaunching the bike",
     modelPath: "/models/ebike/model.gltf",
-    modelScale: 0.5,
+    modelScale: 0.3,
     stageUiPath: "/assets/UI/ebike.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
-    requiredReplacementPartId: "bike-cooling-core-replacement",
+    requiredReplacementPartId: "ebike-cooling-core-replacement",
     brokenParts: [
       {
-        id: "bike-cooling-core",
+        id: "ebike-cooling-core",
         label: "Cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
         nodeName: "refroidisseur",
-        placeholderName: "placeholder_1",
+        caseSlotName: "placeholder_1",
       },
     ],
     replacementParts: [
       {
-        id: "bike-cooling-core-replacement",
+        id: "ebike-cooling-core-replacement",
         label: "Replacement cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
       },
       {
-        id: "bike-radio-decoy",
+        id: "ebike-radio-distractor",
         label: "Radio module",
         modelPath: "/models/talkie/model.gltf",
       },
       {
-        id: "bike-glove-decoy",
+        id: "ebike-glove-distractor",
         label: "Insulation glove",
         modelPath: "/models/gant_l/model.gltf",
       },
     ],
   },
-  pylone: {
-    id: "pylone",
+  pylon: {
+    id: "pylon",
     label: "Power pylon",
     description:
       "Restore the pylon lamp relay and damaged panel before reconnecting the grid",
@@ -96,42 +64,42 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
     reassemblySeconds: 1.8,
-    requiredReplacementPartId: "pylone-grid-relay-replacement",
+    requiredReplacementPartId: "pylon-grid-relay-replacement",
     scanPartSeconds: 1.4,
     brokenParts: [
       {
-        id: "pylone-grid-relay",
+        id: "pylon-grid-relay",
         label: "Grid relay",
         nodeName: "lampe",
-        placeholderName: "placeholder_1",
+        caseSlotName: "placeholder_1",
       },
       {
-        id: "pylone-damaged-panel",
+        id: "pylon-damaged-panel",
         label: "Damaged solar panel",
         nodeName: "panneau2",
-        placeholderName: "placeholder_2",
+        caseSlotName: "placeholder_2",
       },
     ],
     replacementParts: [
       {
-        id: "pylone-grid-relay-replacement",
+        id: "pylon-grid-relay-replacement",
         label: "Replacement grid relay",
         modelPath: "/models/pylone/model.gltf",
       },
       {
-        id: "pylone-stone-decoy",
+        id: "pylon-stone-distractor",
         label: "Stone counterweight",
         modelPath: "/models/galet/model.gltf",
       },
       {
-        id: "pylone-cooling-decoy",
+        id: "pylon-cooling-distractor",
         label: "Cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
       },
     ],
   },
-  ferme: {
-    id: "ferme",
+  farm: {
+    id: "farm",
     label: "Vertical farm",
     description:
       "Stabilize the irrigation loop and humidity sensor before restarting the farm",
@@ -141,33 +109,33 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
     reassemblySeconds: 1.2,
-    requiredReplacementPartId: "ferme-irrigation-pump-replacement",
+    requiredReplacementPartId: "farm-irrigation-pump-replacement",
     scanPartSeconds: 0.9,
     brokenParts: [
       {
-        id: "ferme-irrigation-pump",
+        id: "farm-irrigation-pump",
         label: "Irrigation pump",
-        placeholderName: "placeholder_1",
+        caseSlotName: "placeholder_1",
       },
       {
-        id: "ferme-humidity-sensor",
+        id: "farm-humidity-sensor",
         label: "Humidity sensor",
-        placeholderName: "placeholder_2",
+        caseSlotName: "placeholder_2",
       },
     ],
     replacementParts: [
       {
-        id: "ferme-irrigation-pump-replacement",
+        id: "farm-irrigation-pump-replacement",
         label: "Replacement irrigation pump",
         modelPath: "/models/fermeverticale/model.gltf",
       },
       {
-        id: "ferme-tree-decoy",
+        id: "farm-tree-distractor",
         label: "Tree sensor",
         modelPath: "/models/sapin/model.gltf",
       },
       {
-        id: "ferme-radio-decoy",
+        id: "farm-radio-distractor",
         label: "Radio module",
         modelPath: "/models/talkie/model.gltf",
       },

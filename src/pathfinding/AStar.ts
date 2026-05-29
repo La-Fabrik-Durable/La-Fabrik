@@ -1,5 +1,5 @@
-import { Grid } from './Grid';
-import type { GridNode, Position } from './types';
+import { Grid } from "./Grid";
+import type { GridNode, Position } from "./types";
 
 /**
  * Calculates the octile heuristic distance between two nodes.
@@ -8,9 +8,9 @@ import type { GridNode, Position } from './types';
 function getOctileDistance(nodeA: GridNode, nodeB: GridNode): number {
   const dx = Math.abs(nodeA.x - nodeB.x);
   const dy = Math.abs(nodeA.y - nodeB.y);
-  
-  const D = 1;       // Orthogonal movement cost
-  const D2 = 1.414;  // Diagonal movement cost (approx Math.sqrt(2))
+
+  const D = 1; // Orthogonal movement cost
+  const D2 = 1.414; // Diagonal movement cost (approx Math.sqrt(2))
 
   return D * (dx + dy) + (D2 - 2 * D) * Math.min(dx, dy);
 }
@@ -23,11 +23,14 @@ export function findPath(
   grid: Grid,
   startPos: Position,
   endPos: Position,
-  allowDiagonals: boolean = true
+  allowDiagonals: boolean = true,
 ): Position[] {
   grid.reset();
 
-  const startNode = grid.getNode(Math.floor(startPos.x), Math.floor(startPos.y));
+  const startNode = grid.getNode(
+    Math.floor(startPos.x),
+    Math.floor(startPos.y),
+  );
   const endNode = grid.getNode(Math.floor(endPos.x), Math.floor(endPos.y));
 
   if (!startNode || !endNode) {
@@ -52,7 +55,12 @@ export function findPath(
       }
     }
     // Reroute to that walkable neighbor
-    return findPath(grid, startPos, { x: closestNeighbor.x, y: closestNeighbor.y }, allowDiagonals);
+    return findPath(
+      grid,
+      startPos,
+      { x: closestNeighbor.x, y: closestNeighbor.y },
+      allowDiagonals,
+    );
   }
 
   const openSet: GridNode[] = [startNode];
@@ -98,11 +106,12 @@ export function findPath(
       }
 
       // Calculate cost to move to this neighbor (1 for orthogonal, 1.414 for diagonal)
-      const isDiagonal = neighbor.x !== currentNode.x && neighbor.y !== currentNode.y;
+      const isDiagonal =
+        neighbor.x !== currentNode.x && neighbor.y !== currentNode.y;
       const moveCost = isDiagonal ? 1.414 : 1;
       const tentativeG = currentNode.g + moveCost;
 
-      let neighborInOpenSet = openSet.includes(neighbor);
+      const neighborInOpenSet = openSet.includes(neighbor);
 
       if (!neighborInOpenSet || tentativeG < neighbor.g) {
         neighbor.parent = currentNode;

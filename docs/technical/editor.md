@@ -4,7 +4,7 @@ This document describes the map editor that exists in the current codebase.
 
 ## Purpose
 
-The editor is a React route used to inspect and adjust the `public/map.json` scene data from inside the La-Fabrik app. It shares the same `MapNode` data format as the game scene and uses React Three Fiber for rendering.
+The editor is a React route used to inspect and adjust the current hierarchical `public/map.json` scene data from inside the La-Fabrik app. It exposes editable object nodes as a flat list for UI selection, while preserving and saving the full map tree.
 
 ## Routing
 
@@ -52,7 +52,7 @@ src/
 
 ## Responsibilities
 
-`src/pages/editor/page.tsx` is the route-level composition component. It owns route-specific state such as selected object, hovered object, transform mode, selection lock, player-mode toggle, cinematic preview requests, and editor scene loading state.
+`src/pages/editor/page.tsx` is the route-level composition component. It owns route-specific state such as primary selected object, selected object indexes, hovered object, transform mode, selection lock, player-mode toggle, cinematic preview requests, and editor scene loading state.
 
 `src/hooks/editor/useEditorSceneData.ts` loads the default map data and handles folder uploads.
 
@@ -60,7 +60,7 @@ src/
 
 `src/components/editor/scene/EditorScene.tsx` composes the editor canvas scene, camera controls, lights, keyboard shortcuts, and `EditorMap`.
 
-`src/components/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls.
+`src/components/editor/scene/EditorMap.tsx` renders map nodes, fallback cubes, selection highlighting, and transform controls. For multi-selection, it attaches `TransformControls` to a temporary group centered on the selected nodes, then decomposes the group delta back into each selected node transform.
 
 `src/components/editor/EditorControls.tsx` renders the HTML control panel outside the canvas. The panel is organized into top-level `details` groups: `Editor`, `Cinematics`, `Dialogues`, and `SRT`.
 
@@ -72,7 +72,7 @@ src/
 
 `src/controls/editor/FlyController.tsx` provides editor movement controls for player-style navigation.
 
-`src/utils/map/loadMapSceneData.ts` is shared by the game map and editor. It loads `/map.json` and resolves available `public/models/{name}/model.glb` files first, then falls back to `public/models/{name}/model.gltf`.
+`src/utils/map/loadMapSceneData.ts` is shared by the game map and editor. It loads `/map.json`, validates the hierarchical payload, exposes editable nodes with their `sourcePath` back to the tree, and resolves available `public/models/{name}/model.glb` files first, then falls back to `public/models/{name}/model.gltf`.
 
 `src/utils/editor/loadEditorScene.ts` contains editor-only upload handling for user-selected folders.
 
@@ -87,22 +87,13 @@ interface MapNode {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
+  sourcePath?: number[];
 }
 ```
 
-`public/map.json` is expected to be a `MapNode[]`.
+`public/map.json` may be hierarchical. The editor keeps the hierarchy in `SceneData.mapTree` and stores editable entries in `SceneData.mapNodes` with a `sourcePath` back to the real tree node.
 
-```json
-[
-  {
-    "name": "pylone",
-    "type": "Mesh",
-    "position": [0, 5, 0],
-    "rotation": [0, 1.57, 0],
-    "scale": [1, 1, 1]
-  }
-]
-```
+Group nodes use `role: "group"`; editable nodes keep `name`, `type`, `position`, `rotation`, and `scale`.
 
 Each node `name` maps to a model folder:
 
@@ -122,20 +113,26 @@ If `model.glb` and `model.gltf` are both missing, the editor renders a fallback 
 2. `useEditorSceneData` calls `loadMapSceneData()`.
 3. `loadMapSceneData()` loads `/map.json` and available model URLs.
 4. If `/map.json` is missing, the page displays a folder-upload flow.
-5. `EditorSceneLoadingTracker` uses drei `useProgress()` to update the fullscreen editor loading overlay while models load.
+5. The route-level loading overlay reports map JSON loading, then hands off to the editor scene once the map payload is ready.
 6. `EditorScene` renders the grid, lights, camera controls, and map nodes inside `Suspense`.
-7. `EditorControls` exposes transform mode, history actions, export, save, JSON preview, selection lock, and the cinematic/dialogue/SRT editors.
+7. `EditorControls` exposes transform mode, terrain snap, terrain-selection lock, add/delete node, precise scale inputs, history actions, camera focus/reset, export, save, JSON preview, selection lock, multi-selection status, and the cinematic/dialogue/SRT editors.
 
 ## Controls
 
 - Click: select a node.
+- `Shift` + right click: add or remove a node from the multi-selection.
 - `Esc`: clear selection.
-- Click empty space: clear selection.
-- Selection lock button: prevent object clicks, empty-space clicks, and `Esc` from changing the current selection.
+- Selection lock button: prevent object clicks and `Esc` from changing the current selection.
 - Selection clear button: intentionally clear the current selection even when the lock is active.
 - `T`: translate mode.
 - `R`: rotate mode.
 - `S`: scale mode.
+- Snap terrain on move: enabled by default and applied while translating an object.
+- Multi-selection transforms use a temporary centered group and write the resulting position, rotation, and scale back to every selected map node.
+- Lock terrain: enabled by default so terrain remains visible but ignores selection clicks.
+- Camera action: centers on the selected object or resets to the editor home view.
+- Add node: creates a fallback cube under `blocking` using the requested model folder name.
+- Delete selected node: removes the editable node from the preserved map tree.
 - `Ctrl+Z` or `Cmd+Z`: undo.
 - `Ctrl+Y` or `Cmd+Y`: redo.
 - `WASD`, `ZQSD`, or arrow keys: move in player-controller mode.
@@ -146,21 +143,20 @@ If `model.glb` and `model.gltf` are both missing, the editor renders a fallback 
 
 The editor supports two output paths:
 
-- Export JSON downloads the current `MapNode[]` as `map.json`.
-- Save to Server posts the current `MapNode[]` to `/api/save-map`.
+- Export JSON downloads the current hierarchical map tree as `map.json`.
+- Save to Server posts the current hierarchical map tree to `/api/save-map`.
 
-The dev-only `/api/save-map` endpoint is implemented by the Vite plugin in `vite.config.ts`. It writes to `public/map.json` and enforces a maximum payload size.
+The dev-only `/api/save-map` endpoint is implemented by the Vite plugin in `vite.config.ts`. It validates the payload through the shared map parser, writes to `public/map.json`, and enforces a maximum payload size.
 
 ## Editor Loading Overlay
 
-The editor uses `SceneLoadingOverlay` like the runtime scene. `EditorSceneLoadingTracker` lives in `src/pages/editor/page.tsx` and reads drei `useProgress()` inside the canvas.
+The editor uses `SceneLoadingOverlay` like the runtime scene for the route-level map JSON loading phase.
 
-The route tracks two loading phases:
+The route tracks the map JSON loading phase:
 
 - map JSON loading through `useEditorSceneData()`
-- model loading through `useProgress()`
 
-The overlay is rendered outside the canvas so it remains visible while the R3F scene mounts. The scene itself is wrapped in `Suspense` with a `null` fallback; the visual feedback is handled by the overlay instead of by the canvas fallback.
+The overlay is rendered outside the canvas so it remains visible while the editor route mounts. Model loading is left to R3F `Suspense` boundaries to avoid progress updates during model render.
 
 ## Panel Groups
 
@@ -192,9 +188,9 @@ The state is passed to:
 
 - `EditorControls`, to render the lock/unlock button
 - `EditorScene`, to block `Esc` deselection when locked
-- `EditorMap`, to block object selection and empty-space deselection when locked
+- `EditorMap`, to block object selection when locked
 
-The clear button calls `onClearSelection` directly from `EditorControls`. This is intentionally separate from scene click behavior so the user always has an explicit way to clear the selection.
+The clear button calls `onClearSelection` directly from `EditorControls`. Clicking empty canvas space does not clear the current selection; use `Esc` or the explicit clear button instead.
 
 ## Dialogue SRT Editing
 

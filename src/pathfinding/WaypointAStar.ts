@@ -1,16 +1,16 @@
-import type { Waypoint, WaypointNode } from './types';
+import type { Waypoint, WaypointNode } from "./types";
 
 /**
  * Calculates Euclidean 3D distance between two points.
  */
 function getDistance3D(
   posA: { x: number; y: number; z: number },
-  posB: { x: number; y: number; z: number }
+  posB: { x: number; y: number; z: number },
 ): number {
   return Math.sqrt(
     Math.pow(posA.x - posB.x, 2) +
-    Math.pow(posA.y - posB.y, 2) +
-    Math.pow(posA.z - posB.z, 2)
+      Math.pow(posA.y - posB.y, 2) +
+      Math.pow(posA.z - posB.z, 2),
   );
 }
 
@@ -19,7 +19,7 @@ function getDistance3D(
  */
 export function findClosestWaypoint(
   waypoints: Waypoint[],
-  pos: { x: number; y: number; z: number }
+  pos: { x: number; y: number; z: number },
 ): Waypoint | null {
   if (waypoints.length === 0) return null;
 
@@ -40,7 +40,7 @@ export function findClosestWaypoint(
 
 /**
  * Runs A* pathfinding on a network of 3D Waypoints.
- * 
+ *
  * @param waypoints List of all waypoints in the road network.
  * @param startWorldPos Player's current 3D world position.
  * @param endWorldPos Targeted 3D world destination.
@@ -49,7 +49,7 @@ export function findClosestWaypoint(
 export function findWaypointPath(
   waypoints: Waypoint[],
   startWorldPos: { x: number; y: number; z: number },
-  endWorldPos: { x: number; y: number; z: number }
+  endWorldPos: { x: number; y: number; z: number },
 ): Waypoint[] {
   if (waypoints.length === 0) return [];
 
@@ -123,9 +123,10 @@ export function findWaypointPath(
       if (!neighborNode) continue;
 
       // Distance from currentNode to neighbor is physical 3D distance
-      const tentativeG = currentNode.g + getDistance3D(currentNode, neighborNode);
+      const tentativeG =
+        currentNode.g + getDistance3D(currentNode, neighborNode);
 
-      let neighborInOpenSet = openSet.some((node) => node.id === neighborId);
+      const neighborInOpenSet = openSet.some((node) => node.id === neighborId);
 
       if (!neighborInOpenSet || tentativeG < neighborNode.g) {
         neighborNode.parent = currentNode;

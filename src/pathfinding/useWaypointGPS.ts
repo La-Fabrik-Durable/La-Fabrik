@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { findWaypointPath } from './WaypointAStar';
-import type { Waypoint } from './types';
-import type { WorldBounds } from './useGPS';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { findWaypointPath } from "./WaypointAStar";
+import type { Waypoint } from "./types";
+import type { WorldBounds } from "./useGPS";
 
 export interface UseWaypointGPSOptions {
   roadNetworkUrl: string; // URL/Path to roadNetwork.json
-  colorMapUrl: string;    // URL/Path to color_map.png
+  colorMapUrl: string; // URL/Path to color_map.png
   worldBounds: WorldBounds;
 }
 
@@ -37,7 +37,7 @@ export function useWaypointGPS({
 
         // 2. Pre-load the color map image
         const colorMapImg = new Image();
-        colorMapImg.crossOrigin = 'anonymous';
+        colorMapImg.crossOrigin = "anonymous";
         await new Promise((resolve, reject) => {
           colorMapImg.onload = resolve;
           colorMapImg.onerror = reject;
@@ -51,7 +51,7 @@ export function useWaypointGPS({
         }
       } catch (err: any) {
         if (active) {
-          setError(err.message || 'Failed to initialize Waypoint GPS');
+          setError(err.message || "Failed to initialize Waypoint GPS");
           setLoading(false);
         }
       }
@@ -70,12 +70,12 @@ export function useWaypointGPS({
   const calculateRoute = useCallback(
     (
       startWorld: { x: number; y: number; z: number },
-      endWorld: { x: number; y: number; z: number }
+      endWorld: { x: number; y: number; z: number },
     ): Waypoint[] => {
       if (waypoints.length === 0) return [];
       return findWaypointPath(waypoints, startWorld, endWorld);
     },
-    [waypoints]
+    [waypoints],
   );
 
   /**
@@ -95,17 +95,17 @@ export function useWaypointGPS({
         destColor?: string;
         destSize?: number;
         showAllWaypoints?: boolean; // Debug mode
-      } = {}
+      } = {},
     ) => {
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx || !colorMapImgRef.current) return;
 
       const {
-        pathColor = '#10b981', // Premium emerald green
+        pathColor = "#10b981", // Premium emerald green
         pathWidth = 6,
-        playerColor = '#ff0055', // Neon pink-red for bike
+        playerColor = "#ff0055", // Neon pink-red for bike
         playerSize = 8,
-        destColor = '#00ffcc', // Neon cyan for target
+        destColor = "#00ffcc", // Neon cyan for target
         destSize = 8,
         showAllWaypoints = false,
       } = options;
@@ -127,7 +127,7 @@ export function useWaypointGPS({
 
       // 2. [Debug] Draw all network connections
       if (showAllWaypoints && waypoints.length > 0) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
         ctx.lineWidth = 1.5;
         const drawn = new Set<string>();
 
@@ -136,7 +136,10 @@ export function useWaypointGPS({
           wp.connections.forEach((connId) => {
             const other = waypoints.find((w) => w.id === connId);
             if (other) {
-              const key = wp.id < other.id ? `${wp.id}-${other.id}` : `${other.id}-${wp.id}`;
+              const key =
+                wp.id < other.id
+                  ? `${wp.id}-${other.id}`
+                  : `${other.id}-${wp.id}`;
               if (!drawn.has(key)) {
                 drawn.add(key);
                 const endPt = worldToCanvas(other.x, other.z);
@@ -165,8 +168,8 @@ export function useWaypointGPS({
 
         ctx.strokeStyle = pathColor;
         ctx.lineWidth = pathWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
         // Add soft premium path glow
         ctx.shadowBlur = 8;
@@ -181,7 +184,7 @@ export function useWaypointGPS({
         ctx.beginPath();
         ctx.arc(destPt.x, destPt.y, destSize, 0, 2 * Math.PI);
         ctx.fillStyle = destColor;
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
@@ -193,13 +196,13 @@ export function useWaypointGPS({
         ctx.beginPath();
         ctx.arc(playerPt.x, playerPt.y, playerSize, 0, 2 * Math.PI);
         ctx.fillStyle = playerColor;
-        ctx.strokeStyle = '#ffffff';
+        ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.fill();
         ctx.stroke();
       }
     },
-    [worldBounds, waypoints]
+    [worldBounds, waypoints],
   );
 
   return {

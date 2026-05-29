@@ -184,7 +184,7 @@ Input is ignored while:
 - the settings menu is open
 - a cinematic is playing
 
-Movement lock is read separately from `useRepairMovementLocked`, but that hook currently returns `false` on this branch.
+Movement lock is read separately from `useRepairMovementLocked`, which locks the player during focused repair steps.
 
 ## UI Prompt
 

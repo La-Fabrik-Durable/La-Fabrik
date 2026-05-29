@@ -7,9 +7,8 @@ export function NetTest(): React.JSX.Element {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
   useFrame((_, delta) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value += delta;
-    }
+    const timeUniform = materialRef.current?.uniforms.uTime;
+    if (timeUniform) timeUniform.value += delta;
   });
 
   return (

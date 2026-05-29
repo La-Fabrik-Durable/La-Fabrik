@@ -37,4 +37,3 @@ export interface WaypointNode {
   f: number;
   parent: WaypointNode | null;
 }
-

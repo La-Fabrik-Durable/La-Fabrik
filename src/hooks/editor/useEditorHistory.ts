@@ -1,11 +1,74 @@
 import { useCallback, useRef, useState } from "react";
-import type { MapNode, SceneData } from "@/types/editor/editor";
+import type {
+  HierarchicalMapNode,
+  MapNode,
+  SceneData,
+} from "@/types/editor/editor";
 
 interface ObjectTransform {
   uuid: string;
+  sourcePath?: number[];
   position: { x: number; y: number; z: number };
   rotation: { x: number; y: number; z: number };
   scale: { x: number; y: number; z: number };
+}
+
+function cloneMapTree(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+): HierarchicalMapNode | HierarchicalMapNode[] {
+  return JSON.parse(JSON.stringify(mapTree)) as
+    | HierarchicalMapNode
+    | HierarchicalMapNode[];
+}
+
+function updateTreeNodeAtPath(
+  mapTree: HierarchicalMapNode | HierarchicalMapNode[],
+  path: number[],
+  transform: ObjectTransform,
+): HierarchicalMapNode | HierarchicalMapNode[] {
+  const nextTree = cloneMapTree(mapTree);
+  const rootNodes = Array.isArray(nextTree) ? nextTree : [nextTree];
+  const targetIndex = path[path.length - 1] ?? 0;
+  const isRootTarget = Array.isArray(nextTree)
+    ? path.length === 1
+    : path.length === 0;
+  const updateNode = (node: HierarchicalMapNode): HierarchicalMapNode => ({
+    ...node,
+    position: [
+      transform.position.x,
+      transform.position.y,
+      transform.position.z,
+    ],
+    rotation: [
+      transform.rotation.x,
+      transform.rotation.y,
+      transform.rotation.z,
+    ],
+    scale: [transform.scale.x, transform.scale.y, transform.scale.z],
+  });
+
+  if (isRootTarget) {
+    rootNodes[targetIndex] = updateNode(
+      rootNodes[targetIndex] as HierarchicalMapNode,
+    );
+    return nextTree;
+  }
+
+  const parentPath = path.slice(0, -1);
+  let parent = Array.isArray(nextTree)
+    ? rootNodes[parentPath[0] ?? 0]
+    : rootNodes[0];
+  const childPath = Array.isArray(nextTree) ? parentPath.slice(1) : parentPath;
+
+  for (const index of childPath) {
+    parent = parent?.children?.[index];
+  }
+
+  if (parent?.children?.[targetIndex]) {
+    parent.children[targetIndex] = updateNode(parent.children[targetIndex]);
+  }
+
+  return nextTree;
 }
 
 class HistoryManager {
@@ -81,13 +144,14 @@ export function useEditorHistory(
       setSceneData((prev) => {
         if (!prev) return null;
 
+        let mapTree = prev.mapTree;
         const mapNodes = prev.mapNodes.map((node, index) => {
           const transform = snapshot.find(
             (item) => item.uuid === `node-${index}`,
           );
           if (!transform) return node;
 
-          return {
+          const nextNode = {
             ...node,
             position: [
               transform.position.x,
@@ -101,9 +165,15 @@ export function useEditorHistory(
             ],
             scale: [transform.scale.x, transform.scale.y, transform.scale.z],
           } satisfies MapNode;
+
+          if (mapTree && node.sourcePath) {
+            mapTree = updateTreeNodeAtPath(mapTree, node.sourcePath, transform);
+          }
+
+          return nextNode;
         });
 
-        return { ...prev, mapNodes };
+        return mapTree ? { ...prev, mapNodes, mapTree } : { ...prev, mapNodes };
       });
     },
     [setSceneData],
@@ -149,6 +219,7 @@ export function useEditorHistory(
 function createSnapshot(sceneData: SceneData): ObjectTransform[] {
   return sceneData.mapNodes.map((node, index) => ({
     uuid: `node-${index}`,
+    ...(node.sourcePath ? { sourcePath: node.sourcePath } : {}),
     position: {
       x: node.position[0],
       y: node.position[1],

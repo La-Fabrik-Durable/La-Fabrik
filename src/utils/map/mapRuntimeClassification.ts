@@ -1,0 +1,36 @@
+import type { MapNode } from "@/types/map/mapScene";
+import { VEGETATION_MAP_NODE_NAMES } from "@/data/world/vegetationConfig";
+import { isInstancedMapNodeName } from "@/utils/map/isInstancedMapNodeName";
+
+const MAP_STRUCTURE_NODE_NAMES = new Set(["Scene", "blocking", "terrain"]);
+
+function isRuntimeStructureMapNode(name: string): boolean {
+  return MAP_STRUCTURE_NODE_NAMES.has(name);
+}
+
+export function isRuntimeSingleMapNode(node: MapNode): boolean {
+  if (isRuntimeStructureMapNode(node.name)) {
+    return false;
+  }
+
+  if (node.type === "Mesh") {
+    return false;
+  }
+
+  return (
+    !VEGETATION_MAP_NODE_NAMES.has(node.name) &&
+    !isInstancedMapNodeName(node.name)
+  );
+}
+
+export function isRuntimeCollisionMapNode(node: MapNode): boolean {
+  return node.name === "terrain" || isRuntimeSingleMapNode(node);
+}
+
+export function isEditorVisibleMapNode(node: MapNode): boolean {
+  return !isRuntimeStructureMapNode(node.name) && node.type !== "Mesh";
+}
+
+export function getTerrainMapNode(nodes: readonly MapNode[]): MapNode | null {
+  return nodes.find((node) => node.name === "terrain") ?? null;
+}

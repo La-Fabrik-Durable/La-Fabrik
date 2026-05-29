@@ -1,11 +1,14 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
-import * as THREE from 'three';
-import { findClosestWaypoint, findWaypointPath } from '@/pathfinding/WaypointAStar';
-import type { Waypoint } from '@/pathfinding/types';
+import React, { useRef, useEffect, useState, useMemo } from "react";
+import * as THREE from "three";
+import {
+  findClosestWaypoint,
+  findWaypointPath,
+} from "@/pathfinding/WaypointAStar";
+import type { Waypoint } from "@/pathfinding/types";
 function computeImageSource(
   img: HTMLImageElement | HTMLCanvasElement,
   baseBounds: { minX: number; maxX: number; minZ: number; maxZ: number },
-  bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
 ) {
   const imgW = img.width;
   const imgH = img.height;
@@ -99,11 +102,13 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   zoom = 1,
 }) => {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [mapImage, setMapImage] = useState<HTMLImageElement | HTMLCanvasElement | null>(null);
+  const [mapImage, setMapImage] = useState<
+    HTMLImageElement | HTMLCanvasElement | null
+  >(null);
 
   // Offscreen high-res canvas for crystal clear rendering
   const [offscreenCanvas] = useState(() => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = canvasSize;
     canvas.height = canvasSize;
     return canvas;
@@ -123,7 +128,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
   // Load waypoints (localStorage with /roadNetwork.json fallback)
   useEffect(() => {
-    const saved = localStorage.getItem('la-fabrik-waypoints');
+    const saved = localStorage.getItem("la-fabrik-waypoints");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -132,15 +137,18 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
           return;
         }
       } catch (e) {
-        console.error('[GPS Component] Error loading local storage waypoints', e);
+        console.error(
+          "[GPS Component] Error loading local storage waypoints",
+          e,
+        );
       }
     }
 
     // Fallback to static roadNetwork.json
-    fetch('/roadNetwork.json')
+    fetch("/roadNetwork.json")
       .then((res) => {
         if (res.ok) return res.json();
-        throw new Error('Not found');
+        throw new Error("Not found");
       })
       .then((data) => {
         if (Array.isArray(data)) {
@@ -148,7 +156,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         }
       })
       .catch((err) => {
-        console.log('[GPS Component] No default road network found.', err);
+        console.log("[GPS Component] No default road network found.", err);
       });
   }, []);
 
@@ -165,7 +173,9 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       setMapImage(img);
     };
     img.onerror = () => {
-      console.warn(`[GPS Component] Failed to load map background image from ${mapImageUrl}. Falling back to dynamic vector map.`);
+      console.warn(
+        `[GPS Component] Failed to load map background image from ${mapImageUrl}. Falling back to dynamic vector map.`,
+      );
       setMapImage(null);
     };
     img.src = mapImageUrl;
@@ -229,7 +239,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
   // Calculated active A* route
   const activePath = useMemo(() => {
-    if (!startPosSnapped || !destPosSnapped || waypoints.length === 0) return [];
+    if (!startPosSnapped || !destPosSnapped || waypoints.length === 0)
+      return [];
     return findWaypointPath(waypoints, startPosSnapped, destPosSnapped);
   }, [waypoints, startPosSnapped, destPosSnapped]);
 
@@ -241,12 +252,13 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
     return { x: px, y: py };
   };
 
-
-
   // Draw loop
   const draw = () => {
     const canvas = offscreenCanvas;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true });
+    const ctx = canvas.getContext("2d", {
+      willReadFrequently: true,
+      alpha: true,
+    });
     if (!ctx) return;
 
     const size = canvas.width;
@@ -267,7 +279,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       // Dynamic Sci-fi background grid (Background is transparent!)
 
       // Sci-fi subgrid
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+      ctx.strokeStyle = "rgba(30, 41, 59, 0.4)";
       ctx.lineWidth = 1;
       const step = size / 32;
       for (let x = 0; x < size; x += step) {
@@ -284,7 +296,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       }
 
       // Aesthetic concentric radar topo-rings
-      ctx.strokeStyle = 'rgba(71, 85, 105, 0.06)';
+      ctx.strokeStyle = "rgba(71, 85, 105, 0.06)";
       ctx.lineWidth = 2;
       for (let r = size / 6; r < size; r += size / 6) {
         ctx.beginPath();
@@ -293,7 +305,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       }
 
       // Faint diagonal technical accents
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.03)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, 0);
@@ -315,12 +327,12 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.2)'; // Faint bright orange
+      ctx.strokeStyle = "rgba(249, 115, 22, 0.2)"; // Faint bright orange
       ctx.lineWidth = 20;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
       ctx.shadowBlur = 30;
-      ctx.shadowColor = '#f97316'; // Neon Orange
+      ctx.shadowColor = "#f97316"; // Neon Orange
       ctx.stroke();
 
       // Pass 2: Saturated glow core
@@ -331,10 +343,10 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
-      ctx.strokeStyle = '#f97316'; // Vibrant orange
+      ctx.strokeStyle = "#f97316"; // Vibrant orange
       ctx.lineWidth = 8;
       ctx.shadowBlur = 12;
-      ctx.shadowColor = '#ea580c';
+      ctx.shadowColor = "#ea580c";
       ctx.stroke();
 
       // Pass 3: High-intensity white core
@@ -345,18 +357,28 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         pt = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
         ctx.lineTo(pt.x, pt.y);
       }
-      ctx.strokeStyle = '#fff7ed'; // Cream white
+      ctx.strokeStyle = "#fff7ed"; // Cream white
       ctx.lineWidth = 3;
       ctx.shadowBlur = 0; // Turn off shadows for the core
       ctx.stroke();
 
       // 3. Energy Particle Pulse animation tracing the road
-      const segments: { start: { x: number; y: number }; end: { x: number; y: number }; len: number }[] = [];
+      const segments: {
+        start: { x: number; y: number };
+        end: { x: number; y: number };
+        len: number;
+      }[] = [];
       let totalLen = 0;
       for (let i = 0; i < activePath.length - 1; i++) {
         const p1 = worldToCanvas(activePath[i]!.x, activePath[i]!.z, size);
-        const p2 = worldToCanvas(activePath[i + 1]!.x, activePath[i + 1]!.z, size);
-        const len = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        const p2 = worldToCanvas(
+          activePath[i + 1]!.x,
+          activePath[i + 1]!.z,
+          size,
+        );
+        const len = Math.sqrt(
+          Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2),
+        );
         segments.push({ start: p1, end: p2, len });
         totalLen += len;
       }
@@ -381,9 +403,9 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
         // Draw multiple glowing pulses along the path
         ctx.beginPath();
         ctx.arc(dotPt.x, dotPt.y, 8, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = "#ffffff";
         ctx.shadowBlur = 15;
-        ctx.shadowColor = '#f97316';
+        ctx.shadowColor = "#f97316";
         ctx.fill();
         ctx.shadowBlur = 0;
       }
@@ -397,15 +419,15 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       // Pulse ring
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, pulseSize, 0, 2 * Math.PI);
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.4)';
+      ctx.strokeStyle = "rgba(249, 115, 22, 0.4)";
       ctx.lineWidth = 3;
       ctx.stroke();
 
       // Solid target core
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ea580c'; // Deep target orange
-      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = "#ea580c"; // Deep target orange
+      ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       ctx.fill();
       ctx.stroke();
@@ -417,8 +439,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       // Start Marker (Player Arrow/Dot)
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
-      ctx.fillStyle = '#0ea5e9'; // Cool cyberpunk sky blue
-      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = "#0ea5e9"; // Cool cyberpunk sky blue
+      ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2.5;
       ctx.fill();
       ctx.stroke();
@@ -426,7 +448,7 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
       // Tech details
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 3, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = "#ffffff";
       ctx.fill();
     }
 
@@ -454,7 +476,13 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   return (
     <mesh castShadow receiveShadow position={position as any}>
       <planeGeometry args={[width, height]} />
-      <meshBasicMaterial toneMapped={false} transparent={true} opacity={1} depthWrite={false} side={THREE.DoubleSide}>
+      <meshBasicMaterial
+        toneMapped={false}
+        transparent={true}
+        opacity={1}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      >
         <canvasTexture
           ref={textureRef}
           attach="map"
