@@ -1,7 +1,22 @@
+import type { CSSProperties } from "react";
+
+const BACKGROUND_IMAGE = "/assets/bg-site.png";
+
 export const SITE_CONFIG = {
-  backgroundImage: "/assets/bg-site.png",
-  forcedName: "Danyl",
+  backgroundImage: BACKGROUND_IMAGE,
+  presetPlayerName: "Danyl",
 } as const;
+
+/**
+ * Shared background style used by SiteLayout and SiteMobileBlocker.
+ */
+export const SITE_BACKGROUND_STYLE: CSSProperties = {
+  backgroundColor: "#87CEEB",
+  backgroundImage: `url(${BACKGROUND_IMAGE})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+};
 
 export interface SiteCardConfig {
   id: string;
@@ -24,10 +39,10 @@ export const EXPERIENCE_CARDS: readonly SiteCardConfig[] = [
  * Cards for screen 2: "Quelle est votre situation ?"
  */
 export const SITUATION_CARDS: readonly SiteCardConfig[] = [
-  { id: "sit-refugie-climat", label: "Sans domicile fixe", disabled: true },
+  { id: "sit-sans-domicile", label: "Sans domicile fixe", disabled: true },
   { id: "sit-refugie-guerre", label: "Réfugié.e de guerre", disabled: true },
   {
-    id: "sit-sans-domicile",
+    id: "sit-refugie-climat",
     label: "Réfugié.e climatique",
     disabled: false,
   },

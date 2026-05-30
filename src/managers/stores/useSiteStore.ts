@@ -3,14 +3,14 @@ import type { SiteStep } from "@/types/game";
 
 interface SiteState {
   currentStep: SiteStep;
-  selectedExperience: number | null;
-  selectedSituation: number | null;
+  selectedExperienceIndex: number | null;
+  selectedSituationIndex: number | null;
 }
 
 interface SiteActions {
   setStep: (step: SiteStep) => void;
-  setSelectedExperience: (index: number) => void;
-  setSelectedSituation: (index: number) => void;
+  setSelectedExperienceIndex: (index: number) => void;
+  setSelectedSituationIndex: (index: number) => void;
   reset: () => void;
 }
 
@@ -18,14 +18,15 @@ type SiteStore = SiteState & SiteActions;
 
 const initialState: SiteState = {
   currentStep: "disclaimer",
-  selectedExperience: null,
-  selectedSituation: null,
+  selectedExperienceIndex: null,
+  selectedSituationIndex: null,
 };
 
 export const useSiteStore = create<SiteStore>()((set) => ({
   ...initialState,
   setStep: (step) => set({ currentStep: step }),
-  setSelectedExperience: (index) => set({ selectedExperience: index }),
-  setSelectedSituation: (index) => set({ selectedSituation: index }),
+  setSelectedExperienceIndex: (index) =>
+    set({ selectedExperienceIndex: index }),
+  setSelectedSituationIndex: (index) => set({ selectedSituationIndex: index }),
   reset: () => set(initialState),
 }));

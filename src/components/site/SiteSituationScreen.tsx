@@ -7,13 +7,15 @@ import { SITUATION_CARDS } from "@/data/site/siteConfig";
  * Screen 2: Situation selection
  */
 export function SiteSituationScreen(): React.JSX.Element {
-  const selectedSituation = useSiteStore((state) => state.selectedSituation);
-  const setSelectedSituation = useSiteStore(
-    (state) => state.setSelectedSituation,
+  const selectedSituationIndex = useSiteStore(
+    (state) => state.selectedSituationIndex,
+  );
+  const setSelectedSituationIndex = useSiteStore(
+    (state) => state.setSelectedSituationIndex,
   );
   const setStep = useSiteStore((state) => state.setStep);
 
-  const canProceed = selectedSituation !== null;
+  const canProceed = selectedSituationIndex !== null;
 
   const handleConfirm = (): void => {
     if (canProceed) {
@@ -63,11 +65,11 @@ export function SiteSituationScreen(): React.JSX.Element {
           <SiteCard
             key={card.id}
             config={card}
-            selected={selectedSituation === index}
+            selected={selectedSituationIndex === index}
             variant="situation"
             onSelect={() => {
               if (!card.disabled) {
-                setSelectedSituation(index);
+                setSelectedSituationIndex(index);
               }
             }}
           />

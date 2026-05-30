@@ -7,13 +7,15 @@ import { EXPERIENCE_CARDS } from "@/data/site/siteConfig";
  * Screen 1: Welcome
  */
 export function SiteWelcomeScreen(): React.JSX.Element {
-  const selectedExperience = useSiteStore((state) => state.selectedExperience);
-  const setSelectedExperience = useSiteStore(
-    (state) => state.setSelectedExperience,
+  const selectedExperienceIndex = useSiteStore(
+    (state) => state.selectedExperienceIndex,
+  );
+  const setSelectedExperienceIndex = useSiteStore(
+    (state) => state.setSelectedExperienceIndex,
   );
   const setStep = useSiteStore((state) => state.setStep);
 
-  const canProceed = selectedExperience !== null;
+  const canProceed = selectedExperienceIndex !== null;
 
   const handleNext = (): void => {
     if (canProceed) {
@@ -104,10 +106,10 @@ export function SiteWelcomeScreen(): React.JSX.Element {
           <SiteCard
             key={card.id}
             config={card}
-            selected={selectedExperience === index}
+            selected={selectedExperienceIndex === index}
             onSelect={() => {
               if (!card.disabled) {
-                setSelectedExperience(index);
+                setSelectedExperienceIndex(index);
               }
             }}
           />

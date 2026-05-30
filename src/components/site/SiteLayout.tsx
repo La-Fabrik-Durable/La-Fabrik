@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SITE_CONFIG } from "@/data/site/siteConfig";
+import { SITE_BACKGROUND_STYLE } from "@/data/site/siteConfig";
 import { Subtitles } from "@/components/ui/Subtitles";
 
 interface SiteLayoutProps {
@@ -16,11 +16,7 @@ export function SiteLayout({ children }: SiteLayoutProps): React.JSX.Element {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#87CEEB",
-        backgroundImage: `url(${SITE_CONFIG.backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        ...SITE_BACKGROUND_STYLE,
         fontFamily: "system-ui, -apple-system, sans-serif",
         color: "#fff",
         overflow: "hidden",
