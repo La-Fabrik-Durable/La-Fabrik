@@ -6,8 +6,8 @@ const REVEAL_DURATION_MS = 2000;
 
 /**
  * Fade-out overlay revealing the game world.
- * Calls completeIntro() when the fade is done — completeIntro also flips
- * intro.currentStep to "playing" so no separate setIntroStep call is needed.
+ * Calls completeIntro() when the fade is done — completeIntro also marks
+ * intro.currentStep as "completed" so no separate setIntroStep call is needed.
  */
 export function IntroRevealOverlay(): React.JSX.Element {
   const completeIntro = useGameStore((state) => state.completeIntro);

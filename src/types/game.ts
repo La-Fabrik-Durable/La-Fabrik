@@ -19,6 +19,6 @@ export type GameStep =
   | "video" // Vidéo intro.mp4
   | "dialogue-intro" // Dialogues post-vidéo (écran noir)
   | "reveal" // Fondu noir → jeu visible
-  | "playing"; // Intro terminée, jeu actif
+  | "completed"; // Intro terminée
 
 export type MainGameState = "intro" | RepairMissionId | "outro";

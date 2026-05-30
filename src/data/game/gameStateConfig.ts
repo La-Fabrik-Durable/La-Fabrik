@@ -19,7 +19,7 @@ export const GAME_STEPS: readonly GameStep[] = [
   "video",
   "dialogue-intro",
   "reveal",
-  "playing",
+  "completed",
 ];
 
 export const MAIN_GAME_STATES: readonly MainGameState[] = [

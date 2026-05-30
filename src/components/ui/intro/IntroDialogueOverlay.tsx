@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Subtitles } from "@/components/ui/Subtitles";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { SITE_DIALOGUE_IDS } from "@/data/site/dialogueIds";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
@@ -63,21 +64,9 @@ export function IntroDialogueOverlay(): React.JSX.Element {
         inset: 0,
         background: "#000",
         zIndex: 999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
       }}
     >
-      <span
-        aria-hidden="true"
-        style={{
-          color: "rgba(255, 255, 255, 0.5)",
-          fontSize: 16,
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        ...
-      </span>
+      <Subtitles />
     </div>
   );
 }
