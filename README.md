@@ -112,7 +112,7 @@ npm run format:check
 npm run build
 ```
 
-Regenerate runtime map data after editing `public/map_raw.json`:
+Regenerate runtime map data after editing `public/map_raw.json` that came from the hierachy node of the model Blocking.gltf:
 
 ```bash
 npm run map:transform
