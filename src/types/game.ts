@@ -4,6 +4,7 @@ import type { RepairMissionId } from "@/types/gameplay/repairMission";
  * Steps for the /site onboarding page
  */
 export type SiteStep =
+  | "disclaimer" // Écran 0: Avertissement (ordi recommandé, bonne connexion)
   | "welcome" // Écran 1: Bienvenue à Altera
   | "situation" // Écran 2: Quelle est votre situation
   | "naming" // Écran 3: Quel est votre prénom (Danyl)
