@@ -1,71 +1,101 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useSiteStore } from "@/managers/stores/useSiteStore";
 import { Subtitles } from "@/components/ui/Subtitles";
 import { setSiteVisited } from "@/utils/cookies/siteVisitCookie";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
-import { playDialogueById } from "@/utils/dialogues/playDialogue";
+import {
+  playDialogueById,
+  stopCurrentDialogue,
+} from "@/utils/dialogues/playDialogue";
+import { SITE_DIALOGUE_IDS } from "@/data/site/dialogueIds";
+import { usePrefersReducedMotion } from "@/hooks/ui/usePrefersReducedMotion";
 
 const FADE_DURATION_MS = 1000;
+const DIALOGUE_FALLBACK_TIMEOUT_MS = 12000;
+const NO_DIALOGUE_FALLBACK_MS = 3000;
 
 /**
- * Transition overlay: black screen (fade in) + logo (fade in/out) + dialogue with subtitles + redirect to /
+ * Transition overlay: black screen, logo fade-in, transition dialogue
+ * with subtitles, then redirect to /. A safety timeout guarantees the
+ * redirect happens even if the dialogue audio fails to fire `ended`.
  */
 export function SiteTransitionOverlay(): React.JSX.Element {
   const navigate = useNavigate();
   const reset = useSiteStore((state) => state.reset);
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [screenOpacity, setScreenOpacity] = useState(0);
   const [logoOpacity, setLogoOpacity] = useState(0);
-  const transitionStarted = useRef(false);
 
   useEffect(() => {
-    if (transitionStarted.current) return;
-    transitionStarted.current = true;
-
-    // Fade in black screen
-    setScreenOpacity(1);
-
-    // Set cookie
     setSiteVisited();
 
-    // Fade in logo after the black screen transition delay.
-    setLogoOpacity(1);
+    let isCancelled = false;
+    const timeoutIds: number[] = [];
 
-    // Play transition dialogue (with subtitles) then fade out logo and redirect
+    // Defer the opacity flip one tick so the CSS transition has an
+    // initial frame at opacity 0 before flipping to 1.
+    const fadeInId = window.setTimeout(() => {
+      setScreenOpacity(1);
+      setLogoOpacity(1);
+    }, 0);
+    timeoutIds.push(fadeInId);
+
+    const redirectToGame = (): void => {
+      if (isCancelled) return;
+      setLogoOpacity(0);
+      const id = window.setTimeout(() => {
+        if (isCancelled) return;
+        reset();
+        navigate({ to: "/" });
+      }, FADE_DURATION_MS);
+      timeoutIds.push(id);
+    };
+
     void (async () => {
       const manifest = await loadDialogueManifest();
-      if (manifest) {
-        const dialogueAudio = await playDialogueById(
-          manifest,
-          "narrateur_intro_apresprenom",
+      if (isCancelled) return;
+
+      const dialogueAudio = manifest
+        ? await playDialogueById(manifest, SITE_DIALOGUE_IDS.transition)
+        : null;
+      if (isCancelled) return;
+
+      if (dialogueAudio) {
+        const safetyId = window.setTimeout(
+          redirectToGame,
+          DIALOGUE_FALLBACK_TIMEOUT_MS,
         );
-        if (dialogueAudio) {
-          dialogueAudio.addEventListener(
-            "ended",
-            () => {
-              // Fade out logo
-              setLogoOpacity(0);
-              // Redirect after logo fade out
-              setTimeout(() => {
-                reset();
-                navigate({ to: "/" });
-              }, FADE_DURATION_MS);
-            },
-            { once: true },
-          );
-          return;
-        }
+        timeoutIds.push(safetyId);
+
+        dialogueAudio.addEventListener(
+          "ended",
+          () => {
+            window.clearTimeout(safetyId);
+            redirectToGame();
+          },
+          { once: true },
+        );
+        return;
       }
-      // Fallback: redirect after 3s if dialogue fails
-      setTimeout(() => {
-        setLogoOpacity(0);
-        setTimeout(() => {
-          reset();
-          navigate({ to: "/" });
-        }, FADE_DURATION_MS);
-      }, 3000);
+
+      const fallbackId = window.setTimeout(
+        redirectToGame,
+        NO_DIALOGUE_FALLBACK_MS,
+      );
+      timeoutIds.push(fallbackId);
     })();
+
+    return () => {
+      isCancelled = true;
+      timeoutIds.forEach(window.clearTimeout);
+      stopCurrentDialogue();
+    };
   }, [navigate, reset]);
+
+  const fadeTransition = prefersReducedMotion
+    ? "none"
+    : `opacity ${FADE_DURATION_MS}ms ease-in-out`;
 
   return (
     <div
@@ -86,12 +116,12 @@ export function SiteTransitionOverlay(): React.JSX.Element {
           background: "#000",
           zIndex: 0,
           opacity: screenOpacity,
-          transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`,
+          transition: fadeTransition,
         }}
       />
       <img
         src="/assets/logo/logo.jpg"
-        alt="Logo"
+        alt="Logo Altera"
         style={{
           position: "relative",
           zIndex: 1,
@@ -99,10 +129,16 @@ export function SiteTransitionOverlay(): React.JSX.Element {
           height: "auto",
           objectFit: "contain",
           opacity: logoOpacity,
-          transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`,
-          transitionDelay: logoOpacity === 1 ? `${FADE_DURATION_MS}ms` : "0ms",
+          transition: fadeTransition,
+          transitionDelay:
+            !prefersReducedMotion && logoOpacity === 1
+              ? `${FADE_DURATION_MS}ms`
+              : "0ms",
         }}
       />
+      {/* Subtitles must live inside this overlay's stacking context
+          (z-index 1000) so they render above the black screen. The
+          <Subtitles /> in SiteLayout sits behind this overlay. */}
       <Subtitles />
     </div>
   );

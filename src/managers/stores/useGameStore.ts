@@ -121,6 +121,7 @@ function completeIntroState(state: GameState): GameStateUpdate {
     mainState: "ebike",
     intro: {
       ...state.intro,
+      currentStep: "playing",
       hasCompleted: true,
       isEbikeUnlocked: true,
     },

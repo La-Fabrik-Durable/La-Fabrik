@@ -1,37 +1,28 @@
-import { SITE_CONFIG } from "@/data/site/siteConfig";
+import { SITE_BACKGROUND_STYLE } from "@/data/site/siteConfig";
 
 const MOBILE_TEXT =
   "Ce site a été conçu pour être utilisé sur ordinateur. Veuillez réessayer sur votre ordinateur pour une expérience optimale.";
 
-/**
- * Mobile blocker screen
- */
 export function SiteMobileBlocker(): React.JSX.Element {
   return (
     <div
+      role="alert"
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "#87CEEB",
-        backgroundImage: `url(${SITE_CONFIG.backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         padding: 32,
         gap: 48,
+        ...SITE_BACKGROUND_STYLE,
       }}
     >
       <img
-        src="public/assets/logo/logo.jpg"
-        alt="Logo"
-        style={{
-          width: 120,
-          height: "auto",
-        }}
+        src="/assets/logo/logo.jpg"
+        alt="Logo Altera"
+        style={{ width: 120, height: "auto" }}
       />
       <p
         style={{

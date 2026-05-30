@@ -12,6 +12,9 @@ import type { SubtitleCue } from "@/utils/subtitles/parseSrt";
 const DIALOGUE_MANIFEST_PATH = "/sounds/dialogue/dialogues.json";
 const DEFAULT_SUBTITLE_LANGUAGE: SubtitleLanguage = "fr";
 
+let manifestCache: DialogueManifest | null = null;
+let manifestPromise: Promise<DialogueManifest | null> | null = null;
+
 export interface DialogueSubtitleCue {
   voice: DialogueVoice;
   cue: SubtitleCue;
@@ -28,13 +31,21 @@ export interface DialogueSubtitleCues {
 }
 
 export async function loadDialogueManifest(): Promise<DialogueManifest | null> {
-  const response = await fetch(DIALOGUE_MANIFEST_PATH);
+  if (manifestCache) return manifestCache;
+  if (manifestPromise) return manifestPromise;
 
-  if (!response.ok) {
-    return null;
-  }
+  manifestPromise = (async () => {
+    const response = await fetch(DIALOGUE_MANIFEST_PATH);
+    if (!response.ok) {
+      manifestPromise = null;
+      return null;
+    }
+    const manifest = parseDialogueManifest(await response.json());
+    manifestCache = manifest;
+    return manifest;
+  })();
 
-  return parseDialogueManifest(await response.json());
+  return manifestPromise;
 }
 
 function getDialogueVoice(
