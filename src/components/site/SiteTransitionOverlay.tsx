@@ -16,16 +16,15 @@ const DIALOGUE_FALLBACK_TIMEOUT_MS = 12000;
 const NO_DIALOGUE_FALLBACK_MS = 3000;
 
 /**
- * Transition overlay: black screen, logo fade-in, transition dialogue
- * with subtitles, then redirect to /. A safety timeout guarantees the
- * redirect happens even if the dialogue audio fails to fire `ended`.
+ * Transition overlay: black screen with transition dialogue and subtitles,
+ * then redirect to /. A safety timeout guarantees the redirect happens even if
+ * the dialogue audio fails to fire `ended`.
  */
 export function SiteTransitionOverlay(): React.JSX.Element {
   const navigate = useNavigate();
   const reset = useSiteStore((state) => state.reset);
   const prefersReducedMotion = usePrefersReducedMotion();
   const [screenOpacity, setScreenOpacity] = useState(0);
-  const [logoOpacity, setLogoOpacity] = useState(0);
 
   useEffect(() => {
     setSiteVisited();
@@ -37,13 +36,11 @@ export function SiteTransitionOverlay(): React.JSX.Element {
     // initial frame at opacity 0 before flipping to 1.
     const fadeInId = window.setTimeout(() => {
       setScreenOpacity(1);
-      setLogoOpacity(1);
     }, 0);
     timeoutIds.push(fadeInId);
 
     const redirectToGame = (): void => {
       if (isCancelled) return;
-      setLogoOpacity(0);
       const id = window.setTimeout(() => {
         if (isCancelled) return;
         reset();
@@ -117,23 +114,6 @@ export function SiteTransitionOverlay(): React.JSX.Element {
           zIndex: 0,
           opacity: screenOpacity,
           transition: fadeTransition,
-        }}
-      />
-      <img
-        src="/assets/logo/logo.jpg"
-        alt="Logo Altera"
-        style={{
-          position: "relative",
-          zIndex: 1,
-          width: "min(300px, 45vw)",
-          height: "auto",
-          objectFit: "contain",
-          opacity: logoOpacity,
-          transition: fadeTransition,
-          transitionDelay:
-            !prefersReducedMotion && logoOpacity === 1
-              ? `${FADE_DURATION_MS}ms`
-              : "0ms",
         }}
       />
       {/* Subtitles must live inside this overlay's stacking context
