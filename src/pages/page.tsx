@@ -1,18 +1,35 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { DebugPerf } from "@/components/debug/DebugPerf";
 import { DialogMessage } from "@/components/ui/DialogMessage";
 import { GameUI } from "@/components/ui/GameUI";
+import {
+  IntroDialogueOverlay,
+  IntroRevealOverlay,
+  IntroVideoPlayer,
+} from "@/components/ui/intro";
 import { SceneLoadingOverlay } from "@/components/ui/SceneLoadingOverlay";
 import { INITIAL_SCENE_LOADING_STATE } from "@/data/world/sceneLoadingConfig";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { HandTrackingProvider } from "@/providers/gameplay/HandTrackingProvider";
 import type { SceneLoadingState } from "@/types/world/sceneLoading";
+import { hasSiteBeenVisitedToday } from "@/utils/cookies/siteVisitCookie";
 import { logger } from "@/utils/core/Logger";
 import { World } from "@/world/World";
 
 export function HomePage(): React.JSX.Element {
+  const navigate = useNavigate();
+  const introStep = useGameStore((state) => state.intro.currentStep);
+  const setIntroStep = useGameStore((state) => state.setIntroStep);
+
+  useEffect(() => {
+    if (!hasSiteBeenVisitedToday()) {
+      navigate({ to: "/site", replace: true });
+    }
+  }, [navigate]);
+
   const dialogMessage = useGameStore(
     (state) => state.missionFlow.dialogMessage,
   );
@@ -49,6 +66,12 @@ export function HomePage(): React.JSX.Element {
     [],
   );
 
+  useEffect(() => {
+    if (introStep === "loading-map" && sceneLoadingState.status === "ready") {
+      setIntroStep("video");
+    }
+  }, [introStep, sceneLoadingState.status, setIntroStep]);
+
   const handleCanvasCreated = useCallback(
     ({ gl }: { gl: THREE.WebGLRenderer }) => {
       const canvas = gl.domElement;
@@ -75,6 +98,19 @@ export function HomePage(): React.JSX.Element {
     [],
   );
 
+  const renderIntroOverlay = () => {
+    switch (introStep) {
+      case "video":
+        return <IntroVideoPlayer />;
+      case "dialogue-intro":
+        return <IntroDialogueOverlay />;
+      case "reveal":
+        return <IntroRevealOverlay />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <HandTrackingProvider>
       <Canvas
@@ -100,7 +136,10 @@ export function HomePage(): React.JSX.Element {
           onClose={hideDialog}
         />
       ) : null}
-      <SceneLoadingOverlay state={sceneLoadingState} />
+      {introStep === "loading-map" && (
+        <SceneLoadingOverlay state={sceneLoadingState} />
+      )}
+      {renderIntroOverlay()}
     </HandTrackingProvider>
   );
 }
