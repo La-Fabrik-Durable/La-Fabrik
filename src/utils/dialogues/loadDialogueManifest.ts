@@ -3,6 +3,7 @@ import type {
   DialogueManifest,
   DialogueVoice,
 } from "@/types/dialogues/dialogues";
+import { getDialogueCueIndices } from "@/types/dialogues/dialogues";
 import type { SubtitleLanguage } from "@/types/settings/settings";
 import { parseDialogueManifest } from "@/utils/dialogues/dialogueManifestValidation";
 import { parseSrt } from "@/utils/subtitles/parseSrt";
@@ -14,6 +15,15 @@ const DEFAULT_SUBTITLE_LANGUAGE: SubtitleLanguage = "fr";
 export interface DialogueSubtitleCue {
   voice: DialogueVoice;
   cue: SubtitleCue;
+  subtitlePath: string;
+}
+
+/**
+ * Multiple subtitle cues for a single dialogue
+ */
+export interface DialogueSubtitleCues {
+  voice: DialogueVoice;
+  cues: SubtitleCue[];
   subtitlePath: string;
 }
 
@@ -39,21 +49,40 @@ export async function loadDialogueSubtitleCue(
   dialogue: DialogueDefinition,
   language: SubtitleLanguage,
 ): Promise<DialogueSubtitleCue | null> {
+  const result = await loadDialogueSubtitleCues(manifest, dialogue, language);
+  const firstCue = result?.cues[0];
+  if (!result || !firstCue) return null;
+
+  return {
+    voice: result.voice,
+    cue: firstCue,
+    subtitlePath: result.subtitlePath,
+  };
+}
+
+export async function loadDialogueSubtitleCues(
+  manifest: DialogueManifest,
+  dialogue: DialogueDefinition,
+  language: SubtitleLanguage,
+): Promise<DialogueSubtitleCues | null> {
   const voice = getDialogueVoice(manifest, dialogue.voice);
   if (!voice) return null;
 
   const subtitles = await loadVoiceSubtitleCues(voice, language);
   if (!subtitles) return null;
 
-  const cue = subtitles.cues.find(
-    (item) => item.index === dialogue.subtitleCueIndex,
-  );
+  const cueIndices = getDialogueCueIndices(dialogue);
+  if (cueIndices.length === 0) return null;
 
-  if (!cue) return null;
+  const cues = cueIndices
+    .map((index) => subtitles.cues.find((item) => item.index === index))
+    .filter((cue): cue is SubtitleCue => cue !== undefined);
+
+  if (cues.length === 0) return null;
 
   return {
     voice,
-    cue,
+    cues,
     subtitlePath: subtitles.path,
   };
 }
