@@ -96,9 +96,16 @@ export function HomePage(): React.JSX.Element | null {
       gl.shadowMap.type = THREE.PCFShadowMap;
       gl.shadowMap.autoUpdate = true;
 
+      // The browser hands us a WEBGL_lose_context extension we can use to
+      // ask the GPU to restore the context after a loss. Without this the
+      // page stays frozen on a black canvas until the user reloads.
+      const loseContextExt = gl.getContext().getExtension("WEBGL_lose_context");
+
       const handleContextLost = (event: Event) => {
         event.preventDefault();
-        logger.error("WebGL", "Context lost - GPU resources exhausted");
+        logger.error("WebGL", "Context lost - attempting auto-restore");
+        // Give the GPU a moment to free resources before asking it back.
+        window.setTimeout(() => loseContextExt?.restoreContext(), 500);
       };
 
       const handleContextRestored = () => {
@@ -121,10 +128,14 @@ export function HomePage(): React.JSX.Element | null {
   // all hooks (rules of hooks) but BEFORE any expensive render.
   if (!hasSiteBeenVisitedToday()) return null;
 
+  const showFadeToVideoOverlay =
+    introStep === "fade-to-video" ||
+    (introStep === "loading-map" && sceneLoadingState.status === "ready");
+
   const renderIntroOverlay = () => {
+    if (showFadeToVideoOverlay) return <FadeToVideoOverlay />;
+
     switch (introStep) {
-      case "fade-to-video":
-        return <FadeToVideoOverlay />;
       case "video":
         return <IntroVideoPlayer />;
       case "dialogue-intro":
