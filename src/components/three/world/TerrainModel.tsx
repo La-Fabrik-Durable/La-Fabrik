@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { TERRAIN_MODEL_PATH } from "@/data/world/terrainConfig";
+import { flattenLaFabrikTerrainFootprint } from "@/data/world/laFabrikConfig";
 import type { Vector3Tuple } from "@/types/three/three";
 import { optimizeGLTFSceneTextures } from "@/utils/three/optimizeGLTFScene";
 
@@ -65,9 +66,10 @@ export function TerrainModel({
   const terrainModel = useMemo(() => {
     optimizeGLTFSceneTextures(scene, maxAnisotropy);
     const model = scene.clone(true);
+    flattenLaFabrikTerrainFootprint(model, position, rotation, scale);
     applyTerrainMaterialSettings(model, receiveShadow);
     return model;
-  }, [maxAnisotropy, scene, receiveShadow]);
+  }, [maxAnisotropy, position, receiveShadow, rotation, scale, scene]);
 
   useEffect(() => {
     onLoaded?.();

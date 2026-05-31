@@ -18,6 +18,7 @@ import {
   SUN_Z_MIN,
   SUN_Z_STEP,
 } from "@/data/world/lightingConfig";
+import { LA_FABRIK_INTERIOR_LIGHT_POSITION } from "@/data/world/laFabrikConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { LIGHTING_STATE } from "@/world/lightingState";
 
@@ -121,6 +122,13 @@ export function Lighting(): React.JSX.Element {
         castShadow
       />
       <object3D ref={sunTarget} />
+      <pointLight
+        position={LA_FABRIK_INTERIOR_LIGHT_POSITION}
+        color="#dbeafe"
+        intensity={1.2}
+        distance={14}
+        decay={1.6}
+      />
     </>
   );
 }

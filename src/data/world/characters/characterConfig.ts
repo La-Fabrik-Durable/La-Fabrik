@@ -11,6 +11,7 @@ export interface CharacterConfig {
   scale: Vector3Tuple;
   animations: readonly string[];
   defaultAnimation: string;
+  snapToTerrain?: boolean;
 }
 
 export const CHARACTER_CONFIGS = {
@@ -28,11 +29,12 @@ export const CHARACTER_CONFIGS = {
     id: "gerant",
     label: "Gerant",
     modelPath: "/models/gerant-animated/model.gltf",
-    position: [59.5, 0, 64.64],
+    position: [59.5, 6.3, 64.64],
     rotation: [0, 2.41, 0],
     scale: [1, 1, 1],
     animations: ["idle", "walk"],
     defaultAnimation: "idle",
+    snapToTerrain: false,
   },
   fermier: {
     id: "fermier",
