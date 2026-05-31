@@ -84,11 +84,11 @@ This matters for `lafabrik`: adding `public/models/lafabrik-LOD/` is not enough 
 To add LOD support for a model:
 
 1. Add the light model in `public/models/<name>-LOD/model.gltf`.
-2. Keep the regular model in `public/models/<name>/model.gltf`.
+2. Keep the regular model in `public/models/<name>/model.glb` or `public/models/<name>/model.gltf`.
 3. Add the mapping in `src/data/world/mapLodConfig.ts`.
 4. If the model uses a dedicated component, call `useMapLodModelPath()` in that component.
 5. Preload both paths when the component is dedicated and uses `useGLTF.preload()`.
-6. Verify the GLTF references: buffers, textures, opacity maps, and relative paths.
+6. Verify the GLTF/GLB references: buffers, textures, opacity maps, and relative paths.
 
 ## Current LOD Models
 

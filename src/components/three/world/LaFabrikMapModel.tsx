@@ -6,7 +6,7 @@ import {
 import { getMapLodModelPath } from "@/data/world/mapLodConfig";
 import { useMapLodModelPath } from "@/hooks/world/useMapLodModelPath";
 
-const LA_FABRIK_MODEL_PATH = "/models/lafabrik/model.gltf";
+const LA_FABRIK_MODEL_PATH = "/models/lafabrik/model.glb";
 const LA_FABRIK_LOD_MODEL_PATH = getMapLodModelPath("lafabrik");
 
 type LaFabrikMapModelProps = Omit<MergedStaticMapModelProps, "modelPath">;
