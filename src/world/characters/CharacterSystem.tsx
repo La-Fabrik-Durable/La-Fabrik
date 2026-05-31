@@ -3,18 +3,15 @@ import { AnimatedModel } from "@/components/three/models/AnimatedModel";
 import {
   CHARACTER_CONFIGS,
   CHARACTER_IDS,
-  type CharacterConfig,
   type CharacterId,
 } from "@/data/world/characters/characterConfig";
 import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
 import { useCharacterDebugStore } from "@/managers/stores/useCharacterDebugStore";
 
 function CharacterModel({ id }: { id: CharacterId }): React.JSX.Element {
-  const config: CharacterConfig = CHARACTER_CONFIGS[id];
+  const config = CHARACTER_CONFIGS[id];
   const state = useCharacterDebugStore((store) => store.characters[id]);
-  const snappedPosition = useTerrainSnappedPosition(state.position);
-  const position =
-    config.snapToTerrain === false ? state.position : snappedPosition;
+  const position = useTerrainSnappedPosition(state.position);
 
   return (
     <AnimatedModel

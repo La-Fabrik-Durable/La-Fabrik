@@ -2,10 +2,6 @@ import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { TERRAIN_MODEL_PATH } from "@/data/world/terrainConfig";
-import {
-  isInsideLaFabrikFootprint,
-  LA_FABRIK_FLOOR_Y,
-} from "@/data/world/laFabrikConfig";
 import type { Vector3Tuple } from "@/types/three/three";
 import { getMapNodesByName } from "@/utils/map/loadMapSceneData";
 
@@ -70,10 +66,6 @@ function createTerrainHeightSampler(
 
   return {
     getHeight: (x, z) => {
-      if (isInsideLaFabrikFootprint(x, z, 0.6)) {
-        return LA_FABRIK_FLOOR_Y;
-      }
-
       localOrigin.set(x, RAYCAST_Y, z).applyMatrix4(inverseTerrainMatrix);
       raycaster.set(localOrigin, localDirection);
       hits.length = 0;

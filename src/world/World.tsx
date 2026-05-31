@@ -4,6 +4,7 @@ import {
   PLAYER_SPAWN_POSITION_GAME,
   PLAYER_SPAWN_POSITION_PHYSICS,
 } from "@/data/player/playerConfig";
+import { LA_FABRIK_INITIAL_LOOK_AT } from "@/data/world/laFabrikConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useEnvironmentDebug } from "@/hooks/debug/useEnvironmentDebug";
 import { useMapPerformanceDebug } from "@/hooks/debug/useMapPerformanceDebug";
@@ -99,7 +100,11 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
               <GameMusic />
               {mainState === "outro" ? <GameCinematics /> : null}
               {mainState !== "intro" ? <GameDialogues /> : null}
-              <Player octree={octree} spawnPosition={playerSpawnPosition} />
+              <Player
+                initialLookAt={LA_FABRIK_INITIAL_LOOK_AT}
+                octree={octree}
+                spawnPosition={playerSpawnPosition}
+              />
             </>
           ) : null}
         </>

@@ -18,7 +18,6 @@ import {
   useTerrainHeightSampler,
 } from "@/hooks/three/useTerrainHeight";
 import { WorldBoundsCollision } from "@/world/collision/WorldBoundsCollision";
-import { flattenLaFabrikTerrainFootprint } from "@/data/world/laFabrikConfig";
 import type { MapNode } from "@/types/map/mapScene";
 import type { OctreeReadyHandler } from "@/types/three/three";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
@@ -214,7 +213,7 @@ function CollisionModelInstance({
   modelUrl: string;
   onLoaded: () => void;
   terrainHeight: TerrainHeightSampler;
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const { position, rotation, scale } = node;
   const normalizedScale = normalizeMapScale(scale);
   const { scene } = useLoggedGLTF(modelUrl, {
@@ -224,46 +223,22 @@ function CollisionModelInstance({
     scale: normalizedScale,
   });
   const sceneInstance = useClonedObject(scene);
-  const collisionSceneInstance = useMemo(() => {
-    if (node.name === "terrain") {
-      flattenLaFabrikTerrainFootprint(
-        sceneInstance,
-        position,
-        rotation,
-        normalizedScale,
-      );
-    }
-    return sceneInstance;
-  }, [node.name, normalizedScale, position, rotation, sceneInstance]);
   const collisionPosition = useMemo(() => {
     if (node.name === "terrain") return position;
 
     const [x, y, z] = position;
     const height = terrainHeight.getHeight(x, z);
-    const bottomOffset = getObjectBottomOffset(
-      collisionSceneInstance,
-      normalizedScale,
-    );
+    const bottomOffset = getObjectBottomOffset(sceneInstance, normalizedScale);
     return [x, height !== null ? height + bottomOffset : y, z] as const;
-  }, [
-    node.name,
-    normalizedScale,
-    position,
-    collisionSceneInstance,
-    terrainHeight,
-  ]);
+  }, [node.name, normalizedScale, position, sceneInstance, terrainHeight]);
 
   useEffect(() => {
     onLoaded();
   }, [onLoaded]);
 
-  if (node.name === "lafabrik") {
-    return null;
-  }
-
   return (
     <primitive
-      object={collisionSceneInstance}
+      object={sceneInstance}
       position={collisionPosition}
       rotation={rotation}
       scale={normalizedScale}

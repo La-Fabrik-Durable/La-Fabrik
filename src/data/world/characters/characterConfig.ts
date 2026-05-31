@@ -20,7 +20,6 @@ export interface CharacterConfig {
   scale: Vector3Tuple;
   animations: readonly string[];
   defaultAnimation: string;
-  snapToTerrain?: boolean;
 }
 
 export const CHARACTER_CONFIGS = {

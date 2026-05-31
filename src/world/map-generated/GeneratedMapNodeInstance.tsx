@@ -17,8 +17,7 @@ export function GeneratedMapNodeInstance({
   node,
   onLoaded,
 }: GeneratedMapNodeInstanceProps): React.JSX.Element | null {
-  const snappedPosition = useTerrainSnappedPosition(node.position);
-  const position = node.name === "lafabrik" ? node.position : snappedPosition;
+  const position = useTerrainSnappedPosition(node.position);
   const scale = normalizeMapScale(node.scale);
 
   if (node.name === "ecole") {
