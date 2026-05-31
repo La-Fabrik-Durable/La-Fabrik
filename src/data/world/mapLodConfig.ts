@@ -10,6 +10,7 @@ export const MAP_LOD_MODEL_PATHS = {
   boiteimmeuble: "/models/boiteimmeuble-LOD/model.gltf",
   ecole: "/models/ecole-LOD/model.gltf",
   immeuble1: "/models/immeuble1-LOD/model.gltf",
+  lafabrik: "/models/lafabrik-LOD/model.gltf",
   maison1: "/models/maison1-LOD/model.gltf",
   panneauaffichage: "/models/panneauaffichage-LOD/model.gltf",
   talkie: "/models/talkie-LOD/model.gltf",
