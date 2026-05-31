@@ -10,7 +10,6 @@ import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { useEbikeSounds } from "@/hooks/ebike/useEbikeSounds";
 import { animateCameraTransformTransition } from "@/world/GameCinematics";
 import { useGameStore } from "@/managers/stores/useGameStore";
-import { PLAYER_EYE_HEIGHT } from "@/data/player/playerConfig";
 import {
   EBIKE_CAMERA_TRANSFORM,
   EBIKE_DROP_PLAYER_TRANSFORM,
@@ -76,7 +75,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   // Use ref for internal state, and state for debug visualization (to avoid ref access during render)
   const restingPositionRef = useRef<Vector3Tuple>([
     position[0],
-    position[1] - PLAYER_EYE_HEIGHT,
+    position[1],
     position[2],
   ]);
   const restingRotationRef = useRef<number>(EBIKE_WORLD_ROTATION_Y);
@@ -85,11 +84,23 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   // State for debug visualization (synced from refs during useFrame)
   const [showCameraPoints, setShowCameraPoints] = useState(true);
   const [debugRestingPosition, setDebugRestingPosition] =
-    useState<Vector3Tuple>([
-      position[0],
-      position[1] - PLAYER_EYE_HEIGHT,
-      position[2],
-    ]);
+    useState<Vector3Tuple>([position[0], position[1], position[2]]);
+
+  useEffect(() => {
+    if (movementMode === "ebike") return;
+
+    restingPositionRef.current = position;
+    restingRotationRef.current = EBIKE_WORLD_ROTATION_Y;
+    lastGpsUpdatePos.current.set(...position);
+
+    if (groupRef.current) {
+      groupRef.current.position.set(...position);
+      groupRef.current.rotation.set(0, EBIKE_WORLD_ROTATION_Y, 0);
+    }
+
+    window.ebikeParkedPosition = position;
+    window.ebikeParkedRotation = EBIKE_WORLD_ROTATION_Y;
+  }, [movementMode, position]);
 
   useEffect(() => {
     if (model) {

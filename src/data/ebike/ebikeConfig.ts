@@ -15,9 +15,9 @@ export const EBIKE_DROP_PLAYER_TRANSFORM: CameraTransform = {
   rotation: [0, 0, 0],
 };
 
-export const EBIKE_WORLD_POSITION: Vector3Tuple = [55.8, 1.75, 60.2];
-export const EBIKE_WORLD_ROTATION_Y = 2.4107;
-export const EBIKE_WORLD_SCALE = 0.25;
+export const EBIKE_WORLD_POSITION: Vector3Tuple = [57.9, 6.3, 58.35];
+export const EBIKE_WORLD_ROTATION_Y = -2.5;
+export const EBIKE_WORLD_SCALE = 0.35;
 
 export const EBIKE_INTRO_BREAKDOWN_DISTANCE = 15;
 export const EBIKE_BREAKDOWN_DIALOGUE_DELAY_MS = 250;
