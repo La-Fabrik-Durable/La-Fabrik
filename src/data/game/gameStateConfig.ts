@@ -19,6 +19,9 @@ export const GAME_STEPS: readonly GameStep[] = [
   "video",
   "dialogue-intro",
   "reveal",
+  "await-ebike-mount",
+  "ebike-intro-ride",
+  "ebike-breakdown",
   "completed",
 ];
 

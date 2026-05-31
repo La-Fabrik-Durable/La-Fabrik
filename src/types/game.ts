@@ -19,6 +19,9 @@ export type GameStep =
   | "video" // Vidéo intro.mp4
   | "dialogue-intro" // Dialogues post-vidéo (écran noir)
   | "reveal" // Fondu noir → jeu visible
+  | "await-ebike-mount" // Attente interaction pour monter sur l'e-bike
+  | "ebike-intro-ride" // Courte conduite avant la panne
+  | "ebike-breakdown" // Panne + dialogue avant mission réparation
   | "completed"; // Intro terminée
 
 export type MainGameState = "intro" | RepairMissionId | "outro";

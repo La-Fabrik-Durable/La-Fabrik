@@ -6,11 +6,12 @@ const REVEAL_DURATION_MS = 2000;
 
 /**
  * Fade-out overlay revealing the game world.
- * Calls completeIntro() when the fade is done — completeIntro also marks
- * intro.currentStep as "completed" so no separate setIntroStep call is needed.
+ * Moves to the ebike onboarding step when the fade is done. The intro only
+ * completes after the player rides the ebike and triggers the breakdown.
  */
 export function IntroRevealOverlay(): React.JSX.Element {
-  const completeIntro = useGameStore((state) => state.completeIntro);
+  const setIntroStep = useGameStore((state) => state.setIntroStep);
+  const setCanMove = useGameStore((state) => state.setCanMove);
   const prefersReducedMotion = usePrefersReducedMotion();
   const [opacity, setOpacity] = useState(1);
 
@@ -20,14 +21,15 @@ export function IntroRevealOverlay(): React.JSX.Element {
     }, 100);
 
     const completeTimeout = window.setTimeout(() => {
-      completeIntro();
+      setCanMove(true);
+      setIntroStep("await-ebike-mount");
     }, REVEAL_DURATION_MS);
 
     return () => {
       window.clearTimeout(fadeTimeout);
       window.clearTimeout(completeTimeout);
     };
-  }, [completeIntro]);
+  }, [setCanMove, setIntroStep]);
 
   return (
     <div

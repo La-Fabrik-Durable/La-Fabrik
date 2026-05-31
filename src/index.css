@@ -982,6 +982,194 @@ canvas {
   }
 }
 
+/* Mission notification */
+.mission-notification {
+  position: fixed;
+  top: clamp(18px, 4vh, 42px);
+  left: clamp(18px, 4vw, 48px);
+  z-index: 20;
+  width: min(280px, calc(100vw - 36px));
+  pointer-events: none;
+  opacity: 1;
+  filter: drop-shadow(0 0 12px rgba(96, 165, 250, 0.36));
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    opacity 420ms ease,
+    filter 420ms ease,
+    transform 420ms ease;
+  animation: mission-notification-enter 900ms ease-out both;
+}
+
+.mission-notification--hidden {
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.12));
+  transform: translate3d(-8px, -2px, 0) scale(0.985);
+}
+
+.mission-notification::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+}
+
+.mission-notification::after {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(96, 165, 250, 0.16) 48%,
+    transparent 52%,
+    transparent 100%
+  );
+  background-size: 100% 10px;
+  opacity: 0.22;
+  clip-path: polygon(0 0, 100% 0, 100% 69%, 88% 100%, 0 100%);
+  mix-blend-mode: screen;
+}
+
+.mission-notification__glow {
+  position: absolute;
+  inset: -14px;
+  background: radial-gradient(
+    circle at 22% 22%,
+    rgba(96, 165, 250, 0.36),
+    transparent 58%
+  );
+  opacity: 0.7;
+  filter: blur(12px);
+  animation: mission-notification-glow 10s ease-in-out 1s infinite;
+}
+
+.mission-notification__image-wrap {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 100% 69%, 88% 100%, 0 100%);
+}
+
+.mission-notification__image-wrap::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -35%;
+  z-index: 2;
+  width: 28%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(191, 219, 254, 0.08) 18%,
+    rgba(125, 211, 252, 0.52) 50%,
+    rgba(191, 219, 254, 0.08) 82%,
+    transparent 100%
+  );
+  content: "";
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  transform: skewX(-16deg);
+  animation: mission-notification-scan 3.8s ease-in-out 1.2s infinite;
+}
+
+.mission-notification__image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.92;
+  filter: sepia(0.08) saturate(1.18) hue-rotate(155deg) contrast(1.04)
+    brightness(1.03) blur(0.18px);
+  animation: mission-notification-flicker 10s ease-in-out 1s infinite;
+}
+
+@keyframes mission-notification-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(-12px, -4px, 0) scale(0.985);
+  }
+
+  12% {
+    opacity: 0.85;
+  }
+
+  18% {
+    opacity: 0.22;
+  }
+
+  26% {
+    opacity: 0.95;
+  }
+
+  34% {
+    opacity: 0.5;
+  }
+
+  48%,
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes mission-notification-flicker {
+  0%,
+  7%,
+  100% {
+    opacity: 0.92;
+    filter: saturate(1) brightness(1);
+  }
+
+  1.5% {
+    opacity: 0.58;
+    filter: saturate(1.25) brightness(1.18);
+  }
+
+  3% {
+    opacity: 1;
+  }
+
+  4.5% {
+    opacity: 0.74;
+  }
+}
+
+@keyframes mission-notification-scan {
+  0%,
+  22% {
+    left: -35%;
+    opacity: 0;
+  }
+
+  32% {
+    opacity: 0.78;
+  }
+
+  52% {
+    left: 108%;
+    opacity: 0;
+  }
+
+  100% {
+    left: 108%;
+    opacity: 0;
+  }
+}
+
+@keyframes mission-notification-glow {
+  0%,
+  7%,
+  100% {
+    opacity: 0.55;
+  }
+
+  2.5% {
+    opacity: 0.95;
+  }
+
+  4.5% {
+    opacity: 0.35;
+  }
+}
+
 /* Subtitles */
 .subtitles {
   position: fixed;

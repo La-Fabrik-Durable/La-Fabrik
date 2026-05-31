@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { DebugPerf } from "@/components/debug/DebugPerf";
+import { EbikeIntroSequence } from "@/components/game/EbikeIntroSequence";
 import { DialogMessage } from "@/components/ui/DialogMessage";
 import { GameUI } from "@/components/ui/GameUI";
 import {
@@ -176,6 +177,7 @@ export function HomePage(): React.JSX.Element | null {
         <SceneLoadingOverlay state={sceneLoadingState} />
       )}
       {renderIntroOverlay()}
+      <EbikeIntroSequence />
     </HandTrackingProvider>
   );
 }

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/managers/stores/useGameStore";
 
 const INTRO_VIDEO_PATH = "/cinematics/intro.mp4";
 const SKIP_KEYS = new Set(["Enter", " "]);
+const SKIP_HINT_HIDE_DELAY_MS = 1000;
 
 /**
  * Full-screen video player for the intro cinematic.
@@ -10,6 +11,8 @@ const SKIP_KEYS = new Set(["Enter", " "]);
  */
 export function IntroVideoPlayer(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hideHintTimeoutRef = useRef<number | null>(null);
+  const [showSkipHint, setShowSkipHint] = useState(false);
   const setIntroStep = useGameStore((state) => state.setIntroStep);
 
   const handleVideoEnd = useCallback(() => {
@@ -33,11 +36,33 @@ export function IntroVideoPlayer(): React.JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSkip]);
 
+  useEffect(() => {
+    return () => {
+      if (hideHintTimeoutRef.current !== null) {
+        window.clearTimeout(hideHintTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseMove = useCallback(() => {
+    setShowSkipHint(true);
+
+    if (hideHintTimeoutRef.current !== null) {
+      window.clearTimeout(hideHintTimeoutRef.current);
+    }
+
+    hideHintTimeoutRef.current = window.setTimeout(() => {
+      setShowSkipHint(false);
+      hideHintTimeoutRef.current = null;
+    }, SKIP_HINT_HIDE_DELAY_MS);
+  }, []);
+
   return (
     <div
       role="region"
       aria-label="Vidéo d'introduction. Appuyez sur Entrée pour passer."
       onClick={handleSkip}
+      onMouseMove={handleMouseMove}
       style={{
         position: "fixed",
         inset: 0,
@@ -71,6 +96,8 @@ export function IntroVideoPlayer(): React.JSX.Element {
           color: "rgba(255, 255, 255, 0.6)",
           fontSize: 14,
           fontFamily: "system-ui, sans-serif",
+          opacity: showSkipHint ? 1 : 0,
+          transition: "opacity 240ms ease",
         }}
       >
         Appuyez pour passer

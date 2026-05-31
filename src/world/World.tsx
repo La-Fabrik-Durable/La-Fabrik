@@ -89,7 +89,7 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
             <>
               <GameMusic />
               {mainState === "outro" ? <GameCinematics /> : null}
-              <GameDialogues />
+              {mainState !== "intro" ? <GameDialogues /> : null}
               <Player octree={octree} spawnPosition={playerSpawnPosition} />
             </>
           ) : null}
