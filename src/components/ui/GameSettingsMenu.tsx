@@ -22,7 +22,7 @@ import { useSettingsStore } from "@/managers/stores/useSettingsStore";
 import { useWorldSettingsStore } from "@/managers/stores/useWorldSettingsStore";
 import type { HandTrackingSource } from "@/types/handTracking/handTracking";
 import type { SubtitleLanguage } from "@/types/settings/settings";
-import { clearSiteVisited } from "@/utils/cookies/siteVisitCookie";
+import { hasSiteBeenVisitedToday } from "@/utils/cookies/siteVisitCookie";
 import { Debug } from "@/utils/debug/Debug";
 
 function formatPercent(value: number): string {
@@ -169,9 +169,8 @@ export function GameSettingsMenu(): React.JSX.Element | null {
 
   const handleRestart = (): void => {
     resetGame();
-    clearSiteVisited();
     setSettingsMenuOpen(false);
-    window.location.assign("/");
+    window.location.assign(hasSiteBeenVisitedToday() ? "/" : "/site");
   };
 
   const handleHandTrackingSourceChange = (source: HandTrackingSource): void => {
