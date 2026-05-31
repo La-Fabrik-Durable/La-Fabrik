@@ -869,6 +869,40 @@ canvas {
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.86);
 }
 
+.app-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(8px, 1.2vw, 14px);
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+  text-transform: inherit;
+}
+
+.app-loading-indicator--floating {
+  position: fixed;
+  bottom: clamp(22px, 5vh, 48px);
+  left: clamp(18px, 4vw, 56px);
+  z-index: 45;
+  color: #ffffff;
+  font-family: "Nersans One", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: clamp(16px, 2.3vw, 30px);
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  text-transform: uppercase;
+}
+
+.app-loading-indicator__spinner {
+  flex: 0 0 auto;
+  width: clamp(18px, 2.2vw, 30px);
+  height: clamp(18px, 2.2vw, 30px);
+  color: currentColor;
+  animation: app-loading-spin 900ms linear infinite;
+}
+
 .scene-loading-overlay {
   position: fixed;
   inset: 0;
@@ -947,14 +981,6 @@ canvas {
   min-width: 0;
 }
 
-.scene-loading-overlay__spinner {
-  flex: 0 0 auto;
-  width: clamp(18px, 2.2vw, 30px);
-  height: clamp(18px, 2.2vw, 30px);
-  color: #ffffff;
-  animation: scene-loading-spin 900ms linear infinite;
-}
-
 .scene-loading-overlay__meta strong {
   color: inherit;
   font: inherit;
@@ -976,7 +1002,7 @@ canvas {
   transition: width 180ms ease;
 }
 
-@keyframes scene-loading-spin {
+@keyframes app-loading-spin {
   to {
     transform: rotate(360deg);
   }
