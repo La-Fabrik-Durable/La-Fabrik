@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
+  Mesh,
   PCFShadowMap,
   type AmbientLight,
   type DirectionalLight,
   type Object3D,
+  type Scene,
   type WebGLRenderer,
 } from "three";
 import {
@@ -51,12 +53,33 @@ function configureSunShadow(sun: DirectionalLight, sunTarget: Object3D): void {
   sun.shadow.camera.updateProjectionMatrix();
 }
 
+// [diag] temporary helper: count shadow-casting/receiving meshes in the scene
+function snapshotShadowMeshes(scene: Scene): {
+  meshCount: number;
+  castShadowCount: number;
+  receiveShadowCount: number;
+} {
+  let meshCount = 0;
+  let castShadowCount = 0;
+  let receiveShadowCount = 0;
+  scene.traverse((obj) => {
+    if (obj instanceof Mesh) {
+      meshCount += 1;
+      if (obj.castShadow) castShadowCount += 1;
+      if (obj.receiveShadow) receiveShadowCount += 1;
+    }
+  });
+  return { meshCount, castShadowCount, receiveShadowCount };
+}
+
 export function Lighting(): React.JSX.Element {
   const camera = useThree((state) => state.camera);
   const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
   const ambient = useRef<AmbientLight>(null);
   const sun = useRef<DirectionalLight>(null);
   const sunTarget = useRef<Object3D>(null);
+  const lastDiagAtRef = useRef(0);
 
   useEffect(() => {
     if (!sun.current || !sunTarget.current) return;
@@ -64,7 +87,18 @@ export function Lighting(): React.JSX.Element {
     configureSunShadow(sun.current, sunTarget.current);
     configureRendererShadows(gl);
     sun.current.shadow.needsUpdate = true;
-  }, [gl]);
+
+    // [diag] one-shot scene snapshot to count shadow casters/receivers
+    const counts = snapshotShadowMeshes(scene);
+    console.log("[shadow:mount]", {
+      shadowMapEnabled: gl.shadowMap.enabled,
+      shadowMapType: gl.shadowMap.type,
+      shadowAutoUpdate: gl.shadowMap.autoUpdate,
+      sunCastShadow: sun.current.castShadow,
+      hasShadowMap: !!sun.current.shadow.map,
+      ...counts,
+    });
+  }, [gl, scene]);
 
   useDebugFolder("Lighting", (folder) => {
     folder.addColor(LIGHTING_STATE, "ambientColor").name("Ambient Color");
@@ -98,7 +132,7 @@ export function Lighting(): React.JSX.Element {
       .name("Sun Z");
   });
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (ambient.current) {
       ambient.current.color.set(LIGHTING_STATE.ambientColor);
       ambient.current.intensity = LIGHTING_STATE.ambientIntensity;
@@ -116,6 +150,24 @@ export function Lighting(): React.JSX.Element {
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
       sun.current.updateMatrixWorld();
       sun.current.shadow.needsUpdate = true;
+    }
+
+    // [diag] periodic shadow pipeline check (every 2s)
+    const now = clock.getElapsedTime();
+    if (now - lastDiagAtRef.current > 2 && sun.current) {
+      lastDiagAtRef.current = now;
+      console.log("[shadow:tick]", {
+        shadowMapEnabled: gl.shadowMap.enabled,
+        shadowAutoUpdate: gl.shadowMap.autoUpdate,
+        sunCastShadow: sun.current.castShadow,
+        sunIntensity: sun.current.intensity,
+        hasShadowMapTexture: !!sun.current.shadow.map?.texture,
+        sunPos: sun.current.position.toArray().map((n) => Number(n.toFixed(2))),
+        targetPos: sunTarget.current?.position
+          .toArray()
+          .map((n) => Number(n.toFixed(2))),
+        renderCalls: gl.info.render.calls,
+      });
     }
   });
 
