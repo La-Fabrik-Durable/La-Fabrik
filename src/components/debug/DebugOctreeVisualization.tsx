@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box3, BufferAttribute, BufferGeometry, Color } from "three";
+import { Box3, BufferAttribute, BufferGeometry } from "three";
 import type { Octree } from "three-stdlib";
 import { useDebugVisualsStore } from "@/managers/stores/useDebugVisualsStore";
 
@@ -11,6 +11,13 @@ interface OctreeNodeBox {
   box: Box3;
   depth: number;
   triangleCount: number;
+  isLeaf: boolean;
+}
+
+interface CollectOptions {
+  minDepth: number;
+  maxDepth: number;
+  leavesOnly: boolean;
 }
 
 const BOX_VERTEX_INDEX_PAIRS: ReadonlyArray<readonly [number, number]> = [
@@ -30,20 +37,28 @@ const BOX_VERTEX_INDEX_PAIRS: ReadonlyArray<readonly [number, number]> = [
 
 function collectOctreeBoxes(
   node: Octree,
-  maxDepth: number,
+  options: CollectOptions,
   depth = 0,
   acc: OctreeNodeBox[] = [],
 ): OctreeNodeBox[] {
-  if (depth > maxDepth) return acc;
+  if (depth > options.maxDepth) return acc;
 
-  acc.push({
-    box: node.box,
-    depth,
-    triangleCount: node.triangles.length,
-  });
+  const isLeaf = node.subTrees.length === 0;
+  const passesDepth = depth >= options.minDepth;
+  const passesLeafFilter = !options.leavesOnly || isLeaf;
+  const hasTriangles = node.triangles.length > 0;
+
+  if (passesDepth && passesLeafFilter && hasTriangles) {
+    acc.push({
+      box: node.box,
+      depth,
+      triangleCount: node.triangles.length,
+      isLeaf,
+    });
+  }
 
   for (const sub of node.subTrees) {
-    collectOctreeBoxes(sub, maxDepth, depth + 1, acc);
+    collectOctreeBoxes(sub, options, depth + 1, acc);
   }
 
   return acc;
@@ -55,17 +70,12 @@ function buildOctreeLineGeometry(
   const positionsBuffer = new Float32Array(
     nodes.length * BOX_VERTEX_INDEX_PAIRS.length * 2 * 3,
   );
-  const colorsBuffer = new Float32Array(
-    nodes.length * BOX_VERTEX_INDEX_PAIRS.length * 2 * 3,
-  );
 
   const corners: [number, number, number][] = Array.from({ length: 8 }, () => [
     0, 0, 0,
   ]);
 
   let positionsOffset = 0;
-  let colorsOffset = 0;
-  const colorHelper = new Color();
 
   for (const node of nodes) {
     const { min, max } = node.box;
@@ -79,9 +89,6 @@ function buildOctreeLineGeometry(
     corners[6] = [min.x, max.y, max.z];
     corners[7] = [max.x, max.y, max.z];
 
-    const hue = (node.depth * 0.13) % 1;
-    colorHelper.setHSL(hue, 0.85, 0.55);
-
     for (const [a, b] of BOX_VERTEX_INDEX_PAIRS) {
       const ca = corners[a]!;
       const cb = corners[b]!;
@@ -91,19 +98,11 @@ function buildOctreeLineGeometry(
       positionsBuffer[positionsOffset++] = cb[0];
       positionsBuffer[positionsOffset++] = cb[1];
       positionsBuffer[positionsOffset++] = cb[2];
-
-      colorsBuffer[colorsOffset++] = colorHelper.r;
-      colorsBuffer[colorsOffset++] = colorHelper.g;
-      colorsBuffer[colorsOffset++] = colorHelper.b;
-      colorsBuffer[colorsOffset++] = colorHelper.r;
-      colorsBuffer[colorsOffset++] = colorHelper.g;
-      colorsBuffer[colorsOffset++] = colorHelper.b;
     }
   }
 
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(positionsBuffer, 3));
-  geometry.setAttribute("color", new BufferAttribute(colorsBuffer, 3));
   return geometry;
 }
 
@@ -111,14 +110,21 @@ export function DebugOctreeVisualization({
   octree,
 }: DebugOctreeVisualizationProps): React.JSX.Element | null {
   const showOctree = useDebugVisualsStore((state) => state.showOctree);
+  const minDepth = useDebugVisualsStore((state) => state.octreeMinDepth);
   const maxDepth = useDebugVisualsStore((state) => state.octreeMaxDepth);
+  const leavesOnly = useDebugVisualsStore((state) => state.octreeLeavesOnly);
+  const opacity = useDebugVisualsStore((state) => state.octreeOpacity);
 
   const geometry = useMemo(() => {
     if (!octree || !showOctree) return null;
-    const boxes = collectOctreeBoxes(octree, maxDepth);
+    const boxes = collectOctreeBoxes(octree, {
+      minDepth,
+      maxDepth,
+      leavesOnly,
+    });
     if (boxes.length === 0) return null;
     return buildOctreeLineGeometry(boxes);
-  }, [maxDepth, octree, showOctree]);
+  }, [leavesOnly, maxDepth, minDepth, octree, showOctree]);
 
   if (!geometry) return null;
 
@@ -126,11 +132,11 @@ export function DebugOctreeVisualization({
     <lineSegments frustumCulled={false} renderOrder={999}>
       <primitive object={geometry} attach="geometry" />
       <lineBasicMaterial
-        vertexColors
+        color="#22d3ee"
         depthTest={false}
         depthWrite={false}
         transparent
-        opacity={0.85}
+        opacity={opacity}
       />
     </lineSegments>
   );

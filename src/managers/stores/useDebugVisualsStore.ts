@@ -7,6 +7,12 @@ interface DebugVisualsStore {
   setShowOctree: (value: boolean) => void;
   octreeMaxDepth: number;
   setOctreeMaxDepth: (value: number) => void;
+  octreeMinDepth: number;
+  setOctreeMinDepth: (value: number) => void;
+  octreeLeavesOnly: boolean;
+  setOctreeLeavesOnly: (value: boolean) => void;
+  octreeOpacity: number;
+  setOctreeOpacity: (value: number) => void;
 }
 
 export const useDebugVisualsStore = create<DebugVisualsStore>((set) => ({
@@ -14,6 +20,12 @@ export const useDebugVisualsStore = create<DebugVisualsStore>((set) => ({
   setShowPlayerModel: (showPlayerModel) => set({ showPlayerModel }),
   showOctree: false,
   setShowOctree: (showOctree) => set({ showOctree }),
-  octreeMaxDepth: 6,
+  octreeMaxDepth: 8,
   setOctreeMaxDepth: (octreeMaxDepth) => set({ octreeMaxDepth }),
+  octreeMinDepth: 4,
+  setOctreeMinDepth: (octreeMinDepth) => set({ octreeMinDepth }),
+  octreeLeavesOnly: true,
+  setOctreeLeavesOnly: (octreeLeavesOnly) => set({ octreeLeavesOnly }),
+  octreeOpacity: 0.35,
+  setOctreeOpacity: (octreeOpacity) => set({ octreeOpacity }),
 }));
