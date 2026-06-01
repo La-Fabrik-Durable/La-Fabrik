@@ -63,6 +63,7 @@ export function Lighting(): React.JSX.Element {
 
     configureSunShadow(sun.current, sunTarget.current);
     configureRendererShadows(gl);
+    sun.current.shadow.needsUpdate = true;
   }, [gl]);
 
   useDebugFolder("Lighting", (folder) => {
@@ -114,6 +115,7 @@ export function Lighting(): React.JSX.Element {
       sun.current.color.set(LIGHTING_STATE.sunColor);
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
       sun.current.updateMatrixWorld();
+      sun.current.shadow.needsUpdate = true;
     }
   });
 
