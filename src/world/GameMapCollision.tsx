@@ -17,9 +17,23 @@ import {
   normalizeMapScale,
   useTerrainHeightSampler,
 } from "@/hooks/three/useTerrainHeight";
+import {
+  CHARACTER_CONFIGS,
+  CHARACTER_IDS,
+  type CharacterId,
+} from "@/data/world/characters/characterConfig";
+import {
+  CHARACTER_OCTREE_COLLISION_BOX,
+  LA_FABRIK_INTERIOR_COLLISION_BOXES,
+  MAP_OCTREE_COLLISION_BOXES,
+  hasMapOctreeCollisionBox,
+  type OctreeCollisionBox,
+} from "@/data/world/octreeCollisionConfig";
+import { getMapModelScaleMultiplier } from "@/data/world/mapInstancingConfig";
+import { useCharacterDebugStore } from "@/managers/stores/useCharacterDebugStore";
 import { WorldBoundsCollision } from "@/world/collision/WorldBoundsCollision";
 import type { MapNode } from "@/types/map/mapScene";
-import type { OctreeReadyHandler } from "@/types/three/three";
+import type { OctreeReadyHandler, Vector3Tuple } from "@/types/three/three";
 import type { SceneLoadingChangeHandler } from "@/types/world/sceneLoading";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
 
@@ -39,6 +53,7 @@ interface GameMapCollisionProps {
   buildOctree?: boolean;
   mapReady: boolean;
   nodes: readonly GameMapCollisionNode[];
+  proxyNodes: readonly MapNode[];
   onLoaded?: (() => void) | undefined;
   onLoadingStateChange?: SceneLoadingChangeHandler | undefined;
   onOctreeReady: OctreeReadyHandler;
@@ -101,6 +116,7 @@ export function GameMapCollision({
   buildOctree = true,
   mapReady,
   nodes,
+  proxyNodes,
   onLoaded,
   onLoadingStateChange,
   onOctreeReady,
@@ -111,8 +127,23 @@ export function GameMapCollision({
   const [settledCollisionNodeCount, setSettledCollisionNodeCount] = useState(0);
   const terrainHeight = useTerrainHeightSampler();
   const collisionNodes = nodes.filter(isCollisionNode);
+  const collisionSourceCount =
+    collisionNodes.length + proxyNodes.length + CHARACTER_IDS.length;
   const collisionReady =
     mapReady && settledCollisionNodeCount >= collisionNodes.length;
+  const characterCollisionSignature = useCharacterDebugStore((state) =>
+    CHARACTER_IDS.map((id) => {
+      const character = state.characters[id];
+      return [
+        ...character.position,
+        ...character.rotation,
+        ...character.scale,
+      ].join(",");
+    }).join("|"),
+  );
+  const collisionRebuildKey = collisionReady
+    ? `${collisionNodes.length}:${collisionSourceCount}:${characterCollisionSignature}`
+    : "pending";
 
   const notifyLoaded = useCallback(() => {
     if (loadedNotifiedRef.current) return;
@@ -144,14 +175,14 @@ export function GameMapCollision({
   useOctreeGraphNode(
     groupRef,
     handleOctreeReady,
-    collisionReady ? collisionNodes.length : 0,
-    buildOctree && collisionReady && collisionNodes.length > 0,
+    collisionRebuildKey,
+    buildOctree && collisionReady && collisionSourceCount > 0,
   );
 
   useEffect(() => {
     if (!mapReady) return;
 
-    if (collisionNodes.length === 0) {
+    if (collisionSourceCount === 0) {
       notifyLoaded();
       return;
     }
@@ -171,6 +202,7 @@ export function GameMapCollision({
   }, [
     buildOctree,
     collisionNodes.length,
+    collisionSourceCount,
     collisionReady,
     mapReady,
     notifyLoaded,
@@ -180,6 +212,18 @@ export function GameMapCollision({
   return (
     <group ref={groupRef} visible={false}>
       {mapReady ? <WorldBoundsCollision /> : null}
+      {mapReady
+        ? proxyNodes.map((node, index) => (
+            <MapCollisionBoxProxy
+              key={`proxy-collision-${index}`}
+              node={node}
+              terrainHeight={terrainHeight}
+            />
+          ))
+        : null}
+      {mapReady ? (
+        <CharacterCollisionProxies terrainHeight={terrainHeight} />
+      ) : null}
       {mapReady
         ? collisionNodes.map((mapNode, index) => (
             <CollisionErrorBoundary
@@ -253,11 +297,125 @@ function CollisionModelInstance({
   }, [onLoaded]);
 
   return (
-    <primitive
-      object={sceneInstance}
-      position={collisionPosition}
-      rotation={rotation}
+    <>
+      <primitive
+        object={sceneInstance}
+        position={collisionPosition}
+        rotation={rotation}
+        scale={normalizedScale}
+      />
+      {node.name === "lafabrik" ? (
+        <group
+          name="lafabrik-interior-collision-proxies"
+          position={collisionPosition}
+          rotation={rotation}
+          scale={normalizedScale}
+        >
+          {LA_FABRIK_INTERIOR_COLLISION_BOXES.map((box, index) => (
+            <CollisionBox key={`lafabrik-interior-${index}`} box={box} />
+          ))}
+        </group>
+      ) : null}
+    </>
+  );
+}
+
+function CollisionBox({ box }: { box: OctreeCollisionBox }): React.JSX.Element {
+  return (
+    <mesh position={box.center}>
+      <boxGeometry args={box.size} />
+      <meshBasicMaterial />
+    </mesh>
+  );
+}
+
+function createScaledMapNodeScale(node: MapNode): Vector3Tuple {
+  const baseScale = normalizeMapScale(node.scale);
+  const scaleMultiplier = getMapModelScaleMultiplier(node.name);
+
+  return [
+    baseScale[0] * scaleMultiplier,
+    baseScale[1] * scaleMultiplier,
+    baseScale[2] * scaleMultiplier,
+  ];
+}
+
+function MapCollisionBoxProxy({
+  node,
+  terrainHeight,
+}: {
+  node: MapNode;
+  terrainHeight: TerrainHeightSampler;
+}): React.JSX.Element | null {
+  const collisionBox = hasMapOctreeCollisionBox(node.name)
+    ? MAP_OCTREE_COLLISION_BOXES[node.name]
+    : null;
+  const normalizedScale = useMemo(() => createScaledMapNodeScale(node), [node]);
+  const position = useMemo(() => {
+    const [x, y, z] = node.position;
+    if (!collisionBox) return [x, y, z] satisfies Vector3Tuple;
+
+    const height = terrainHeight.getHeight(x, z);
+    const bottomOffset = -collisionBox.bottomY * normalizedScale[1];
+
+    return [x, (height ?? y) + bottomOffset, z] satisfies Vector3Tuple;
+  }, [collisionBox, node.position, normalizedScale, terrainHeight]);
+
+  if (!collisionBox) return null;
+
+  return (
+    <group
+      name={`${node.name}-octree-collision-proxy`}
+      position={position}
+      rotation={node.rotation}
       scale={normalizedScale}
-    />
+    >
+      <CollisionBox box={collisionBox} />
+    </group>
+  );
+}
+
+function CharacterCollisionProxies({
+  terrainHeight,
+}: {
+  terrainHeight: TerrainHeightSampler;
+}): React.JSX.Element {
+  return (
+    <>
+      {CHARACTER_IDS.map((id) => (
+        <CharacterCollisionProxy
+          key={`character-collision-${id}`}
+          id={id}
+          terrainHeight={terrainHeight}
+        />
+      ))}
+    </>
+  );
+}
+
+function CharacterCollisionProxy({
+  id,
+  terrainHeight,
+}: {
+  id: CharacterId;
+  terrainHeight: TerrainHeightSampler;
+}): React.JSX.Element {
+  const config = CHARACTER_CONFIGS[id];
+  const state = useCharacterDebugStore((store) => store.characters[id]);
+  const position = useMemo(() => {
+    const [x, y, z] = state.position;
+    const height = terrainHeight.getHeight(x, z);
+
+    return [x, height ?? y, z] satisfies Vector3Tuple;
+  }, [state.position, terrainHeight]);
+
+  return (
+    <group
+      name={`${config.id}-octree-collision-proxy`}
+      position={position}
+      rotation={state.rotation}
+    >
+      <CollisionBox box={CHARACTER_OCTREE_COLLISION_BOX} />
+    </group>
   );
 }
