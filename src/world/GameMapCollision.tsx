@@ -326,10 +326,17 @@ function CollisionModelInstance({
 
 function CollisionBox({ box }: { box: OctreeCollisionBox }): React.JSX.Element {
   return (
-    <mesh position={box.center}>
-      <boxGeometry args={box.size} />
-      <meshBasicMaterial />
-    </mesh>
+    <group position={box.center}>
+      <mesh>
+        <boxGeometry args={box.size} />
+        <meshBasicMaterial />
+      </mesh>
+      {/* Octree ignores material.side, so rotate a second shell for X/Z collisions. */}
+      <mesh rotation={[0, Math.PI, 0]}>
+        <boxGeometry args={box.size} />
+        <meshBasicMaterial />
+      </mesh>
+    </group>
   );
 }
 
