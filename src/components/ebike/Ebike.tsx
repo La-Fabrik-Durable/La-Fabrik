@@ -132,6 +132,17 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   }, [model]);
 
   useEffect(() => {
+    if (!model) return;
+
+    model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [model]);
+
+  useEffect(() => {
     window.ebikeVisualGroup = groupRef;
     window.ebikeParkedPosition = restingPositionRef.current;
     window.ebikeParkedRotation = restingRotationRef.current;

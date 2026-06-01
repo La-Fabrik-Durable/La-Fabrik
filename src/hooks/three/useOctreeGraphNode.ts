@@ -27,6 +27,7 @@ export function useOctreeGraphNode(
 
     const octree = new Octree();
     octree.fromGraphNode(graphNode);
+
     onOctreeReady(octree);
   }, [enabled, graphNodeRef, onOctreeReady, rebuildKey]);
 }

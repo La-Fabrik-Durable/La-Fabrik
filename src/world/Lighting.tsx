@@ -11,6 +11,7 @@ import {
   AMBIENT_INTENSITY_MAX,
   AMBIENT_INTENSITY_MIN,
   AMBIENT_INTENSITY_STEP,
+  SHADOW_CONFIG,
   SUN_INTENSITY_MAX,
   SUN_INTENSITY_MIN,
   SUN_INTENSITY_STEP,
@@ -28,30 +29,25 @@ import { LA_FABRIK_INTERIOR_LIGHT_POSITION } from "@/data/world/laFabrikConfig";
 import { useDebugFolder } from "@/hooks/debug/useDebugFolder";
 import { LIGHTING_STATE } from "@/world/lightingState";
 
-const SHADOW_MAP_SIZE = 2048;
-const SHADOW_CAMERA_SIZE = 95;
-const SHADOW_CAMERA_NEAR = 0.5;
-const SHADOW_CAMERA_FAR = 300;
-
 function configureRendererShadows(gl: WebGLRenderer): void {
   gl.shadowMap.enabled = true;
   gl.shadowMap.type = PCFShadowMap;
   gl.shadowMap.autoUpdate = true;
-  gl.shadowMap.needsUpdate = true;
 }
 
 function configureSunShadow(sun: DirectionalLight, sunTarget: Object3D): void {
   sun.target = sunTarget;
   sun.shadow.autoUpdate = true;
-  sun.shadow.needsUpdate = true;
-  sun.shadow.mapSize.width = SHADOW_MAP_SIZE;
-  sun.shadow.mapSize.height = SHADOW_MAP_SIZE;
-  sun.shadow.camera.left = -SHADOW_CAMERA_SIZE;
-  sun.shadow.camera.right = SHADOW_CAMERA_SIZE;
-  sun.shadow.camera.top = SHADOW_CAMERA_SIZE;
-  sun.shadow.camera.bottom = -SHADOW_CAMERA_SIZE;
-  sun.shadow.camera.near = SHADOW_CAMERA_NEAR;
-  sun.shadow.camera.far = SHADOW_CAMERA_FAR;
+  sun.shadow.bias = SHADOW_CONFIG.bias;
+  sun.shadow.normalBias = SHADOW_CONFIG.normalBias;
+  sun.shadow.mapSize.width = SHADOW_CONFIG.mapSize;
+  sun.shadow.mapSize.height = SHADOW_CONFIG.mapSize;
+  sun.shadow.camera.left = -SHADOW_CONFIG.cameraSize;
+  sun.shadow.camera.right = SHADOW_CONFIG.cameraSize;
+  sun.shadow.camera.top = SHADOW_CONFIG.cameraSize;
+  sun.shadow.camera.bottom = -SHADOW_CONFIG.cameraSize;
+  sun.shadow.camera.near = SHADOW_CONFIG.cameraNear;
+  sun.shadow.camera.far = SHADOW_CONFIG.cameraFar;
   sun.shadow.camera.updateProjectionMatrix();
 }
 
@@ -118,7 +114,6 @@ export function Lighting(): React.JSX.Element {
       sun.current.color.set(LIGHTING_STATE.sunColor);
       sun.current.intensity = LIGHTING_STATE.sunIntensity;
       sun.current.updateMatrixWorld();
-      sun.current.shadow.needsUpdate = true;
     }
   });
 
