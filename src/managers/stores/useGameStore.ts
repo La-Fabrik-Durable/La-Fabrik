@@ -146,7 +146,7 @@ function completeEbikeState(state: GameState): GameStateUpdate {
     },
     pylon: {
       ...state.pylon,
-      currentStep: "waiting",
+      currentStep: "approaching",
     },
   };
 }
@@ -212,7 +212,7 @@ function advanceRepairMissionState(
   state: GameState,
   mission: RepairMissionId,
 ): GameStateUpdate {
-  const nextStep = getNextMissionStep(state[mission].currentStep);
+  const nextStep = getNextMissionStep(state[mission].currentStep, mission);
   if (nextStep === "done") {
     return completeMissionState(state, mission);
   }
@@ -227,7 +227,7 @@ function rewindRepairMissionState(
   return setMissionStepState(
     state,
     mission,
-    getPreviousMissionStep(state[mission].currentStep),
+    getPreviousMissionStep(state[mission].currentStep, mission),
   );
 }
 

@@ -1,6 +1,7 @@
 import { Ebike } from "@/components/ebike/Ebike";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { RepairGame } from "@/components/three/gameplay/RepairGame";
+import { PylonNarrativeFlow } from "@/components/gameplay/pylon/PylonNarrativeFlow";
 import {
   REPAIR_MISSION_POSITION_ENTRIES,
   REPAIR_MISSION_TRIGGERS,
@@ -11,6 +12,7 @@ import {
 } from "@/data/gameplay/gameStageAnchors";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
+import { isPylonNarrativeStep } from "@/types/gameplay/repairMission";
 import type { RepairMissionTriggerConfig } from "@/types/gameplay/repairMission";
 import type { Vector3Tuple } from "@/types/three/three";
 import { getRepairMissionPosition } from "@/utils/gameplay/repairMissionPosition";
@@ -77,15 +79,21 @@ function RepairMissionTrigger({
 
 export function GameStageContent(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
+  const pylonStep = useGameStore((state) => state.pylon.currentStep);
   const anchors = useRepairMissionAnchorStore((state) => state.anchors);
+
+  const pylonInNarrative =
+    mainState === "pylon" && isPylonNarrativeStep(pylonStep);
 
   return (
     <>
       {mainState === "intro" ? <StageAnchor {...INTRO_STAGE_ANCHOR} /> : null}
       <Ebike position={EBIKE_WORLD_POSITION} />
+      {mainState === "pylon" ? <PylonNarrativeFlow /> : null}
       {REPAIR_MISSION_POSITION_ENTRIES.map(({ mission }) => {
         const position = getRepairMissionPosition(mission, anchors);
         if (!position) return null;
+        if (mission === "pylon" && pylonInNarrative) return null;
         return (
           <RepairGame key={mission} mission={mission} position={position} />
         );

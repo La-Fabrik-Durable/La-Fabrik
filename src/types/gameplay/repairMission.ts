@@ -54,10 +54,39 @@ export interface RepairMissionConfig {
 
 export type MissionStep =
   | "locked"
+  | "approaching"
+  | "arrived"
+  | "npc-return"
   | "waiting"
   | "inspected"
   | "fragmented"
   | "scanning"
   | "repairing"
   | "reassembling"
-  | "done";
+  | "done"
+  | "narrator-outro";
+
+export const PYLON_NARRATIVE_STEPS = [
+  "approaching",
+  "arrived",
+  "npc-return",
+  "narrator-outro",
+] as const;
+
+export const REPAIR_GAME_STEPS = [
+  "waiting",
+  "inspected",
+  "fragmented",
+  "scanning",
+  "repairing",
+  "reassembling",
+  "done",
+] as const;
+
+export function isPylonNarrativeStep(step: MissionStep): boolean {
+  return (PYLON_NARRATIVE_STEPS as readonly MissionStep[]).includes(step);
+}
+
+export function isRepairGameStep(step: MissionStep): boolean {
+  return (REPAIR_GAME_STEPS as readonly MissionStep[]).includes(step);
+}

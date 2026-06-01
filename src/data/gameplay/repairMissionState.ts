@@ -10,6 +10,9 @@ const REPAIR_MISSION_ID_VALUES: ReadonlySet<string> = new Set(
 
 export const MISSION_STEPS = [
   "locked",
+  "approaching",
+  "arrived",
+  "npc-return",
   "waiting",
   "inspected",
   "fragmented",
@@ -17,6 +20,7 @@ export const MISSION_STEPS = [
   "repairing",
   "reassembling",
   "done",
+  "narrator-outro",
 ] as const satisfies readonly MissionStep[];
 const MISSION_STEP_VALUES: ReadonlySet<string> = new Set(MISSION_STEPS);
 
@@ -28,9 +32,18 @@ export function isMissionStep(value: string): value is MissionStep {
   return MISSION_STEP_VALUES.has(value);
 }
 
-export function getNextMissionStep(step: MissionStep): MissionStep {
+export function getNextMissionStep(
+  step: MissionStep,
+  mission?: RepairMissionId,
+): MissionStep {
   switch (step) {
     case "locked":
+      return mission === "pylon" ? "approaching" : "waiting";
+    case "approaching":
+      return "arrived";
+    case "arrived":
+      return "npc-return";
+    case "npc-return":
       return "waiting";
     case "waiting":
       return "inspected";
@@ -43,16 +56,29 @@ export function getNextMissionStep(step: MissionStep): MissionStep {
     case "repairing":
       return "reassembling";
     case "reassembling":
-    case "done":
       return "done";
+    case "done":
+      return mission === "pylon" ? "narrator-outro" : "done";
+    case "narrator-outro":
+      return "narrator-outro";
   }
 }
 
-export function getPreviousMissionStep(step: MissionStep): MissionStep {
+export function getPreviousMissionStep(
+  step: MissionStep,
+  mission?: RepairMissionId,
+): MissionStep {
   switch (step) {
     case "locked":
-    case "waiting":
       return "locked";
+    case "approaching":
+      return "locked";
+    case "arrived":
+      return "approaching";
+    case "npc-return":
+      return "arrived";
+    case "waiting":
+      return mission === "pylon" ? "npc-return" : "locked";
     case "inspected":
       return "waiting";
     case "fragmented":
@@ -65,5 +91,7 @@ export function getPreviousMissionStep(step: MissionStep): MissionStep {
       return "repairing";
     case "done":
       return "reassembling";
+    case "narrator-outro":
+      return "done";
   }
 }

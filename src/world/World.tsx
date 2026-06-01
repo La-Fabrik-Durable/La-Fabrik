@@ -8,6 +8,7 @@ import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useEnvironmentDebug } from "@/hooks/debug/useEnvironmentDebug";
 import { useMapPerformanceDebug } from "@/hooks/debug/useMapPerformanceDebug";
 import { useCharacterDebug } from "@/hooks/debug/useCharacterDebug";
+import { usePlayerPositionDebug } from "@/hooks/debug/usePlayerPositionDebug";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { useHandTrackingSnapshot } from "@/hooks/handTracking/useHandTrackingSnapshot";
 import { useWorldSceneLoading } from "@/hooks/world/useWorldSceneLoading";
@@ -35,6 +36,7 @@ export function World({ onLoadingStateChange }: WorldProps): React.JSX.Element {
   useEnvironmentDebug();
   useMapPerformanceDebug();
   useCharacterDebug();
+  usePlayerPositionDebug();
 
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
