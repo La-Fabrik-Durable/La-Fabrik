@@ -223,6 +223,22 @@ function CollisionModelInstance({
     scale: normalizedScale,
   });
   const sceneInstance = useClonedObject(scene);
+  useEffect(() => {
+    // Strip the door slab from the la fabrik collision octree so the player
+    // can walk through the doorway. The visual model is rendered separately
+    // by MergedStaticMapModel and is unaffected.
+    if (node.name !== "lafabrik") return;
+
+    const removed: THREE.Object3D[] = [];
+    sceneInstance.traverse((child) => {
+      if (child.name === "porte") {
+        removed.push(child);
+      }
+    });
+    for (const child of removed) {
+      child.removeFromParent();
+    }
+  }, [node.name, sceneInstance]);
   const collisionPosition = useMemo(() => {
     if (node.name === "terrain") return position;
 
