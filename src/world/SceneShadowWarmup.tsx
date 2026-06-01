@@ -45,6 +45,11 @@ function forceSceneShadowPass(
   });
 }
 
+function restoreManualShadowUpdates(gl: THREE.WebGLRenderer): void {
+  gl.shadowMap.autoUpdate = false;
+  gl.shadowMap.needsUpdate = true;
+}
+
 export function SceneShadowWarmup({
   active,
   onReady,
@@ -77,6 +82,7 @@ export function SceneShadowWarmup({
 
       secondFrame = window.requestAnimationFrame(() => {
         forceSceneShadowPass(gl, scene);
+        restoreManualShadowUpdates(gl);
         invalidate();
         onReady();
       });

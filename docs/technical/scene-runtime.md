@@ -91,6 +91,12 @@ Activation des ombres -> Ombres prêtes -> Gameplay prêt
 
 This keeps the loading overlay visible until the renderer shadow map, shadow-casting light, and mounted scene graph have all been explicitly refreshed.
 
+After the warmup, shadow maps switch back to manual refreshes driven by `Lighting`.
+The sun still follows the player camera, but the shadow map is only marked dirty
+when the camera has moved enough and a short refresh interval has elapsed. This
+keeps shadows present after loading without paying for a full shadow render every
+frame across the dense vegetation chunks.
+
 The debug physics scene is ready when:
 
 ```ts

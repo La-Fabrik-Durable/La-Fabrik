@@ -130,7 +130,8 @@ export function HomePage(): React.JSX.Element | null {
 
       gl.shadowMap.enabled = true;
       gl.shadowMap.type = THREE.PCFShadowMap;
-      gl.shadowMap.autoUpdate = true;
+      gl.shadowMap.autoUpdate = false;
+      gl.shadowMap.needsUpdate = true;
 
       // The browser hands us a WEBGL_lose_context extension we can use to
       // ask the GPU to restore the context after a loss. Without this the
@@ -147,7 +148,8 @@ export function HomePage(): React.JSX.Element | null {
       const handleContextRestored = () => {
         gl.shadowMap.enabled = true;
         gl.shadowMap.type = THREE.PCFShadowMap;
-        gl.shadowMap.autoUpdate = true;
+        gl.shadowMap.autoUpdate = false;
+        gl.shadowMap.needsUpdate = true;
         logger.info("WebGL", "Context restored");
       };
 
