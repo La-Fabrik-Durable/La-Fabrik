@@ -12,8 +12,10 @@ import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { playDialogueById } from "@/utils/dialogues/playDialogue";
 
 export function EbikeIntroSequence(): React.JSX.Element | null {
+  const mainState = useGameStore((state) => state.mainState);
   const introStep = useGameStore((state) => state.intro.currentStep);
   const movementMode = useGameStore((state) => state.player.movementMode);
+  const pylonStep = useGameStore((state) => state.pylon.currentStep);
   const setIntroStep = useGameStore((state) => state.setIntroStep);
   const completeIntro = useGameStore((state) => state.completeIntro);
   const [breakdownDialogueDone, setBreakdownDialogueDone] = useState(false);
@@ -99,6 +101,16 @@ export function EbikeIntroSequence(): React.JSX.Element | null {
       hasStartedBreakdown.current = false;
     }
   }, [introStep]);
+
+  if (mainState === "pylon") {
+    if (pylonStep === "approaching") {
+      return <MissionNotification mission="pylon" visible />;
+    }
+    if (pylonStep === "narrator-outro") {
+      return <MissionNotification mission="farm" visible />;
+    }
+    return null;
+  }
 
   if (introStep !== "await-ebike-mount" && introStep !== "ebike-intro-ride") {
     return null;

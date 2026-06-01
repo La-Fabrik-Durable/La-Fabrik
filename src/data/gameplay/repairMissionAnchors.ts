@@ -4,6 +4,7 @@ import type {
   RepairMissionTriggerConfig,
 } from "@/types/gameplay/repairMission";
 import { EBIKE_WORLD_POSITION } from "@/data/ebike/ebikeConfig";
+import { PYLON_WORLD_POSITION } from "@/data/gameplay/pylonConfig";
 
 export const REPAIR_MISSION_ANCHOR_IDS: Partial<
   Record<RepairMissionId, string>
@@ -15,7 +16,7 @@ const EBIKE_REPAIR_POSITION = EBIKE_WORLD_POSITION satisfies Vector3Tuple;
 
 const REPAIR_MISSION_POSITIONS = {
   ebike: EBIKE_REPAIR_POSITION,
-  pylon: [64, 0, -66],
+  pylon: PYLON_WORLD_POSITION,
   farm: [-24, 0, 42],
 } as const satisfies Record<RepairMissionId, Vector3Tuple>;
 

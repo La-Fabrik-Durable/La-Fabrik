@@ -7,51 +7,58 @@ import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { playDialogueById } from "@/utils/dialogues/playDialogue";
 import {
   PYLON_FARMER_NPC_AFTER_POSITION,
+  PYLON_FARMER_NPC_AFTER_POSITION_pylone_straight,
+  PYLON_FARMER_NPC_AFTER_ROTATION,
+  PYLON_FARMER_NPC_AFTER_SCALE,
   PYLON_FARMER_NPC_POSITION,
+  PYLON_FARMER_NPC_WALK_SPEED,
   PYLON_NARRATIVE_DIALOGUES,
   PYLON_NARRATIVE_INTERACT_RADIUS,
 } from "@/data/gameplay/pylonConfig";
+import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
+
+const _target = new THREE.Vector3();
 
 export function PylonFarmerNPC(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
   const step = useGameStore((state) => state.pylon.currentStep);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
-  const setCanMove = useGameStore((state) => state.setCanMove);
   const groupRef = useRef<THREE.Group>(null);
+  const currentPosRef = useRef(
+    new THREE.Vector3(...PYLON_FARMER_NPC_POSITION),
+  );
 
+  // Reset position when entering arrived, set target when entering npc-return
   useEffect(() => {
-    if (mainState !== "pylon" || step !== "arrived") return;
+    if (step === "arrived") {
+      currentPosRef.current.set(...PYLON_FARMER_NPC_POSITION);
+    }
+  }, [step]);
 
-    if (!groupRef.current) return;
-    (groupRef.current.userData as Record<string, unknown>).startTime =
-      undefined;
-  }, [mainState, step]);
-
-  useFrame(() => {
+  useFrame((_, delta) => {
     const group = groupRef.current;
     if (!group) return;
 
-    if (
-      step === "npc-return" ||
-      step === "waiting" ||
-      step === "narrator-outro"
-    ) {
-      const startTime = (group.userData as Record<string, unknown>)
-        .startTime as number | undefined;
-      if (startTime === undefined) {
-        (group.userData as Record<string, unknown>).startTime =
-          performance.now();
-        group.position.set(...PYLON_FARMER_NPC_AFTER_POSITION);
-        return;
-      }
-      group.position.set(...PYLON_FARMER_NPC_AFTER_POSITION);
+    if (step === "npc-return") {
+      const targetPos = pylonStraighteningSignal.started
+        ? PYLON_FARMER_NPC_AFTER_POSITION_pylone_straight
+        : PYLON_FARMER_NPC_AFTER_POSITION;
+      _target.set(...targetPos);
+      currentPosRef.current.lerp(_target, Math.min(PYLON_FARMER_NPC_WALK_SPEED * delta, 1));
+      group.position.copy(currentPosRef.current);
+      group.rotation.set(...PYLON_FARMER_NPC_AFTER_ROTATION);
+      group.scale.setScalar(PYLON_FARMER_NPC_AFTER_SCALE);
+    } else if (step === "inspected") {
+      group.position.set(...PYLON_FARMER_NPC_AFTER_POSITION_pylone_straight);
+      group.rotation.set(...PYLON_FARMER_NPC_AFTER_ROTATION);
+      group.scale.setScalar(PYLON_FARMER_NPC_AFTER_SCALE);
     } else {
       group.position.set(...PYLON_FARMER_NPC_POSITION);
     }
   });
 
   if (mainState !== "pylon") return null;
-  if (step !== "arrived") return null;
+  if (step !== "arrived" && step !== "npc-return" && step !== "inspected") return null;
 
   return (
     <group ref={groupRef} position={PYLON_FARMER_NPC_POSITION}>
@@ -63,45 +70,42 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
         <sphereGeometry args={[0.28, 12, 12]} />
         <meshStandardMaterial color="#fde68a" />
       </mesh>
-      <InteractableObject
-        kind="trigger"
-        label="Parler au fermier"
-        position={PYLON_FARMER_NPC_POSITION}
-        radius={PYLON_NARRATIVE_INTERACT_RADIUS}
-        onPress={() => {
-          setCanMove(false);
-          void (async () => {
-            const manifest = await loadDialogueManifest();
-            if (!manifest) {
-              setCanMove(true);
-              setMissionStep("pylon", "npc-return");
-              return;
-            }
-            const audio = await playDialogueById(
-              manifest,
-              PYLON_NARRATIVE_DIALOGUES.farmerHelp,
-            );
-            if (!audio) {
-              setCanMove(true);
-              setMissionStep("pylon", "npc-return");
-              return;
-            }
-            audio.addEventListener(
-              "ended",
-              () => {
-                setCanMove(true);
+
+      {step === "arrived" ? (
+        <InteractableObject
+          kind="trigger"
+          label="Parler au fermier"
+          position={PYLON_FARMER_NPC_POSITION}
+          radius={PYLON_NARRATIVE_INTERACT_RADIUS}
+          onPress={() => {
+            void (async () => {
+              const manifest = await loadDialogueManifest();
+              if (!manifest) {
                 setMissionStep("pylon", "npc-return");
-              },
-              { once: true },
-            );
-          })();
-        }}
-      >
-        <mesh>
-          <sphereGeometry args={[1, 8, 8]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      </InteractableObject>
+                return;
+              }
+              const audio = await playDialogueById(
+                manifest,
+                PYLON_NARRATIVE_DIALOGUES.farmerHelp,
+              );
+              if (!audio) {
+                setMissionStep("pylon", "npc-return");
+                return;
+              }
+              audio.addEventListener(
+                "ended",
+                () => setMissionStep("pylon", "npc-return"),
+                { once: true },
+              );
+            })();
+          }}
+        >
+          <mesh>
+            <sphereGeometry args={[1, 8, 8]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
+        </InteractableObject>
+      ) : null}
     </group>
   );
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -14,6 +14,7 @@ import {
   PYLON_UPRIGHT_ROTATION,
   PYLON_WORLD_POSITION,
 } from "@/data/gameplay/pylonConfig";
+import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
 
 const PYLON_MODEL_PATH = "/models/pylone/model.gltf";
 
@@ -25,6 +26,11 @@ export function PylonDownedPylon(): React.JSX.Element | null {
   const [isStraightening, setIsStraightening] = useState(false);
   const groupRef = useRef<THREE.Group>(null);
   const straightenStartRef = useRef<number | null>(null);
+  const hasPlayedFirstAudioRef = useRef(false);
+
+  useEffect(() => {
+    if (step === "arrived") hasPlayedFirstAudioRef.current = false;
+  }, [step]);
 
   const { scene } = useGLTF(PYLON_MODEL_PATH);
 
@@ -33,11 +39,7 @@ export function PylonDownedPylon(): React.JSX.Element | null {
     if (!group) return;
 
     if (!isStraightening || straightenStartRef.current === null) {
-      const targetRotation =
-        step === "narrator-outro"
-          ? PYLON_UPRIGHT_ROTATION
-          : PYLON_DOWNED_ROTATION;
-      group.rotation.set(...targetRotation);
+      group.rotation.set(...(showUpright ? PYLON_UPRIGHT_ROTATION : PYLON_DOWNED_ROTATION));
       return;
     }
 
@@ -53,25 +55,22 @@ export function PylonDownedPylon(): React.JSX.Element | null {
     );
   });
 
-  if (mainState !== "pylon") return null;
-
-  if (
-    step === "approaching" ||
+  const showUpright =
+    mainState !== "pylon" ||
     step === "waiting" ||
     step === "inspected" ||
     step === "fragmented" ||
     step === "scanning" ||
     step === "repairing" ||
     step === "reassembling" ||
-    step === "done"
-  ) {
-    return null;
-  }
+    step === "done" ||
+    step === "narrator-outro";
 
   const isPylonInteractive = step === "arrived" || step === "npc-return";
 
   const beginStraighten = (): void => {
     setIsStraightening(true);
+    pylonStraighteningSignal.started = true;
     straightenStartRef.current = performance.now();
     setCanMove(false);
     if (groupRef.current) {
@@ -79,8 +78,9 @@ export function PylonDownedPylon(): React.JSX.Element | null {
     }
     window.setTimeout(() => {
       setIsStraightening(false);
+      pylonStraighteningSignal.started = false;
       setCanMove(true);
-      setMissionStep("pylon", "waiting");
+      setMissionStep("pylon", "inspected");
     }, PYLON_STRAIGHTEN_ANIMATION_DURATION_MS);
   };
 
@@ -101,14 +101,35 @@ export function PylonDownedPylon(): React.JSX.Element | null {
           radius={PYLON_NARRATIVE_INTERACT_RADIUS}
           onPress={() => {
             if (step === "arrived") {
-              void (async () => {
-                const manifest = await loadDialogueManifest();
-                if (!manifest) return;
-                await playDialogueById(
-                  manifest,
-                  PYLON_NARRATIVE_DIALOGUES.brokenPylon,
-                );
-              })();
+              if (!hasPlayedFirstAudioRef.current) {
+                hasPlayedFirstAudioRef.current = true;
+                void (async () => {
+                  const manifest = await loadDialogueManifest();
+                  if (!manifest) return;
+                  const audio = await playDialogueById(
+                    manifest,
+                    PYLON_NARRATIVE_DIALOGUES.brokenPylon,
+                  );
+                  if (!audio) return;
+                  audio.addEventListener(
+                    "ended",
+                    () => {
+                      void (async () => {
+                        const m = await loadDialogueManifest();
+                        if (!m) return;
+                        await playDialogueById(m, PYLON_NARRATIVE_DIALOGUES.demandeAide);
+                      })();
+                    },
+                    { once: true },
+                  );
+                })();
+              } else {
+                void (async () => {
+                  const manifest = await loadDialogueManifest();
+                  if (!manifest) return;
+                  await playDialogueById(manifest, PYLON_NARRATIVE_DIALOGUES.demandeAide);
+                })();
+              }
             } else if (step === "npc-return" && !isStraightening) {
               beginStraighten();
             }

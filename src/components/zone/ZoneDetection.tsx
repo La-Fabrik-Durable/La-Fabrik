@@ -12,7 +12,7 @@ interface ZoneDetectionProps {
 
 const _cameraPos = new THREE.Vector3();
 
-function ZoneDebugVisual({
+export function ZoneDebugVisual({
   zone,
   active,
 }: {

@@ -76,7 +76,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
       {
         id: "pylon-damaged-panel",
         label: "Damaged solar panel",
-        nodeName: "panneau2",
+        nodeName: "pylone",
         caseSlotName: "placeholder_2",
       },
     ],

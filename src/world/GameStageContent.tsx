@@ -1,7 +1,11 @@
 import { Ebike } from "@/components/ebike/Ebike";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { RepairGame } from "@/components/three/gameplay/RepairGame";
+import { PylonDownedPylon } from "@/components/gameplay/pylon/PylonDownedPylon";
 import { PylonNarrativeFlow } from "@/components/gameplay/pylon/PylonNarrativeFlow";
+import { ZoneDebugVisual } from "@/components/zone/ZoneDetection";
+import { PYLON_APPROACH_ZONE, PYLON_ARRIVED_ZONE } from "@/data/gameplay/zones";
+import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
 import {
   REPAIR_MISSION_POSITION_ENTRIES,
   REPAIR_MISSION_TRIGGERS,
@@ -89,6 +93,13 @@ export function GameStageContent(): React.JSX.Element {
     <>
       {mainState === "intro" ? <StageAnchor {...INTRO_STAGE_ANCHOR} /> : null}
       <Ebike position={EBIKE_WORLD_POSITION} />
+      <PylonDownedPylon />
+      {isDebugEnabled() ? (
+        <>
+          <ZoneDebugVisual zone={PYLON_APPROACH_ZONE} active={false} />
+          <ZoneDebugVisual zone={PYLON_ARRIVED_ZONE} active={false} />
+        </>
+      ) : null}
       {mainState === "pylon" ? <PylonNarrativeFlow /> : null}
       {REPAIR_MISSION_POSITION_ENTRIES.map(({ mission }) => {
         const position = getRepairMissionPosition(mission, anchors);
