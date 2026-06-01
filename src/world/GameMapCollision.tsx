@@ -272,16 +272,6 @@ function CollisionModelInstance({
   });
   const sceneInstance = useClonedObject(scene);
   useEffect(() => {
-    // Strip the door slab AND its Solidify-modifier frame from the la fabrik
-    // collision octree so the player can walk through the doorway. The visual
-    // model is rendered separately by `MergedStaticMapModel` and is unaffected.
-    //
-    // - `porte` (+ Blender suffixes `porte.001` / `porte_001`): the door slab
-    //   itself. We exclude unrelated names like `porte stock` (a shelf of
-    //   stocked doors) by requiring an exact match or a numeric suffix only.
-    // - Children of a `Thicken` parent: the doorway frame produced by
-    //   Blender's Solidify modifier. Its world AABBs sit right inside the
-    //   doorway and otherwise prevent the player from entering / exiting.
     if (node.name !== "lafabrik") return;
 
     const isDoorSlab = (name: string): boolean =>
@@ -343,7 +333,6 @@ function CollisionBox({ box }: { box: OctreeCollisionBox }): React.JSX.Element {
         <boxGeometry args={box.size} />
         <meshBasicMaterial />
       </mesh>
-      {/* Octree ignores material.side, so rotate a second shell for X/Z collisions. */}
       <mesh rotation={[0, Math.PI, 0]}>
         <boxGeometry args={box.size} />
         <meshBasicMaterial />
