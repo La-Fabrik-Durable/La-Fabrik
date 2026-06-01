@@ -71,14 +71,14 @@ export function TalkieDialogueOverlay(): React.JSX.Element | null {
     mainState !== "intro" || TALKIE_REVEAL_STEPS.has(introStep);
   const isNarratorDialogue = activeSubtitle?.speaker === "Narrateur";
 
-  if (!isAfterReveal || !isNarratorDialogue) return null;
+  if (!isAfterReveal) return null;
 
   return (
     <aside
-      className="talkie-dialogue-overlay talkie-dialogue-overlay--raised"
+      className={`talkie-dialogue-overlay${isNarratorDialogue ? " talkie-dialogue-overlay--raised" : ""}`}
       aria-hidden="true"
     >
-      <TalkieSignalLines />
+      {isNarratorDialogue ? <TalkieSignalLines /> : null}
       <div className="talkie-dialogue-overlay__model-frame">
         <Canvas
           camera={{ position: [0, 0, 4.2], zoom: 78 }}
