@@ -1,4 +1,5 @@
 import {
+  HAND_TRACKING_BROWSER_DELEGATE,
   HAND_TRACKING_BROWSER_MODEL_URL,
   HAND_TRACKING_BROWSER_WASM_URL,
 } from "@/data/handTrackingConfig";
@@ -6,6 +7,7 @@ import type {
   HandTrackingHand,
   HandTrackingLandmark,
 } from "@/types/handTracking/handTracking";
+import { logger } from "@/utils/core/Logger";
 
 type HandLandmarkerModule = typeof import("@mediapipe/tasks-vision");
 type HandLandmarker = Awaited<
@@ -14,6 +16,7 @@ type HandLandmarker = Awaited<
 type HandLandmarkerResult = ReturnType<HandLandmarker["detectForVideo"]>;
 
 let handLandmarkerPromise: Promise<HandLandmarker> | null = null;
+let handLandmarkerInstance: HandLandmarker | null = null;
 
 function averageLandmarks(
   landmarks: HandTrackingLandmark[],
@@ -78,18 +81,44 @@ export async function getBrowserHandLandmarker(): Promise<HandLandmarker> {
         HAND_TRACKING_BROWSER_WASM_URL,
       );
 
-      return HandLandmarker.createFromOptions(vision, {
+      const handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: HAND_TRACKING_BROWSER_MODEL_URL,
-          delegate: "GPU",
+          delegate: HAND_TRACKING_BROWSER_DELEGATE,
         },
         numHands: 2,
         runningMode: "VIDEO",
       });
+
+      handLandmarkerInstance = handLandmarker;
+      return handLandmarker;
     },
   );
 
   return handLandmarkerPromise;
+}
+
+export function releaseBrowserHandLandmarker(): void {
+  const activeLandmarker = handLandmarkerInstance;
+  const pendingLandmarker = handLandmarkerPromise;
+
+  handLandmarkerInstance = null;
+  handLandmarkerPromise = null;
+
+  if (activeLandmarker) {
+    activeLandmarker.close();
+    return;
+  }
+
+  void pendingLandmarker
+    ?.then((landmarker) => {
+      landmarker.close();
+    })
+    .catch((error: unknown) => {
+      logger.warn("HandTracking", "Browser JS landmarker release failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
 }
 
 export function convertBrowserHandResult(

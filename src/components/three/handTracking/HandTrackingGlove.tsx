@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Component, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { SkeletonUtils } from "three-stdlib";
 import { useHandTrackingSnapshot } from "@/hooks/handTracking/useHandTrackingSnapshot";
@@ -362,6 +361,3 @@ export function HandTrackingGlove({
     </HandTrackingGloveErrorBoundary>
   );
 }
-
-useGLTF.preload(GLOVE_CONFIGS.left.modelPath);
-useGLTF.preload(GLOVE_CONFIGS.right.modelPath);
