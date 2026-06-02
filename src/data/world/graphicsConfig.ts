@@ -1,9 +1,16 @@
-export const GRAPHICS_PRESET_KEYS = ["low", "medium", "high", "ultra"] as const;
+export const GRAPHICS_PRESET_KEYS = [
+  "low",
+  "medium",
+  "high",
+  "ultra",
+  "max",
+] as const;
 
 export type GraphicsPreset = (typeof GRAPHICS_PRESET_KEYS)[number];
 
 export interface GraphicsPresetConfig {
   chunkLoadRadius: number;
+  chunkStreamingEnabled: boolean;
   chunkUnloadRadius: number;
   fogEnabled: boolean;
   forceLodModels: boolean;
@@ -16,6 +23,7 @@ export const GRAPHICS_PRESETS = {
     label: "Basse",
     chunkLoadRadius: 10,
     chunkUnloadRadius: 18,
+    chunkStreamingEnabled: true,
     fogEnabled: true,
     forceLodModels: true,
     lodHighDetailDistance: 0,
@@ -24,25 +32,37 @@ export const GRAPHICS_PRESETS = {
     label: "Moyenne",
     chunkLoadRadius: 20,
     chunkUnloadRadius: 30,
+    chunkStreamingEnabled: true,
     fogEnabled: true,
     forceLodModels: true,
     lodHighDetailDistance: 0,
   },
   high: {
     label: "High",
-    chunkLoadRadius: 35,
-    chunkUnloadRadius: 45,
+    chunkLoadRadius: 30,
+    chunkUnloadRadius: 40,
+    chunkStreamingEnabled: true,
     fogEnabled: false,
     forceLodModels: false,
-    lodHighDetailDistance: 10,
+    lodHighDetailDistance: 20,
   },
   ultra: {
     label: "Ultra",
     chunkLoadRadius: 50,
     chunkUnloadRadius: 65,
+    chunkStreamingEnabled: true,
     fogEnabled: false,
     forceLodModels: false,
-    lodHighDetailDistance: 20,
+    lodHighDetailDistance: 30,
+  },
+  max: {
+    label: "Max",
+    chunkLoadRadius: 50,
+    chunkUnloadRadius: 65,
+    chunkStreamingEnabled: false,
+    fogEnabled: false,
+    forceLodModels: false,
+    lodHighDetailDistance: 50,
   },
 } as const satisfies Record<GraphicsPreset, GraphicsPresetConfig>;
 

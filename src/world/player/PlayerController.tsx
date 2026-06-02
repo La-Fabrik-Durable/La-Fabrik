@@ -34,6 +34,7 @@ import {
   EBIKE_CAMERA_TRANSFORM,
   EBIKE_DECELERATION_DURATION_MS,
 } from "@/data/ebike/ebikeConfig";
+import { useSceneMode } from "@/hooks/debug/useSceneMode";
 
 /** Global window properties used for ebike communication */
 interface EbikeGlobalState {
@@ -152,6 +153,7 @@ export function PlayerController({
   spawnPosition,
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
+  const sceneMode = useSceneMode();
   const movementLocked = useRepairMovementLocked();
   const terrainHeight = useTerrainHeightSampler();
   const movementLockedRef = useRef(movementLocked);
@@ -483,19 +485,21 @@ export function PlayerController({
       }
     }
 
-    const groundHeight = terrainHeight.getHeight(
-      capsule.current.end.x,
-      capsule.current.end.z,
-    );
-    if (groundHeight !== null && velocity.current.y <= 0) {
-      const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
+    if (sceneMode === "game") {
+      const groundHeight = terrainHeight.getHeight(
+        capsule.current.end.x,
+        capsule.current.end.z,
+      );
+      if (groundHeight !== null && velocity.current.y <= 0) {
+        const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
 
-      if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
-        capsule.current.translate(
-          _collisionCorrection.set(0, -groundOffset, 0),
-        );
-        velocity.current.y = 0;
-        onFloor.current = true;
+        if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
+          capsule.current.translate(
+            _collisionCorrection.set(0, -groundOffset, 0),
+          );
+          velocity.current.y = 0;
+          onFloor.current = true;
+        }
       }
     }
 

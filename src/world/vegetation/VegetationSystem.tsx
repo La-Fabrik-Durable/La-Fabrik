@@ -1,8 +1,24 @@
-import { Suspense, useMemo } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CHUNK_CONFIG } from "@/data/world/chunkStreamingConfig";
+import {
+  getMapLodModelPath,
+  getMapLodScaleMultiplier,
+  selectMapModelPathByDistance,
+} from "@/data/world/mapLodConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
-import { useGraphicsPresetConfig } from "@/hooks/world/useGraphicsSettings";
+import {
+  useGraphicsPreset,
+  useGraphicsPresetConfig,
+} from "@/hooks/world/useGraphicsSettings";
 import { useVisibleWorldChunks } from "@/hooks/world/useVisibleWorldChunks";
 import {
   isMapModelVisible,
@@ -18,6 +34,7 @@ import {
 } from "@/data/world/vegetationConfig";
 import { isInsideLaFabrikFootprint } from "@/data/world/laFabrikConfig";
 import { createWorldInstanceChunks } from "@/utils/world/chunkInstances";
+import type { GraphicsPreset } from "@/data/world/graphicsConfig";
 
 interface VegetationSystemProps {
   onlyMapName?: string | null;
@@ -70,12 +87,78 @@ function removeLaFabrikVegetation(
   });
 }
 
+function areChunkModelPathsEqual(
+  a: ReadonlyMap<string, string>,
+  b: ReadonlyMap<string, string>,
+): boolean {
+  return (
+    a.size === b.size && [...a].every(([key, value]) => b.get(key) === value)
+  );
+}
+
+function useVegetationChunkModelPaths(
+  chunks: readonly VegetationChunk[],
+  preset: GraphicsPreset,
+): ReadonlyMap<string, string> {
+  const camera = useThree((state) => state.camera);
+  const lastUpdateRef = useRef(-CHUNK_CONFIG.updateInterval);
+  const modelPathsRef = useRef<Map<string, string>>(new Map());
+  const [modelPaths, setModelPaths] = useState<ReadonlyMap<string, string>>(
+    () => new Map(),
+  );
+
+  const updateModelPaths = useCallback(() => {
+    const cameraX = camera.position.x;
+    const cameraZ = camera.position.z;
+    const next = new Map<string, string>();
+
+    for (const chunk of chunks) {
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const instance of chunk.instances) {
+        const distance = Math.hypot(
+          instance.position[0] - cameraX,
+          instance.position[2] - cameraZ,
+        );
+        if (distance < nearestDistance) nearestDistance = distance;
+      }
+
+      const modelPath = selectMapModelPathByDistance({
+        distance: nearestDistance,
+        modelName: VEGETATION_TYPES[chunk.type].mapName,
+        modelPath: chunk.modelPath,
+        preset,
+      });
+      next.set(chunk.key, modelPath);
+    }
+
+    if (areChunkModelPathsEqual(next, modelPathsRef.current)) return;
+
+    modelPathsRef.current = next;
+    setModelPaths(next);
+  }, [camera, chunks, preset]);
+
+  useEffect(() => {
+    updateModelPaths();
+  }, [updateModelPaths]);
+
+  useFrame(({ clock }) => {
+    const now = clock.elapsedTime * 1000;
+    if (now - lastUpdateRef.current < CHUNK_CONFIG.updateInterval) return;
+    lastUpdateRef.current = now;
+
+    updateModelPaths();
+  });
+
+  return modelPaths;
+}
+
 export function VegetationSystem({
   onlyMapName = null,
   streaming = true,
 }: VegetationSystemProps): React.JSX.Element | null {
   const cameraMode = useCameraMode();
   const sceneMode = useSceneMode();
+  const graphicsPresetKey = useGraphicsPreset();
   const graphicsPreset = useGraphicsPresetConfig();
   const groups = useMapPerformanceStore((state) => state.groups);
   const models = useMapPerformanceStore((state) => state.models);
@@ -83,6 +166,7 @@ export function VegetationSystem({
   const streamingEnabled =
     streaming &&
     CHUNK_CONFIG.enabled &&
+    graphicsPreset.chunkStreamingEnabled &&
     sceneMode === "game" &&
     cameraMode === "player";
 
@@ -112,25 +196,38 @@ export function VegetationSystem({
     unloadRadius: graphicsPreset.chunkUnloadRadius,
   });
 
+  const chunkModelPaths = useVegetationChunkModelPaths(
+    visibleChunks,
+    graphicsPresetKey,
+  );
+
   if (isLoading || !data) {
     return null;
   }
 
   return (
     <group name="vegetation-system">
-      {visibleChunks.map((chunk) => (
-        <Suspense key={chunk.key} fallback={null}>
-          <InstancedVegetation
-            modelPath={chunk.modelPath}
-            instances={chunk.instances}
-            scaleMultiplier={chunk.scaleMultiplier}
-            castShadow={chunk.castShadow}
-            receiveShadow={chunk.receiveShadow}
-            windStrength={chunk.windStrength}
-            rotationOffset={chunk.rotationOffset}
-          />
-        </Suspense>
-      ))}
+      {visibleChunks.map((chunk) => {
+        const modelPath = chunkModelPaths.get(chunk.key) ?? chunk.modelPath;
+        const mapName = VEGETATION_TYPES[chunk.type].mapName;
+        const isLod = modelPath === getMapLodModelPath(mapName);
+        const scaleMultiplier =
+          chunk.scaleMultiplier *
+          (isLod ? getMapLodScaleMultiplier(mapName) : 1);
+        return (
+          <Suspense key={`${chunk.key}:${modelPath}`} fallback={null}>
+            <InstancedVegetation
+              modelPath={modelPath}
+              instances={chunk.instances}
+              scaleMultiplier={scaleMultiplier}
+              castShadow={chunk.castShadow}
+              receiveShadow={chunk.receiveShadow}
+              windStrength={chunk.windStrength}
+              rotationOffset={chunk.rotationOffset}
+            />
+          </Suspense>
+        );
+      })}
     </group>
   );
 }

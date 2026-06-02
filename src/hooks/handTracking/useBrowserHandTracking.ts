@@ -2,17 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import {
   HAND_TRACKING_FRAME_HEIGHT,
   HAND_TRACKING_FRAME_WIDTH,
+  HAND_TRACKING_RUNTIME_START_DELAY_MS,
   HAND_TRACKING_TARGET_FPS,
 } from "@/data/handTrackingConfig";
 import {
   convertBrowserHandResult,
   getBrowserHandLandmarker,
+  releaseBrowserHandLandmarker,
 } from "@/lib/handTracking/browserHandTracking";
 import {
   INITIAL_HAND_TRACKING_SNAPSHOT,
   getCameraStreamWithTimeout,
 } from "@/lib/handTracking/handTrackingSession";
 import type { HandTrackingSnapshot } from "@/types/handTracking/handTracking";
+import { logger } from "@/utils/core/Logger";
 
 interface UseBrowserHandTrackingOptions {
   enabled: boolean;
@@ -34,8 +37,12 @@ export function useBrowserHandTracking({
     }
 
     let cancelled = false;
+    let cleanedUp = false;
 
     const cleanup = (): void => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+
       if (intervalRef.current !== null) {
         window.clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -44,6 +51,7 @@ export function useBrowserHandTracking({
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
       videoRef.current = null;
+      releaseBrowserHandLandmarker();
     };
 
     const start = async (): Promise<void> => {
@@ -111,24 +119,44 @@ export function useBrowserHandTracking({
         intervalRef.current = window.setInterval(() => {
           if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
 
-          const result = handLandmarker.detectForVideo(
-            video,
-            performance.now(),
-          );
-          const hands = convertBrowserHandResult(result);
+          try {
+            const result = handLandmarker.detectForVideo(
+              video,
+              performance.now(),
+            );
+            const hands = convertBrowserHandResult(result);
 
-          setSnapshot((current) => ({
-            ...current,
-            hands,
-            usageStatus: hands.some((hand) => hand.isFist)
-              ? "active"
-              : "available",
-            error: null,
-          }));
+            setSnapshot((current) => ({
+              ...current,
+              hands,
+              usageStatus: hands.some((hand) => hand.isFist)
+                ? "active"
+                : "available",
+              error: null,
+            }));
+          } catch (error) {
+            logger.error("HandTracking", "Browser JS runtime error", {
+              error: error instanceof Error ? error.message : String(error),
+            });
+            cleanup();
+            setSnapshot({
+              hands: [],
+              status: "error",
+              usageStatus: "inactive",
+              serverStatus: "Browser JS",
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Browser hand tracking failed",
+            });
+          }
         }, 1_000 / HAND_TRACKING_TARGET_FPS);
       } catch (error) {
         if (cancelled) return;
 
+        logger.error("HandTracking", "Browser JS runtime failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
         setSnapshot({
           hands: [],
           status: "error",
@@ -142,10 +170,17 @@ export function useBrowserHandTracking({
       }
     };
 
-    void start();
+    // Delay the actual start so that a StrictMode mount/unmount/mount
+    // cycle, or a rapid `enabled` toggle at a trigger border, does not
+    // spin up the camera + MediaPipe twice in a few milliseconds.
+    const startTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      void start();
+    }, HAND_TRACKING_RUNTIME_START_DELAY_MS);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(startTimer);
       cleanup();
     };
   }, [enabled]);

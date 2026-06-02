@@ -4,6 +4,7 @@ import {
   HAND_TRACKING_FRAME_WIDTH,
   HAND_TRACKING_JPEG_QUALITY,
   HAND_TRACKING_RESPONSE_TIMEOUT_MS,
+  HAND_TRACKING_RUNTIME_START_DELAY_MS,
   HAND_TRACKING_TARGET_FPS,
 } from "@/data/handTrackingConfig";
 import { getHandTrackingWsUrl } from "@/utils/handTracking/handTrackingEndpoint";
@@ -17,6 +18,7 @@ import type {
   HandTrackingServerMessage,
   HandTrackingSnapshot,
 } from "@/types/handTracking/handTracking";
+import { logger } from "@/utils/core/Logger";
 
 interface UseRemoteHandTrackingOptions {
   enabled: boolean;
@@ -100,6 +102,7 @@ export function useRemoteHandTracking({
     }
 
     let cancelled = false;
+    let cleanedUp = false;
 
     const clearResponseTimeout = (): void => {
       if (responseTimeoutRef.current === null) return;
@@ -108,6 +111,9 @@ export function useRemoteHandTracking({
     };
 
     const cleanup = (): void => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+
       if (sendIntervalRef.current !== null) {
         window.clearInterval(sendIntervalRef.current);
         sendIntervalRef.current = null;
@@ -283,6 +289,9 @@ export function useRemoteHandTracking({
         };
         ws.onerror = () => {
           markResponseReceived();
+          logger.error("HandTracking", "Backend WebSocket error", {
+            websocketUrl,
+          });
           setSnapshot((current) => ({
             ...current,
             status: "error",
@@ -307,6 +316,10 @@ export function useRemoteHandTracking({
         );
       } catch (error) {
         if (cancelled) return;
+        logger.error("HandTracking", "Backend runtime failed", {
+          error: error instanceof Error ? error.message : String(error),
+          websocketUrl,
+        });
         setSnapshot({
           hands: [],
           status: "error",
@@ -318,10 +331,17 @@ export function useRemoteHandTracking({
       }
     };
 
-    void start();
+    // Delay the actual start so that a StrictMode mount/unmount/mount
+    // cycle, or a rapid `enabled` toggle at a trigger border, does not
+    // open the camera + WebSocket twice in a few milliseconds.
+    const startTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      void start();
+    }, HAND_TRACKING_RUNTIME_START_DELAY_MS);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(startTimer);
       cleanup();
     };
   }, [enabled, websocketUrl]);

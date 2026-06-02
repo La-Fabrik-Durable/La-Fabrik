@@ -42,11 +42,6 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         modelPath: "/models/refroidisseur/model.gltf",
       },
       {
-        id: "ebike-radio-distractor",
-        label: "Radio module",
-        modelPath: "/models/talkie/model.gltf",
-      },
-      {
         id: "ebike-glove-distractor",
         label: "Insulation glove",
         modelPath: "/models/gant_l/model.gltf",
@@ -133,11 +128,6 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         id: "farm-tree-distractor",
         label: "Tree sensor",
         modelPath: "/models/sapin/model.gltf",
-      },
-      {
-        id: "farm-radio-distractor",
-        label: "Radio module",
-        modelPath: "/models/talkie/model.gltf",
       },
     ],
   },
