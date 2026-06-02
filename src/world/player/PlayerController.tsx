@@ -23,7 +23,6 @@ import {
   PLAYER_MAX_DELTA,
   PLAYER_XZ_DAMPING_FACTOR,
 } from "@/data/player/playerConfig";
-import { useRepairMovementLocked } from "@/hooks/gameplay/useRepairMovementLocked";
 import { useTerrainHeightSampler } from "@/hooks/three/useTerrainHeight";
 import { InteractionManager } from "@/managers/InteractionManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
@@ -154,9 +153,7 @@ export function PlayerController({
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
   const sceneMode = useSceneMode();
-  const movementLocked = useRepairMovementLocked();
   const terrainHeight = useTerrainHeightSampler();
-  const movementLockedRef = useRef(movementLocked);
   const keys = useRef<Keys>({ ...DEFAULT_KEYS });
   const velocity = useRef(new THREE.Vector3());
   const fallDuration = useRef(0);
@@ -250,37 +247,17 @@ export function PlayerController({
   }, [camera, initialLookAt, spawnPosition]);
 
   useEffect(() => {
-    movementLockedRef.current = movementLocked;
-
-    if (!movementLocked) return;
-
-    keys.current = { ...DEFAULT_KEYS };
-    wantsJump.current = false;
-    velocity.current.setX(0);
-    velocity.current.setZ(0);
-  }, [movementLocked]);
-
-  useEffect(() => {
     const interaction = InteractionManager.getInstance();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (isPlayerInputLocked()) return;
 
       if (setMovementKey(keys.current, event.key, true)) {
-        if (movementLockedRef.current) {
-          keys.current = { ...DEFAULT_KEYS };
-        }
         event.preventDefault();
         return;
       }
 
       if (event.key === JUMP_KEY) {
-        if (movementLockedRef.current) {
-          wantsJump.current = false;
-          event.preventDefault();
-          return;
-        }
-
         wantsJump.current = true;
         event.preventDefault();
         return;
@@ -386,7 +363,7 @@ export function PlayerController({
     }
 
     _wishDir.set(0, 0, 0);
-    if (!movementLocked && !isEbikeBreakdown) {
+    if (!isEbikeBreakdown) {
       if (keys.current.forward) _wishDir.add(_forward);
       if (keys.current.backward) _wishDir.sub(_forward);
       if (!isEbikeMounted) {
