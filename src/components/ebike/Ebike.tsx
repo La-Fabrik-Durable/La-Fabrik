@@ -129,12 +129,6 @@ export function Ebike({
 
   // State for debug visualization (synced from refs during useFrame)
   const [showCameraPoints, setShowCameraPoints] = useState(true);
-  const [debugRestingPosition, setDebugRestingPosition] =
-    useState<Vector3Tuple>([
-      parkedPosition[0],
-      parkedPosition[1],
-      parkedPosition[2],
-    ]);
 
   // Keep movementModeRef in sync — useFrame closures capture React state at
   // render time and can become stale between renders.
@@ -321,9 +315,7 @@ export function Ebike({
         }
 
         // Sync debug visualization state (throttled to avoid excessive re-renders)
-        if (showCameraPoints) {
-          setDebugRestingPosition([...restingPositionRef.current]);
-        }
+        // Debug visualization positions are derived elsewhere when needed.
       } else {
         updateEbikeSounds({ mounted: false, driving: false, breakdown: false });
         groupRef.current.position.set(...restingPositionRef.current);
@@ -340,17 +332,6 @@ export function Ebike({
     }
   });
 
-  // Debug visualization positions computed from state (not refs)
-  const camPointPos: Vector3Tuple = [
-    debugRestingPosition[0] + EBIKE_CAMERA_TRANSFORM.position[0],
-    debugRestingPosition[1] + EBIKE_CAMERA_TRANSFORM.position[1],
-    debugRestingPosition[2] + EBIKE_CAMERA_TRANSFORM.position[2],
-  ];
-  const dropPointPos: Vector3Tuple = [
-    debugRestingPosition[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
-    debugRestingPosition[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
-    debugRestingPosition[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
-  ];
   const interactionLabel =
     mainState === "ebike"
       ? "Lancer le repair game"
@@ -409,9 +390,15 @@ export function Ebike({
         EBIKE_CAMERA_TRANSFORM.rotation[2],
       ];
 
-      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
-        useGameStore.getState().setPlayerMovementMode("ebike");
-      });
+      animateCameraTransformTransition(
+        targetCamPos,
+        targetRotation,
+        1,
+        () => {
+          useGameStore.getState().setPlayerMovementMode("ebike");
+        },
+        { lockInput: false },
+      );
     } else {
       const currentPos = new THREE.Vector3();
       if (groupRef.current) {
@@ -437,9 +424,15 @@ export function Ebike({
         THREE.MathUtils.radToDeg(currentEuler.z),
       ];
 
-      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
-        useGameStore.getState().setPlayerMovementMode("walk");
-      });
+      animateCameraTransformTransition(
+        targetCamPos,
+        targetRotation,
+        1,
+        () => {
+          useGameStore.getState().setPlayerMovementMode("walk");
+        },
+        { lockInput: false },
+      );
     }
   }, [movementMode, mainState, ebikeStep, setMissionStep, camera, position]);
 
