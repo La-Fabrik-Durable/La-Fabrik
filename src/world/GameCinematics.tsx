@@ -250,7 +250,10 @@ export function animateCameraTransformTransition(
   targetRotation: Vector3Tuple,
   duration: number = 1,
   onComplete?: () => void,
+  options: { lockInput?: boolean } = {},
 ): void {
+  const { lockInput = true } = options;
+
   if (!globalCamera) {
     logger.warn("GameCinematics", "Camera not found for transition");
     onComplete?.();
@@ -260,7 +263,9 @@ export function animateCameraTransformTransition(
   const camera = globalCamera;
 
   cameraTransitionTimeline?.kill();
-  useGameStore.getState().setCinematicPlaying(true);
+  if (lockInput) {
+    useGameStore.getState().setCinematicPlaying(true);
+  }
 
   // Convert target rotation in degrees to quaternion
   const targetEuler = new THREE.Euler(
@@ -282,7 +287,9 @@ export function animateCameraTransformTransition(
     },
     onComplete: () => {
       cameraTransitionTimeline = null;
-      useGameStore.getState().setCinematicPlaying(false);
+      if (lockInput) {
+        useGameStore.getState().setCinematicPlaying(false);
+      }
       onComplete?.();
     },
   });

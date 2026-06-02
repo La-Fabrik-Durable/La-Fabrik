@@ -33,9 +33,19 @@ const _up = new THREE.Vector3(0, 1, 0);
 
 interface EbikeProps {
   position: Vector3Tuple;
+  /**
+   * When true (default), the parked position is snapped to the world terrain
+   * height. Pass false in test scenes that don't render the world terrain so
+   * the bike stays at the explicit Y of {@link position} instead of floating
+   * at the (invisible) terrain height.
+   */
+  snapToTerrain?: boolean;
 }
 
-export function Ebike({ position }: EbikeProps): React.JSX.Element {
+export function Ebike({
+  position,
+  snapToTerrain = true,
+}: EbikeProps): React.JSX.Element {
   const groupRef = useRef<THREE.Group>(null);
   const { scene } = useLoggedGLTF(EBIKE_MODEL_PATH, {
     scope: "Ebike",
@@ -45,7 +55,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   const terrainHeight = useTerrainHeightSampler();
   const parkedPosition = useMemo<Vector3Tuple>(() => {
     const [x, y, z] = position;
-    const height = terrainHeight.getHeight(x, z) ?? y;
+    const height = snapToTerrain ? (terrainHeight.getHeight(x, z) ?? y) : y;
     const bottomOffset = getObjectBottomOffset(model, [
       EBIKE_WORLD_SCALE,
       EBIKE_WORLD_SCALE,
@@ -53,7 +63,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
     ]);
 
     return [x, height + bottomOffset, z];
-  }, [model, position, terrainHeight]);
+  }, [model, position, snapToTerrain, terrainHeight]);
   const movementMode = useGameStore((state) => state.player.movementMode);
   const mainState = useGameStore((state) => state.mainState);
   const ebikeStep = useGameStore((state) => state.ebike.currentStep);
@@ -119,12 +129,6 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
 
   // State for debug visualization (synced from refs during useFrame)
   const [showCameraPoints, setShowCameraPoints] = useState(true);
-  const [debugRestingPosition, setDebugRestingPosition] =
-    useState<Vector3Tuple>([
-      parkedPosition[0],
-      parkedPosition[1],
-      parkedPosition[2],
-    ]);
 
   // Keep movementModeRef in sync — useFrame closures capture React state at
   // render time and can become stale between renders.
@@ -135,7 +139,9 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   // SpotLight target must be in the scene to define the cone direction.
   useEffect(() => {
     threeScene.add(headlightTarget);
-    return () => { threeScene.remove(headlightTarget); };
+    return () => {
+      threeScene.remove(headlightTarget);
+    };
   }, [threeScene, headlightTarget]);
 
   // Link the target to the SpotLight once it mounts.
@@ -192,7 +198,9 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
       console.log("[Ebike] Fork found:", (forkNode as THREE.Object3D).name);
     } else {
       const names: string[] = [];
-      model.traverse((c) => { if (c.name) names.push(c.name); });
+      model.traverse((c) => {
+        if (c.name) names.push(c.name);
+      });
       console.warn("[Ebike] Fork not found. All nodes:", names);
     }
   }, [model]);
@@ -222,11 +230,11 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   useFrame((_, delta) => {
     // ── SpotLight headlight — tune the constants below ────────────────────────
     // ── SpotLight headlight — tune these four constants ───────────────────────
-    const LIGHT_OFFSET_X   =  -0.7;   // position : left(-) / right(+)
-    const LIGHT_OFFSET_Y   =  1.5;   // position : down(-) / up(+)
-    const LIGHT_OFFSET_Z   =  0;   // position : backward(-) / forward(+)
-    const LIGHT_AIM_DEG    = 90;  // aim rotation around Y : 0=forward, -90=left, +90=right
-    const LIGHT_TARGET_DIST = 20;  // metres devant la position de la lumière
+    const LIGHT_OFFSET_X = -0.7; // position : left(-) / right(+)
+    const LIGHT_OFFSET_Y = 1.5; // position : down(-) / up(+)
+    const LIGHT_OFFSET_Z = 0; // position : backward(-) / forward(+)
+    const LIGHT_AIM_DEG = 90; // aim rotation around Y : 0=forward, -90=left, +90=right
+    const LIGHT_TARGET_DIST = 20; // metres devant la position de la lumière
     // ─────────────────────────────────────────────────────────────────────────
     if (headlightRef.current && phareRef.current && groupRef.current) {
       phareRef.current.getWorldPosition(_phareWorldPos);
@@ -307,9 +315,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         }
 
         // Sync debug visualization state (throttled to avoid excessive re-renders)
-        if (showCameraPoints) {
-          setDebugRestingPosition([...restingPositionRef.current]);
-        }
+        // Debug visualization positions are derived elsewhere when needed.
       } else {
         updateEbikeSounds({ mounted: false, driving: false, breakdown: false });
         groupRef.current.position.set(...restingPositionRef.current);
@@ -326,23 +332,25 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
     }
   });
 
-  // Debug visualization positions computed from state (not refs)
-  const camPointPos: Vector3Tuple = [
-    debugRestingPosition[0] + EBIKE_CAMERA_TRANSFORM.position[0],
-    debugRestingPosition[1] + EBIKE_CAMERA_TRANSFORM.position[1],
-    debugRestingPosition[2] + EBIKE_CAMERA_TRANSFORM.position[2],
-  ];
-  const dropPointPos: Vector3Tuple = [
-    debugRestingPosition[0] + EBIKE_DROP_PLAYER_TRANSFORM.position[0],
-    debugRestingPosition[1] + EBIKE_DROP_PLAYER_TRANSFORM.position[1],
-    debugRestingPosition[2] + EBIKE_DROP_PLAYER_TRANSFORM.position[2],
-  ];
   const interactionLabel =
     mainState === "ebike"
-      ? "Réparer l'e-bike"
+      ? "Lancer le repair game"
       : movementMode === "walk"
         ? "Monter sur le bike"
         : "Descendre du bike";
+
+  // Hide the interact prompt while the player is actively riding the bike
+  // (driving input pressed) so the "Descendre du bike" label doesn't
+  // pollute the view. The prompt comes back the moment the bike comes to
+  // a stop. window.ebikeDriveInputActive is published every frame by
+  // PlayerController based on whether a movement key is currently held.
+  const [isEbikeDriving, setIsEbikeDriving] = useState(false);
+  useFrame(() => {
+    const driving =
+      movementMode === "ebike" && window.ebikeDriveInputActive === true;
+    if (driving !== isEbikeDriving) setIsEbikeDriving(driving);
+  });
+  const showInteractPrompt = !isEbikeDriving;
 
   const handleInteract = useCallback((): void => {
     if (window.ebikeBreakdownActive === true) return;
@@ -382,9 +390,15 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         EBIKE_CAMERA_TRANSFORM.rotation[2],
       ];
 
-      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
-        useGameStore.getState().setPlayerMovementMode("ebike");
-      });
+      animateCameraTransformTransition(
+        targetCamPos,
+        targetRotation,
+        1,
+        () => {
+          useGameStore.getState().setPlayerMovementMode("ebike");
+        },
+        { lockInput: false },
+      );
     } else {
       const currentPos = new THREE.Vector3();
       if (groupRef.current) {
@@ -410,9 +424,15 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         THREE.MathUtils.radToDeg(currentEuler.z),
       ];
 
-      animateCameraTransformTransition(targetCamPos, targetRotation, 1, () => {
-        useGameStore.getState().setPlayerMovementMode("walk");
-      });
+      animateCameraTransformTransition(
+        targetCamPos,
+        targetRotation,
+        1,
+        () => {
+          useGameStore.getState().setPlayerMovementMode("walk");
+        },
+        { lockInput: false },
+      );
     }
   }, [movementMode, mainState, ebikeStep, setMissionStep, camera, position]);
 
@@ -451,25 +471,36 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           {/* radius 20 → ~7 unités monde (scale 0.35).
               Sphère omnidirectionnelle pour que le raycast fonctionne
               quelle que soit l'orientation de la caméra (montée ou à pied). */}
-          <InteractableObject
-            kind="trigger"
-            label={interactionLabel}
-            position={parkedPosition}
-            radius={5}
-            onPress={handleInteract}
-          >
-            <mesh>
-              <sphereGeometry args={[8, 15, 12]} />
-              <meshBasicMaterial colorWrite={false} color={"red"} depthWrite={false} />
-            </mesh>
-          </InteractableObject>
+          {showInteractPrompt ? (
+            <InteractableObject
+              kind="trigger"
+              label={interactionLabel}
+              position={parkedPosition}
+              radius={5}
+              onPress={handleInteract}
+            >
+              <mesh>
+                <sphereGeometry args={[8, 15, 12]} />
+                <meshBasicMaterial
+                  colorWrite={false}
+                  color={"red"}
+                  depthWrite={false}
+                />
+              </mesh>
+            </InteractableObject>
+          ) : null}
 
           {/* GPS + Speedmeter – same group so they are perfectly co-localised.
               GPS: full circle (Fresnel mask), renderOrder 10 000
               Speedmeter: upper-half arc overlay, renderOrder 10 001
               rotation: Math.PI/2 radians = 90° (NOT the number 90 which = ~116.6°) */}
           <group position={[2, 6, 0]} rotation={[0, -80, 0]}>
-            <EbikeSpeedmeter width={3} height={1.5} position={[0, 0.4, 0]} gaugeInnerR={0.33} gaugeOuterR={0.445}
+            <EbikeSpeedmeter
+              width={3}
+              height={1.5}
+              position={[0, 0.4, 0]}
+              gaugeInnerR={0.33}
+              gaugeOuterR={0.445}
               gaugeWidth={2.5}
               gaugeHeight={2.1}
               gaugeOffsetX={0}
@@ -499,8 +530,8 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           ref={headlightRef}
           intensity={100}
           color="#ffca60"
-          angle={Math.PI / 5}   // 22.5° demi-angle — cone étroit comme une torche
-          penumbra={0.5}        // bord doux (0 = dur, 1 = très doux)
+          angle={Math.PI / 5} // 22.5° demi-angle — cone étroit comme une torche
+          penumbra={0.5} // bord doux (0 = dur, 1 = très doux)
           distance={50}
           decay={2.5}
           castShadow={false}

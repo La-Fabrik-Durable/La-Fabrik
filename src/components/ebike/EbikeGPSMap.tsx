@@ -181,6 +181,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
 
   // Sync texture into uniform when it changes (canvas resize)
   useEffect(() => {
+    // External Three.js material uniform sync — intentional side effect.
+    // eslint-disable-next-line react-hooks/immutability
     shaderMat.uniforms.map.value = texture;
   }, [shaderMat, texture]);
 
@@ -196,6 +198,8 @@ export const EbikeGPSMap: React.FC<EbikeGPSMapProps> = ({
   // Resize the canvas whenever canvasSize changes (texture declared above)
   useEffect(() => {
     Object.assign(offscreenCanvas, { width: canvasSize, height: canvasSize });
+    // External Three.js texture invalidation — intentional side effect.
+    // eslint-disable-next-line react-hooks/immutability
     texture.needsUpdate = true;
   }, [canvasSize, offscreenCanvas, texture]);
 

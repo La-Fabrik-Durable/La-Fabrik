@@ -49,6 +49,9 @@ export function PylonDownedPylon(): React.JSX.Element | null {
   useEffect(() => {
     if (step === "arrived") {
       hasPlayedFirstAudioRef.current = false;
+      // Reset the "raised" latch when a new run begins. This is derived
+      // resync from the step prop and runs once per step transition.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRaised(false);
     }
   }, [step]);
@@ -133,7 +136,10 @@ export function PylonDownedPylon(): React.JSX.Element | null {
                       void (async () => {
                         const m = await loadDialogueManifest();
                         if (!m) return;
-                        await playDialogueById(m, PYLON_NARRATIVE_DIALOGUES.demandeAide);
+                        await playDialogueById(
+                          m,
+                          PYLON_NARRATIVE_DIALOGUES.demandeAide,
+                        );
                       })();
                     },
                     { once: true },
@@ -143,7 +149,10 @@ export function PylonDownedPylon(): React.JSX.Element | null {
                 void (async () => {
                   const manifest = await loadDialogueManifest();
                   if (!manifest) return;
-                  await playDialogueById(manifest, PYLON_NARRATIVE_DIALOGUES.demandeAide);
+                  await playDialogueById(
+                    manifest,
+                    PYLON_NARRATIVE_DIALOGUES.demandeAide,
+                  );
                 })();
               }
             } else if (step === "npc-return" && !isStraightening) {

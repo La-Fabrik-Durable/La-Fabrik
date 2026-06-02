@@ -123,6 +123,8 @@ export function EbikeSpeedmeter({
   );
 
   // ── Frame loop ──────────────────────────────────────────────────────────────
+  /* External Three.js canvas+texture sync — intentional side effects in useFrame. */
+  /* eslint-disable react-hooks/immutability */
   useFrame((_, delta) => {
     // 1. Smooth speed factor
     const target = THREE.MathUtils.clamp(window.ebikeSpeedFactor ?? 0, 0, 1);
@@ -151,7 +153,7 @@ export function EbikeSpeedmeter({
     // Default centre: horizontal middle + needle-pivot height.
     // gaugeOffsetX/Y shift the pivot so the arc aligns with cadran.png.
     const cx = size * (0.5 + gaugeOffsetX);
-    const cy = size * ((1 - NEEDLE_PIVOT_UV_Y) + gaugeOffsetY); // default ≈ 0.88 × size
+    const cy = size * (1 - NEEDLE_PIVOT_UV_Y + gaugeOffsetY); // default ≈ 0.88 × size
 
     const outerR = size * gaugeOuterR;
     const innerR = size * gaugeInnerR;
@@ -164,7 +166,7 @@ export function EbikeSpeedmeter({
       // Radial gradient using #3F67DD — slightly transparent at inner edge,
       // fully solid at outer edge for a depth effect.
       const radial = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
-      radial.addColorStop(0, "rgba(191, 234, 255, 0)");  // inner edge
+      radial.addColorStop(0, "rgba(191, 234, 255, 0)"); // inner edge
       radial.addColorStop(0.7, "rgba(118, 152, 255, 0.95)"); // outer edge
 
       // Annular sector shape (outer arc + inner arc reversed)
@@ -181,6 +183,7 @@ export function EbikeSpeedmeter({
     }
 
     fillTexture.needsUpdate = true;
+    /* eslint-enable react-hooks/immutability */
   });
 
   return (
@@ -212,11 +215,12 @@ export function EbikeSpeedmeter({
       </mesh>
 
       {/* Needle — pivot at bottom-centre of the arc */}
-      <group ref={needleGroupRef} position={[0, -height * 0.38, 0.002]} rotation={[0, 0, 0]}>
-        <mesh
-          position={[0, needleHeight / 2, 0]}
-          renderOrder={renderOrder + 1}
-        >
+      <group
+        ref={needleGroupRef}
+        position={[0, -height * 0.38, 0.002]}
+        rotation={[0, 0, 0]}
+      >
+        <mesh position={[0, needleHeight / 2, 0]} renderOrder={renderOrder + 1}>
           <planeGeometry args={[needleWidth, needleHeight]} />
           <meshBasicMaterial
             map={needleTexture}

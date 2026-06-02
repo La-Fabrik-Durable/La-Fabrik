@@ -25,6 +25,7 @@ import type {
   RepairScannedBrokenPart,
 } from "@/types/gameplay/repairMission";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairFocusStore } from "@/managers/stores/useRepairFocusStore";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
 import { toVector3Scale } from "@/utils/three/scale";
 
@@ -72,8 +73,20 @@ export function RepairGame({
   const [scannedBrokenParts, setScannedBrokenParts] = useState<
     readonly RepairScannedBrokenPart[]
   >([]);
+  // For the ebike mission, use the bike's live parked world position once
+  // the repair flow leaves the waiting/locked phase so the repair happens
+  // wherever the player parked the bike, not at the static zone anchor.
+  // window.ebikeParkedPosition is set by Ebike when the player drops the
+  // bike and stays stable through the rest of the repair flow.
+  const livePosition = useMemo<Vector3Tuple>(() => {
+    if (mission !== "ebike" || mainState !== mission) return position;
+    if (step === "locked" || step === "waiting") return position;
+    const parked = window.ebikeParkedPosition;
+    if (!parked) return position;
+    return [parked[0], parked[1], parked[2]];
+  }, [mainState, mission, position, step]);
   const parsedScale = toVector3Scale(scale);
-  const snappedPosition = useTerrainSnappedPosition(position);
+  const snappedPosition = useTerrainSnappedPosition(livePosition);
   const readyForFragmentation = step === "inspected";
   const brokenNodeNames = useMemo(() => getBrokenNodeNames(config), [config]);
 
@@ -97,6 +110,25 @@ export function RepairGame({
       window.clearTimeout(timeoutId);
     };
   }, [mainState, mission, step]);
+
+  // Drive the global focus bubble: active during the immersive repair
+  // phases so the world dims/hides outside the dark sphere shroud.
+  const focusCenterX = snappedPosition[0];
+  const focusCenterY = snappedPosition[1];
+  const focusCenterZ = snappedPosition[2];
+  useEffect(() => {
+    const inFocusPhase =
+      mainState === mission && shouldFocusBubbleBeActive(step);
+    if (inFocusPhase) {
+      useRepairFocusStore
+        .getState()
+        .setFocus(true, [focusCenterX, focusCenterY, focusCenterZ]);
+      return () => {
+        useRepairFocusStore.getState().setFocus(false);
+      };
+    }
+    return undefined;
+  }, [mainState, mission, step, focusCenterX, focusCenterY, focusCenterZ]);
 
   useEffect(() => {
     if (mainState !== mission) return undefined;
@@ -131,6 +163,7 @@ export function RepairGame({
         {step === "fragmented" ? (
           <ExplodableModel
             modelPath={config.modelPath}
+            rotation={config.modelRotation ?? [0, 0, 0]}
             scale={config.modelScale ?? 1}
             split
           />
@@ -148,6 +181,7 @@ export function RepairGame({
           <>
             <ExplodableModel
               modelPath={config.modelPath}
+              rotation={config.modelRotation ?? [0, 0, 0]}
               scale={config.modelScale ?? 1}
               split
               hideNodeNames={brokenNodeNames}
@@ -198,6 +232,15 @@ export function RepairGame({
 
 function shouldKeepRepairRuntimeState(step: MissionStep): boolean {
   return step === "repairing" || step === "reassembling" || step === "done";
+}
+
+function shouldFocusBubbleBeActive(step: MissionStep): boolean {
+  return (
+    step === "fragmented" ||
+    step === "scanning" ||
+    step === "repairing" ||
+    step === "reassembling"
+  );
 }
 
 function getRepairMissionModelPaths(config: RepairMissionConfig): string[] {

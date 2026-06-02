@@ -1,5 +1,6 @@
 import { Ebike } from "@/components/ebike/Ebike";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
+import { RepairFocusBubble } from "@/components/three/gameplay/RepairFocusBubble";
 import { RepairGame } from "@/components/three/gameplay/RepairGame";
 import { FarmNarrativeFlow } from "@/components/gameplay/farm/FarmNarrativeFlow";
 import { PylonDownedPylon } from "@/components/gameplay/pylon/PylonDownedPylon";
@@ -17,6 +18,7 @@ import {
   OUTRO_STAGE_ANCHOR,
 } from "@/data/gameplay/gameStageAnchors";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairFocusStore } from "@/managers/stores/useRepairFocusStore";
 import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
 import {
   isFarmNarrativeStep,
@@ -25,13 +27,7 @@ import {
 import type { RepairMissionTriggerConfig } from "@/types/gameplay/repairMission";
 import type { Vector3Tuple } from "@/types/three/three";
 import { getRepairMissionPosition } from "@/utils/gameplay/repairMissionPosition";
-import {
-  EBIKE_WORLD_POSITION,
-  EBIKE_WORLD_ROTATION_Y,
-  EBIKE_WORLD_SCALE,
-} from "@/data/ebike/ebikeConfig";
-
-const EBIKE_CONFIG_KEY = `${EBIKE_WORLD_POSITION.join(",")}:${EBIKE_WORLD_ROTATION_Y}:${EBIKE_WORLD_SCALE}`;
+import { EBIKE_WORLD_POSITION } from "@/data/ebike/ebikeConfig";
 
 interface StageAnchorProps {
   color: string;
@@ -96,6 +92,7 @@ export function GameStageContent(): React.JSX.Element {
   const mainState = useGameStore((state) => state.mainState);
   const pylonStep = useGameStore((state) => state.pylon.currentStep);
   const anchors = useRepairMissionAnchorStore((state) => state.anchors);
+  const repairFocusActive = useRepairFocusStore((state) => state.active);
 
   const farmStep = useGameStore((state) => state.farm.currentStep);
 
@@ -110,7 +107,7 @@ export function GameStageContent(): React.JSX.Element {
       <Ebike position={EBIKE_WORLD_POSITION} />
       <PylonLightingEffect />
       <PylonDownedPylon />
-      {isDebugEnabled() ? (
+      {isDebugEnabled() && !repairFocusActive ? (
         <>
           <ZoneDebugVisual zone={PYLON_APPROACH_ZONE} active={false} />
           <ZoneDebugVisual zone={PYLON_ARRIVED_ZONE} active={false} />
@@ -131,6 +128,7 @@ export function GameStageContent(): React.JSX.Element {
         <RepairMissionTrigger key={config.mission} config={config} />
       ))}
       {mainState === "outro" ? <StageAnchor {...OUTRO_STAGE_ANCHOR} /> : null}
+      <RepairFocusBubble />
     </>
   );
 }

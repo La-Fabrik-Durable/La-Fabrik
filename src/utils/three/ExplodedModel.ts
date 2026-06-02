@@ -53,13 +53,23 @@ export class ExplodedModel {
   }
 
   private createParts(model: THREE.Object3D): ExplodedPart[] {
-    const root =
-      model.children.length === 1 && model.children[0]
-        ? model.children[0]
-        : model;
-    const directChildren = root.children.filter((child) => hasMesh(child));
+    // Drill down through single-mesh-bearing branches until we find a node
+    // with multiple mesh-bearing children (the natural "explosion group" the
+    // modeler authored). Falls back to flat mesh list only if no such group
+    // exists. This avoids exploding leaves in local space when wrapper nodes
+    // (e.g. "Empty" + "Moto" > "Eclatement") sit above the actual group.
+    let current = model;
+    while (true) {
+      const meshChildren = current.children.filter((child) => hasMesh(child));
+      if (meshChildren.length === 1 && meshChildren[0]) {
+        current = meshChildren[0];
+        continue;
+      }
+      break;
+    }
+    const directChildren = current.children.filter((child) => hasMesh(child));
     const sourceObjects =
-      directChildren.length > 1 ? directChildren : getMeshes(root);
+      directChildren.length > 1 ? directChildren : getMeshes(current);
 
     if (sourceObjects.length === 0) return [];
 

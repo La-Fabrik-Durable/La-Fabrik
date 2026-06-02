@@ -809,35 +809,48 @@ canvas {
 
 .interact-prompt {
   position: fixed;
-  bottom: 30%;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
   pointer-events: none;
   z-index: 10;
 }
 
-.interact-prompt__key {
+.interact-prompt__key,
+.interact-prompt__label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: white;
+  height: 36px;
+  background: rgba(10, 12, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-family: "Inter", sans-serif;
+  color: #ffffff;
+}
+
+.interact-prompt__key {
+  width: 36px;
+  font-size: 15px;
+  font-weight: 900;
   font-style: normal;
+  letter-spacing: 0;
+  /* 3D keyboard key effect: top highlight, bottom inner darkening,
+     and a thin bottom drop so the key reads as physically pressed-up. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
+    0 2px 0 rgba(0, 0, 0, 0.55);
 }
 
 .interact-prompt__label {
+  padding: 0 12px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .repair-movement-lock-indicator {

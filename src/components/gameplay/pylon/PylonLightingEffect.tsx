@@ -32,7 +32,9 @@ export function PylonLightingEffect(): null {
   const sunRef = useRef(new THREE.Color(LIGHTING_STATE.sunColor));
 
   // Target colours — updated reactively when isActive changes
-  const targetAmbientRef = useRef(new THREE.Color(LIGHTING_DEFAULTS.ambientColor));
+  const targetAmbientRef = useRef(
+    new THREE.Color(LIGHTING_DEFAULTS.ambientColor),
+  );
   const targetSunRef = useRef(new THREE.Color(LIGHTING_DEFAULTS.sunColor));
 
   useEffect(() => {
