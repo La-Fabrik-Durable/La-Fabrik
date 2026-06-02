@@ -16,7 +16,7 @@ import {
 } from "@/data/gameplay/pylonConfig";
 import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
 
-const PYLON_MODEL_PATH = "/models/pylone/model.gltf";
+const PYLON_MODEL_PATH = "/models/pylone/model.glb";
 
 export function PylonDownedPylon(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
