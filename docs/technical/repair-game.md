@@ -16,14 +16,16 @@ Implemented missions:
 
 ## Main Files
 
-| File                                           | Responsibility                                    |
-| ---------------------------------------------- | ------------------------------------------------- |
-| `src/components/three/gameplay/RepairGame.tsx` | Orchestrates the repair step machine              |
-| `src/data/gameplay/repairMissions.ts`          | Mission-specific data                             |
-| `src/types/gameplay/repairMission.ts`          | Mission ids, step ids, guards                     |
-| `src/managers/stores/useGameStore.ts`          | Global progression and mission transitions        |
-| `src/world/GameStageContent.tsx`               | Production placement of the three repair missions |
-| `src/world/debug/TestMap.tsx`                  | Debug repair playground placement                 |
+| File                                                  | Responsibility                                    |
+| ----------------------------------------------------- | ------------------------------------------------- |
+| `src/components/three/gameplay/RepairGame.tsx`        | Orchestrates the repair step machine              |
+| `src/components/three/gameplay/RepairFocusBubble.tsx` | Dark sphere shroud + cocoon decor during focus    |
+| `src/managers/stores/useRepairFocusStore.ts`          | Global flag + center for the repair focus bubble  |
+| `src/data/gameplay/repairMissions.ts`                 | Mission-specific data                             |
+| `src/types/gameplay/repairMission.ts`                 | Mission ids, step ids, guards                     |
+| `src/managers/stores/useGameStore.ts`                 | Global progression and mission transitions        |
+| `src/world/GameStageContent.tsx`                      | Production placement of the three repair missions |
+| `src/world/debug/TestMap.tsx`                         | Debug repair playground placement                 |
 
 ## State Machine
 
@@ -159,8 +161,6 @@ The repair case appears near the mission object. The player can:
 
 Both paths move to `fragmented`.
 
-`useRepairMovementLocked()` locks player movement during focused repair steps and drives the repair movement indicator.
-
 ### Fragmented
 
 File:
@@ -170,6 +170,10 @@ src/components/three/models/ExplodableModel.tsx
 ```
 
 The mission object is shown split apart. A timer then moves the mission to `scanning`.
+
+`ExplodedModel.createParts` walks the GLTF tree recursively, descending through any single mesh-bearing wrapper node (e.g. `Scene > Moto > Eclatement` for the Ebike) until it reaches a node with multiple mesh-bearing children. Those children are the natural "explosion groups" authored by the modeler. This avoids exploding raw leaf meshes in local space when the model has extra empty wrapper nodes above the intended group.
+
+When mounted, `RepairGame` applies `RepairMissionConfig.modelRotation` and `modelScale` to the fragmented model so it lines up with the source inspection model in world space (e.g. the parked Ebike using `EBIKE_WORLD_ROTATION_Y` / `EBIKE_WORLD_SCALE`).
 
 The default delay comes from:
 
@@ -255,6 +259,21 @@ The repaired object remains visible. The player validates the completion target,
 1. the repair case closes
 2. the case plays its exit animation
 3. `completeMission(mission)` advances the global game progression
+
+## Focus Bubble
+
+While the player is in `fragmented`, `scanning`, `repairing` or `reassembling`, `RepairGame` flips `useRepairFocusStore.active = true` and publishes the snapped world center of the repair model.
+
+`RepairFocusBubble` reads the store and:
+
+- renders a `BackSide` sphere (radius 1, scaled 0 → 10m) tinted `#060814` at opacity 0.92
+- grows the sphere with GSAP `expo.out` over 2.5 s when focus turns on
+- shrinks back with `expo.in` over 1.2 s when focus turns off
+- mounts a small "cocoon" decor pass inside (subtle grid floor + soft directional light + ambient) that fades in once the bubble is mostly grown
+
+`Environment.tsx` and `GameStageContent.tsx` consume the same store flag to unmount the vegetation system and the zone debug visuals while the bubble is up, so trees and gizmos do not pierce the shroud. Terrain, water, sky, clouds and grass remain visible behind the bubble.
+
+The bubble is mounted both in `GameStageContent` (production scene) and `TestMap` (physics test scene) so the behaviour matches in both contexts.
 
 ## Repair Case Details
 
