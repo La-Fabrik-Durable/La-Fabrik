@@ -32,6 +32,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         label: "Cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
         nodeName: "refroidisseur",
+        targetNodeName: "refroidisseur",
         caseSlotName: "placeholder_1",
       },
     ],
@@ -41,6 +42,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         label: "Refroidisseur",
         modelPath: "/models/refroidisseur/model.gltf",
         caseAnchor: "refroidisseur",
+        targetNodeName: "refroidisseur",
       },
       {
         id: "ebike-cable-right-distractor",
@@ -73,7 +75,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     label: "Power pylon",
     description:
       "Restore the pylon lamp relay and damaged panel before reconnecting the grid",
-    modelPath: "/models/pylone/model.gltf",
+    modelPath: "/models/pylone/model.glb",
     stageUiPath: "/assets/world/UI/pylon-mission-notification.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
@@ -84,20 +86,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
       "pylon-cable-left-replacement",
     ],
     scanPartSeconds: 1.4,
-    brokenParts: [
-      {
-        id: "pylon-grid-relay",
-        label: "Grid relay",
-        nodeName: "lampe",
-        caseSlotName: "placeholder_1",
-      },
-      {
-        id: "pylon-damaged-panel",
-        label: "Damaged solar panel",
-        nodeName: "panneau2",
-        caseSlotName: "placeholder_2",
-      },
-    ],
+    brokenParts: [],
     replacementParts: [
       {
         id: "pylon-cable-right-replacement",
@@ -105,6 +94,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         modelPath: "/models/cable1/model.gltf",
         caseAnchor: "cabledroit",
         caseLockGroup: "pylon-cable",
+        targetNodeName: "cable2",
       },
       {
         id: "pylon-cable-left-replacement",
@@ -112,6 +102,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         modelPath: "/models/cable2/model.gltf",
         caseAnchor: "cablegauche",
         caseLockGroup: "pylon-cable",
+        targetNodeName: "cable2",
       },
       {
         id: "pylon-cooling-distractor",
