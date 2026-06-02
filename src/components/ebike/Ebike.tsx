@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { EbikeGPSMap } from "@/components/ebike/EbikeGPSMap";
-import { EbikeSpeedometer } from "@/components/ebike/EbikeSpeedometer";
+import { EbikeSpeedmeter } from "@/components/ebike/EbikeSpeedmeter";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import { useClonedObject } from "@/hooks/three/useClonedObject";
@@ -123,11 +123,35 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   }, [movementMode, parkedPosition]);
 
   useEffect(() => {
-    if (model) {
-      const fork = model.getObjectByName("fourche");
-      if (fork) {
-        forkRef.current = fork;
+    if (!model) return;
+
+    // Full recursive search — case-insensitive so it survives export renames.
+    // Also tries the exact path Moto > * > Fourche as a fallback.
+    let forkNode: THREE.Object3D | null = null;
+
+    model.traverse((child) => {
+      if (child.name.toLowerCase() === "fourche") {
+        forkNode = child;
       }
+    });
+
+    if (forkNode) {
+      forkRef.current = forkNode;
+      console.log("[Ebike] Fork found:", (forkNode as THREE.Object3D).name);
+    } else {
+      // Print the full hierarchy tree so you can read the exact node names.
+      const lines: string[] = [];
+      function printTree(obj: THREE.Object3D, indent: number): void {
+        lines.push(" ".repeat(indent * 2) + (obj.name || "(unnamed)"));
+        for (const child of obj.children) {
+          printTree(child, indent + 1);
+        }
+      }
+      printTree(model, 0);
+      console.warn(
+        '[Ebike] No node matching "fourche" (case-insensitive) found.\nFull hierarchy:\n' +
+          lines.join("\n"),
+      );
     }
   }, [model]);
 
@@ -156,9 +180,11 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
   useFrame((_, delta) => {
     if (groupRef.current) {
       if (movementMode === "ebike") {
+        // Sound plays whenever the bike is actually moving (speedFactor > 5 %),
+        // not only while the input key is held.
         updateEbikeSounds({
           mounted: true,
-          driving: window.ebikeDriveInputActive === true,
+          driving: (window.ebikeSpeedFactor ?? 0) > 0.05,
           breakdown: window.ebikeBreakdownActive === true,
         });
 
@@ -169,11 +195,11 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
         ];
         restingRotationRef.current = groupRef.current.rotation.y;
 
-        // Smoothly rotate the front fork ("fourche") up to 15 degrees in its own Z axis
+        // Smoothly rotate the front fork ("fourche") on its local Z axis
         const steerFactor = window.ebikeSteerFactor ?? 0;
         if (forkRef.current) {
-          // 15 degrees is 0.26 radians
-          const targetForkRotation = steerFactor * 0.26;
+          // 10 degrees = 0.175 radians
+          const targetForkRotation = steerFactor * 0.175;
           forkRef.current.rotation.z = THREE.MathUtils.lerp(
             forkRef.current.rotation.z,
             targetForkRotation,
@@ -329,6 +355,9 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
           scale={EBIKE_WORLD_SCALE}
         >
           <primitive object={model} />
+          {/* radius 20 → ~7 unités monde (scale 0.35).
+              Sphère omnidirectionnelle pour que le raycast fonctionne
+              quelle que soit l'orientation de la caméra (montée ou à pied). */}
           <InteractableObject
             kind="trigger"
             label={interactionLabel}
@@ -337,16 +366,25 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
             onPress={handleInteract}
           >
             <mesh>
-              <boxGeometry args={[8, 9, 2]} />
-              <meshBasicMaterial colorWrite={false} depthWrite={false} />
+              <sphereGeometry args={[8, 15, 12]} />
+              <meshBasicMaterial colorWrite={false} color={"red"} depthWrite={false} />
             </mesh>
           </InteractableObject>
 
-          {/* Dynamic 3D GPS Dashboard Screen */}
-          <group position={[0, 7, 0]} rotation={[0, 90, 0]}>
+          {/* GPS + Speedmeter – same group so they are perfectly co-localised.
+              GPS: full circle (Fresnel mask), renderOrder 10 000
+              Speedmeter: upper-half arc overlay, renderOrder 10 001
+              rotation: Math.PI/2 radians = 90° (NOT the number 90 which = ~116.6°) */}
+          <group position={[2, 6, 0]} rotation={[0, -80, 0]}>
+            <EbikeSpeedmeter width={3} height={1.5} position={[0, 0.4, 0]} gaugeInnerR={0.33} gaugeOuterR={0.445}
+              gaugeWidth={2.5}
+              gaugeHeight={2.1}
+              gaugeOffsetX={0}
+              gaugeOffsetY={-0.19}
+            />
             <EbikeGPSMap
-              width={0.8}
-              height={0.8}
+              width={1.3}
+              height={1}
               startPos={gpsStartPos}
               destPos={destPos}
               mapImageUrl="/assets/world/gps/map_background.png"
@@ -359,15 +397,12 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
               zoom={4}
             />
           </group>
-          <group position={[0, 6.35, 0]} rotation={[0, 90, 0]}>
-            <EbikeSpeedometer />
-          </group>
         </group>
       ) : null}
 
       {showCameraPoints && !repairGameOwnsEbikeModel && (
         <>
-          <mesh position={camPointPos}>
+          {/* <mesh position={camPointPos}>
             <sphereGeometry args={[0.3, 16, 16]} />
             <meshStandardMaterial
               color="yellow"
@@ -382,7 +417,7 @@ export function Ebike({ position }: EbikeProps): React.JSX.Element {
               emissive="cyan"
               emissiveIntensity={0.5}
             />
-          </mesh>
+          </mesh> */}
         </>
       )}
     </>
