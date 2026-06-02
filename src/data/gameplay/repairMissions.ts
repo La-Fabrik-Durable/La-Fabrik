@@ -21,7 +21,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
       "Repair the damaged cooling module before relaunching the bike",
     modelPath: "/models/ebike/model.gltf",
     modelScale: 0.3,
-    stageUiPath: "/assets/world/UI/ebike.webm",
+    stageUiPath: "/assets/world/UI/ebike-mission-notification.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
@@ -59,7 +59,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     description:
       "Restore the pylon lamp relay and damaged panel before reconnecting the grid",
     modelPath: "/models/pylone/model.gltf",
-    stageUiPath: "/assets/world/UI/centrale.webm",
+    stageUiPath: "/assets/world/UI/pylon-mission-notification.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
@@ -104,7 +104,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     description:
       "Stabilize the irrigation loop and humidity sensor before restarting the farm",
     modelPath: "/models/fermeverticale/model.gltf",
-    stageUiPath: "/assets/world/UI/laferme.webm",
+    stageUiPath: "/assets/world/UI/farm-mission-notification.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,

@@ -33,7 +33,6 @@ import {
   EBIKE_ACCELERATION_DURATION_MS,
   EBIKE_CAMERA_TRANSFORM,
   EBIKE_DECELERATION_DURATION_MS,
-  EBIKE_MAX_SPEED,
 } from "@/data/ebike/ebikeConfig";
 
 /** Global window properties used for ebike communication */
@@ -415,7 +414,7 @@ export function PlayerController({
     }
 
     const movementSpeed = isEbikeMounted
-      ? EBIKE_MAX_SPEED * ebikeSpeedFactor.current
+      ? currentSpeed * ebikeSpeedFactor.current
       : currentSpeed;
     const accel = onFloor.current
       ? movementSpeed
