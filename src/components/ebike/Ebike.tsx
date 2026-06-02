@@ -334,7 +334,7 @@ export function Ebike({
 
   const interactionLabel =
     mainState === "ebike"
-      ? "Lancer le repair game"
+      ? "Lancer le Repair Game"
       : movementMode === "walk"
         ? "Monter sur le bike"
         : "Descendre du bike";
