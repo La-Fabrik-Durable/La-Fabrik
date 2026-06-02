@@ -80,8 +80,8 @@ export function RepairRepairingStep({
     useState(false);
   const replacementParts = getReplacementParts(config);
   const brokenPartsToDeposit = getBrokenPartsToDeposit(config, brokenParts);
-  const requiredReplacementPart = replacementParts.find(
-    (part) => part.id === config.requiredReplacementPartId,
+  const requiredReplacementPart = replacementParts.find((part) =>
+    config.requiredReplacementPartIds.includes(part.id),
   );
   const requiredReplacementLabel =
     requiredReplacementPart?.label ?? config.label;
@@ -89,15 +89,16 @@ export function RepairRepairingStep({
   const placeholderPositions = placeholderTargets.map(
     (target) => target.position,
   );
-  const hasCorrectPartPlaced = Boolean(
-    placedPartIds[config.requiredReplacementPartId],
+  const hasCorrectPartPlaced = config.requiredReplacementPartIds.some(
+    (id) => placedPartIds[id],
   );
   const hasDepositedBrokenParts = brokenPartsToDeposit.every(
     (part) => depositedBrokenPartIds[part.id],
   );
   const hasWrongPartPlaced = replacementParts.some(
     (part) =>
-      part.id !== config.requiredReplacementPartId && placedPartIds[part.id],
+      !config.requiredReplacementPartIds.includes(part.id) &&
+      placedPartIds[part.id],
   );
   const isReadyToInstall = hasCorrectPartPlaced && hasDepositedBrokenParts;
   const installColor = isReadyToInstall
@@ -198,7 +199,7 @@ export function RepairRepairingStep({
         const isPlaced = Boolean(placedPartIds[part.id]);
         const feedbackState = getReplacementFeedbackState(
           part.id,
-          config.requiredReplacementPartId,
+          config.requiredReplacementPartIds,
           isPlaced,
         );
 
@@ -387,12 +388,12 @@ function getPlacementFeedbackColor(
 
 function getReplacementFeedbackState(
   partId: string,
-  requiredPartId: string,
+  requiredPartIds: readonly string[],
   isPlaced: boolean,
 ): RepairPartPlacementFeedbackProps["state"] {
   if (!isPlaced) return null;
 
-  return partId === requiredPartId ? "valid" : "invalid";
+  return requiredPartIds.includes(partId) ? "valid" : "invalid";
 }
 
 function getPlaceholderTargets(
@@ -466,9 +467,12 @@ function getReplacementParts(
 ): readonly RepairMissionPartConfig[] {
   if (config.replacementParts.length > 0) return config.replacementParts;
 
+  const fallbackId =
+    config.requiredReplacementPartIds[0] ?? `${config.id}-replacement`;
+
   return [
     {
-      id: config.requiredReplacementPartId,
+      id: fallbackId,
       label: config.label,
       modelPath: config.modelPath,
     },

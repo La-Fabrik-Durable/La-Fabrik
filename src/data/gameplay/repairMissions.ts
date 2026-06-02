@@ -25,7 +25,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
-    requiredReplacementPartId: "ebike-cooling-core-replacement",
+    requiredReplacementPartIds: ["ebike-cooling-core-replacement"],
     brokenParts: [
       {
         id: "ebike-cooling-core",
@@ -59,7 +59,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
     reassemblySeconds: 1.8,
-    requiredReplacementPartId: "pylon-grid-relay-replacement",
+    requiredReplacementPartIds: ["pylon-grid-relay-replacement"],
     scanPartSeconds: 1.4,
     brokenParts: [
       {
@@ -104,7 +104,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
     reassemblySeconds: 1.2,
-    requiredReplacementPartId: "farm-irrigation-pump-replacement",
+    requiredReplacementPartIds: ["farm-irrigation-pump-replacement"],
     scanPartSeconds: 0.9,
     brokenParts: [
       {
