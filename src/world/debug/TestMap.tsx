@@ -264,7 +264,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
         </mesh>
         */}
         {/* GPS Map screen plane */}
-        <group position={[0, 0, 0.06]}>
+        <group position={[0, -8, 0.06]}>
           <EbikeGPSMap
             width={4}
             height={4}

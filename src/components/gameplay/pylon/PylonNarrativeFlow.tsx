@@ -45,7 +45,12 @@ export function PylonNarrativeFlow(): React.JSX.Element | null {
     );
   }
 
-  if (step === "arrived" || step === "npc-return" || step === "inspected") {
+  if (
+    step === "arrived" ||
+    step === "npc-return" ||
+    step === "inspected" ||
+    step === "done"
+  ) {
     return <PylonFarmerNPC />;
   }
 
