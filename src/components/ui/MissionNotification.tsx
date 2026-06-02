@@ -14,6 +14,7 @@ export function MissionNotification({
 }: MissionNotificationProps): React.JSX.Element {
   const src =
     imagePath ?? (mission ? MISSION_NOTIFICATION_IMAGE_PATHS[mission] : "");
+  const isVideo = src.toLowerCase().endsWith(".webm");
 
   return (
     <div
@@ -22,11 +23,24 @@ export function MissionNotification({
     >
       <div className="mission-notification__glow" />
       <span className="mission-notification__image-wrap">
-        <img
-          className="mission-notification__image"
-          src={src}
-          alt="Nouvel objectif de mission"
-        />
+        {isVideo ? (
+          <video
+            className="mission-notification__image"
+            src={src}
+            aria-label="Nouvel objectif de mission"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+          />
+        ) : (
+          <img
+            className="mission-notification__image"
+            src={src}
+            alt="Nouvel objectif de mission"
+          />
+        )}
       </span>
     </div>
   );
