@@ -809,12 +809,12 @@ canvas {
 
 .interact-prompt {
   position: fixed;
-  bottom: 30%;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   pointer-events: none;
   z-index: 10;
 }
@@ -823,21 +823,32 @@ canvas {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: white;
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  font-family: "Inter", sans-serif;
+  font-size: 32px;
+  font-weight: 900;
   font-style: normal;
+  color: #0a0a0a;
+  letter-spacing: 0;
 }
 
 .interact-prompt__label {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  font-family: "Inter", sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0a0a0a;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .repair-movement-lock-indicator {
