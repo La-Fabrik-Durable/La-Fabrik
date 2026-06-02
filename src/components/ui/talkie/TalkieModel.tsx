@@ -5,7 +5,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import type { Vector3Tuple } from "@/types/three/three";
 
-const TALKIE_MODEL_PATH = "/models/talkie/model.gltf";
+const TALKIE_MODEL_PATH = "/models/talkie/model.glb";
 const TALKIE_REST_Y = -1.55;
 const TALKIE_ACTIVE_Y = -0.38;
 const TALKIE_BASE_ROTATION: Vector3Tuple = [0.08, -0.52, -0.04];

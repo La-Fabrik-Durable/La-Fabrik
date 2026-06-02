@@ -44,7 +44,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
       {
         id: "ebike-radio-distractor",
         label: "Radio module",
-        modelPath: "/models/talkie/model.gltf",
+        modelPath: "/models/talkie/model.glb",
       },
       {
         id: "ebike-glove-distractor",
@@ -137,7 +137,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
       {
         id: "farm-radio-distractor",
         label: "Radio module",
-        modelPath: "/models/talkie/model.gltf",
+        modelPath: "/models/talkie/model.glb",
       },
     ],
   },
