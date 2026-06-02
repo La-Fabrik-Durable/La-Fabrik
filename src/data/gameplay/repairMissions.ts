@@ -129,11 +129,6 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         label: "Tree sensor",
         modelPath: "/models/sapin/model.gltf",
       },
-      {
-        id: "farm-radio-distractor",
-        label: "Radio module",
-        modelPath: "/models/talkie/model.glb",
-      },
     ],
   },
 };
