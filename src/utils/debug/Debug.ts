@@ -1,14 +1,17 @@
 import GUI from "lil-gui";
+import type { Controller } from "lil-gui";
 import type { CameraMode, SceneMode } from "@/types/debug/debug";
 import type { HandTrackingSource } from "@/types/handTracking/handTracking";
 import { FOG_CONFIG } from "@/data/world/fogConfig";
 import { EventEmitter } from "@/utils/core/EventEmitter";
 import { isDebugEnabled } from "@/utils/debug/isDebugEnabled";
+import { logger } from "@/utils/core/Logger";
 
 const DEBUG_CONTROLS_STORAGE_KEY = "la-fabrik-debug-controls";
 
 interface StoredDebugControls {
   cameraMode: CameraMode;
+  handTrackingSource: HandTrackingSource;
   sceneMode: SceneMode;
 }
 
@@ -25,6 +28,7 @@ const DEBUG_FOLDER_ORDER = [
   "Hand Tracking",
   "Map",
   "Personnages",
+  "Debug",
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -39,6 +43,10 @@ function isSceneMode(value: unknown): value is SceneMode {
   return value === "game" || value === "physics";
 }
 
+function isHandTrackingSource(value: unknown): value is HandTrackingSource {
+  return value === "browser" || value === "backend";
+}
+
 function getStoredDebugControls(): Partial<StoredDebugControls> {
   try {
     const rawValue = window.localStorage.getItem(DEBUG_CONTROLS_STORAGE_KEY);
@@ -50,6 +58,9 @@ function getStoredDebugControls(): Partial<StoredDebugControls> {
     return {
       ...(isCameraMode(parsedValue.cameraMode)
         ? { cameraMode: parsedValue.cameraMode }
+        : {}),
+      ...(isHandTrackingSource(parsedValue.handTrackingSource)
+        ? { handTrackingSource: parsedValue.handTrackingSource }
         : {}),
       ...(isSceneMode(parsedValue.sceneMode)
         ? { sceneMode: parsedValue.sceneMode }
@@ -68,6 +79,7 @@ export class Debug {
   private readonly events = new EventEmitter<DebugEvents>();
   private readonly folders = new Map<string, GUI>();
   private readonly folderRefCounts = new Map<string, number>();
+  private handTrackingSourceController: Controller | null = null;
   private readonly controls: {
     cameraMode: CameraMode;
     fogEnabled: boolean;
@@ -94,7 +106,7 @@ export class Debug {
     this.controls = {
       cameraMode: storedControls.cameraMode ?? "player",
       fogEnabled: FOG_CONFIG.enabled,
-      handTrackingSource: "browser",
+      handTrackingSource: storedControls.handTrackingSource ?? "browser",
       showDebugOverlay: true,
       showHandTrackingSvg: false,
       showInteractionSpheres: false,
@@ -151,16 +163,22 @@ export class Debug {
           this.emit();
         });
 
-      handTrackingFolder
-        ?.add(this.controls, "handTrackingSource", {
-          "Browser JS": "browser",
-          Backend: "backend",
-        })
-        .name("Source")
-        .onChange((value: HandTrackingSource) => {
-          this.controls.handTrackingSource = value;
-          this.emit();
-        });
+      this.handTrackingSourceController =
+        handTrackingFolder
+          ?.add(this.controls, "handTrackingSource", {
+            "Browser JS": "browser",
+            Backend: "backend",
+          })
+          .name("Source")
+          .onChange((value: HandTrackingSource) => {
+            const previousSource = this.controls.handTrackingSource;
+            this.controls.handTrackingSource = value;
+            logger.info("HandTracking", "Debug source changed", {
+              from: previousSource,
+              to: value,
+            });
+            this.saveAndEmit();
+          }) ?? null;
     }
   }
 
@@ -245,8 +263,14 @@ export class Debug {
   }
 
   setHandTrackingSource(value: HandTrackingSource): void {
+    const previousSource = this.controls.handTrackingSource;
     this.controls.handTrackingSource = value;
-    this.emit();
+    this.handTrackingSourceController?.updateDisplay();
+    logger.info("HandTracking", "Settings source changed", {
+      from: previousSource,
+      to: value,
+    });
+    this.saveAndEmit();
   }
 
   getFogEnabled(): boolean {
@@ -285,6 +309,7 @@ export class Debug {
         DEBUG_CONTROLS_STORAGE_KEY,
         JSON.stringify({
           cameraMode: this.controls.cameraMode,
+          handTrackingSource: this.controls.handTrackingSource,
           sceneMode: this.controls.sceneMode,
         }),
       );

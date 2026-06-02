@@ -2,14 +2,20 @@ import { MISSION_NOTIFICATION_IMAGE_PATHS } from "@/data/gameplay/missionNotific
 import type { RepairMissionId } from "@/types/gameplay/repairMission";
 
 interface MissionNotificationProps {
-  mission: RepairMissionId;
+  mission?: RepairMissionId;
+  imagePath?: string;
   visible?: boolean;
 }
 
 export function MissionNotification({
   mission,
+  imagePath,
   visible = true,
 }: MissionNotificationProps): React.JSX.Element {
+  const src =
+    imagePath ?? (mission ? MISSION_NOTIFICATION_IMAGE_PATHS[mission] : "");
+  const isVideo = src.toLowerCase().endsWith(".webm");
+
   return (
     <div
       className={`mission-notification${visible ? "" : " mission-notification--hidden"}`}
@@ -17,11 +23,24 @@ export function MissionNotification({
     >
       <div className="mission-notification__glow" />
       <span className="mission-notification__image-wrap">
-        <img
-          className="mission-notification__image"
-          src={MISSION_NOTIFICATION_IMAGE_PATHS[mission]}
-          alt="Nouvel objectif de mission"
-        />
+        {isVideo ? (
+          <video
+            className="mission-notification__image"
+            src={src}
+            aria-label="Nouvel objectif de mission"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+          />
+        ) : (
+          <img
+            className="mission-notification__image"
+            src={src}
+            alt="Nouvel objectif de mission"
+          />
+        )}
       </span>
     </div>
   );

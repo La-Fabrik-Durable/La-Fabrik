@@ -19,20 +19,21 @@ type TexturedMaterial = THREE.Material &
   Partial<Record<TextureKey, THREE.Texture>>;
 
 const optimizedTextures = new WeakSet<THREE.Texture>();
+const MAX_GLTF_TEXTURE_ANISOTROPY = 2;
 
 function optimizeTexture(texture: THREE.Texture, maxAnisotropy: number): void {
   if (optimizedTextures.has(texture)) return;
 
   optimizedTextures.add(texture);
-  texture.anisotropy = Math.min(4, Math.max(1, maxAnisotropy));
+  const nextAnisotropy = Math.min(
+    MAX_GLTF_TEXTURE_ANISOTROPY,
+    Math.max(1, maxAnisotropy),
+  );
 
-  if (!(texture instanceof THREE.CompressedTexture)) {
-    texture.generateMipmaps = true;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.magFilter = THREE.LinearFilter;
+  if (texture.anisotropy > nextAnisotropy) {
+    texture.anisotropy = nextAnisotropy;
+    texture.needsUpdate = true;
   }
-
-  texture.needsUpdate = true;
 }
 
 function optimizeMaterialTextures(

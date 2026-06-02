@@ -33,8 +33,8 @@ import {
   EBIKE_ACCELERATION_DURATION_MS,
   EBIKE_CAMERA_TRANSFORM,
   EBIKE_DECELERATION_DURATION_MS,
-  EBIKE_MAX_SPEED,
 } from "@/data/ebike/ebikeConfig";
+import { useSceneMode } from "@/hooks/debug/useSceneMode";
 
 /** Global window properties used for ebike communication */
 interface EbikeGlobalState {
@@ -75,6 +75,7 @@ const PLAYER_FLOOR_NORMAL_MIN = 0.15;
 const PLAYER_GROUND_SNAP_DISTANCE = 0.22;
 
 interface PlayerControllerProps {
+  initialLookAt?: Vector3Tuple | undefined;
   octree: Octree | null;
   spawnPosition: Vector3Tuple;
 }
@@ -89,6 +90,7 @@ const _collisionCorrection = new THREE.Vector3();
 function resetPlayerCapsule(
   capsule: Capsule,
   spawnPosition: Vector3Tuple,
+  initialLookAt: Vector3Tuple | undefined,
   camera: THREE.Camera,
   velocity: THREE.Vector3,
 ): void {
@@ -100,6 +102,7 @@ function resetPlayerCapsule(
   capsule.end.set(...spawnPosition);
   velocity.set(0, 0, 0);
   camera.position.copy(capsule.end);
+  if (initialLookAt) camera.lookAt(...initialLookAt);
 }
 
 function createSpawnCapsule(spawnPosition: Vector3Tuple): Capsule {
@@ -145,10 +148,12 @@ function getCapsuleFootY(capsule: Capsule): number {
 }
 
 export function PlayerController({
+  initialLookAt,
   octree,
   spawnPosition,
 }: PlayerControllerProps): null {
   const camera = useThree((state) => state.camera);
+  const sceneMode = useSceneMode();
   const movementLocked = useRepairMovementLocked();
   const terrainHeight = useTerrainHeightSampler();
   const movementLockedRef = useRef(movementLocked);
@@ -234,6 +239,7 @@ export function PlayerController({
     resetPlayerCapsule(
       capsule.current,
       spawnPosition,
+      initialLookAt,
       camera,
       velocity.current,
     );
@@ -241,7 +247,7 @@ export function PlayerController({
     onFloor.current = false;
     wantsJump.current = false;
     initializedRef.current = true;
-  }, [camera, spawnPosition]);
+  }, [camera, initialLookAt, spawnPosition]);
 
   useEffect(() => {
     movementLockedRef.current = movementLocked;
@@ -339,6 +345,7 @@ export function PlayerController({
         resetPlayerCapsule(
           capsule.current,
           spawnPosition,
+          initialLookAt,
           camera,
           velocity.current,
         );
@@ -409,7 +416,7 @@ export function PlayerController({
     }
 
     const movementSpeed = isEbikeMounted
-      ? EBIKE_MAX_SPEED * ebikeSpeedFactor.current
+      ? currentSpeed * ebikeSpeedFactor.current
       : currentSpeed;
     const accel = onFloor.current
       ? movementSpeed
@@ -478,19 +485,21 @@ export function PlayerController({
       }
     }
 
-    const groundHeight = terrainHeight.getHeight(
-      capsule.current.end.x,
-      capsule.current.end.z,
-    );
-    if (groundHeight !== null && velocity.current.y <= 0) {
-      const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
+    if (sceneMode === "game") {
+      const groundHeight = terrainHeight.getHeight(
+        capsule.current.end.x,
+        capsule.current.end.z,
+      );
+      if (groundHeight !== null && velocity.current.y <= 0) {
+        const groundOffset = getCapsuleFootY(capsule.current) - groundHeight;
 
-      if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
-        capsule.current.translate(
-          _collisionCorrection.set(0, -groundOffset, 0),
-        );
-        velocity.current.y = 0;
-        onFloor.current = true;
+        if (groundOffset <= PLAYER_GROUND_SNAP_DISTANCE) {
+          capsule.current.translate(
+            _collisionCorrection.set(0, -groundOffset, 0),
+          );
+          velocity.current.y = 0;
+          onFloor.current = true;
+        }
       }
     }
 

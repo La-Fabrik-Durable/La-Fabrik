@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/intro";
 import { SceneLoadingOverlay } from "@/components/ui/SceneLoadingOverlay";
 import { INITIAL_SCENE_LOADING_STATE } from "@/data/world/sceneLoadingConfig";
+import { useDebugStore } from "@/hooks/debug/useDebugStore";
 import { useTransientLoadingIndicator } from "@/hooks/ui/useTransientLoadingIndicator";
+import { releaseBrowserHandLandmarker } from "@/lib/handTracking/browserHandTracking";
 import { AudioManager } from "@/managers/AudioManager";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useWorldSettingsStore } from "@/managers/stores/useWorldSettingsStore";
@@ -26,6 +28,9 @@ import { logger } from "@/utils/core/Logger";
 import { World } from "@/world/World";
 
 const LOADING_TO_VIDEO_FADE_MS = 500;
+const WEBGL_CONTEXT_RESTORE_DELAY_MS = 500;
+const CANVAS_DPR: [number, number] = [1, 1];
+const registeredWebglContextCanvases = new WeakSet<HTMLCanvasElement>();
 
 export function HomePage(): React.JSX.Element | null {
   const navigate = useNavigate();
@@ -38,6 +43,11 @@ export function HomePage(): React.JSX.Element | null {
   const graphicsPreset = useWorldSettingsStore(
     (state) => state.graphics.preset,
   );
+  const cameraMode = useDebugStore((debug) => debug.getCameraMode());
+  const handTrackingSource = useDebugStore((debug) =>
+    debug.getHandTrackingSource(),
+  );
+  const sceneMode = useDebugStore((debug) => debug.getSceneMode());
   const dialogMessage = useGameStore(
     (state) => state.missionFlow.dialogMessage,
   );
@@ -48,8 +58,17 @@ export function HomePage(): React.JSX.Element | null {
     INITIAL_SCENE_LOADING_STATE,
   );
   const sceneReadyRef = useRef(false);
+  const cameraModeRef = useRef(cameraMode);
+  const handTrackingSourceRef = useRef(handTrackingSource);
+  const sceneModeRef = useRef(sceneMode);
   const runtimeLoadingSignal = `${graphicsPreset}:${mainState}:${ebikeStep}:${pylonStep}:${farmStep}`;
   const previousRuntimeLoadingSignalRef = useRef(runtimeLoadingSignal);
+
+  useEffect(() => {
+    cameraModeRef.current = cameraMode;
+    handTrackingSourceRef.current = handTrackingSource;
+    sceneModeRef.current = sceneMode;
+  }, [cameraMode, handTrackingSource, sceneMode]);
 
   useEffect(() => {
     sceneReadyRef.current = sceneLoadingState.status === "ready";
@@ -131,24 +150,44 @@ export function HomePage(): React.JSX.Element | null {
       gl.shadowMap.enabled = true;
       gl.shadowMap.type = THREE.PCFShadowMap;
       gl.shadowMap.autoUpdate = true;
+      gl.shadowMap.needsUpdate = true;
 
       // The browser hands us a WEBGL_lose_context extension we can use to
       // ask the GPU to restore the context after a loss. Without this the
       // page stays frozen on a black canvas until the user reloads.
       const loseContextExt = gl.getContext().getExtension("WEBGL_lose_context");
 
+      if (registeredWebglContextCanvases.has(canvas)) return;
+      registeredWebglContextCanvases.add(canvas);
+
       const handleContextLost = (event: Event) => {
         event.preventDefault();
-        logger.error("WebGL", "Context lost - attempting auto-restore");
+        releaseBrowserHandLandmarker();
+
+        logger.error("WebGL", "Context lost - attempting auto-restore", {
+          cameraMode: cameraModeRef.current,
+          geometries: gl.info.memory.geometries,
+          handTrackingSource: handTrackingSourceRef.current,
+          sceneMode: sceneModeRef.current,
+          textures: gl.info.memory.textures,
+        });
         // Give the GPU a moment to free resources before asking it back.
-        window.setTimeout(() => loseContextExt?.restoreContext(), 500);
+        window.setTimeout(
+          () => loseContextExt?.restoreContext(),
+          WEBGL_CONTEXT_RESTORE_DELAY_MS,
+        );
       };
 
       const handleContextRestored = () => {
         gl.shadowMap.enabled = true;
         gl.shadowMap.type = THREE.PCFShadowMap;
         gl.shadowMap.autoUpdate = true;
-        logger.info("WebGL", "Context restored");
+        gl.shadowMap.needsUpdate = true;
+        logger.info("WebGL", "Context restored", {
+          cameraMode: cameraModeRef.current,
+          handTrackingSource: handTrackingSourceRef.current,
+          sceneMode: sceneModeRef.current,
+        });
       };
 
       canvas.addEventListener("webglcontextlost", handleContextLost);
@@ -189,10 +228,12 @@ export function HomePage(): React.JSX.Element | null {
     <HandTrackingProvider>
       <Canvas
         camera={{ position: [85, 60, 85], fov: 42 }}
+        dpr={CANVAS_DPR}
+        id="game-canvas"
         shadows={{ type: THREE.PCFShadowMap }}
         gl={{
           powerPreference: "high-performance",
-          antialias: true,
+          antialias: false,
           stencil: false,
         }}
         onCreated={handleCanvasCreated}

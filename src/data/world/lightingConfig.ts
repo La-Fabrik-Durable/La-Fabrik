@@ -3,9 +3,9 @@ const SUN_LIGHT_COLOR = "#ffe2bf";
 
 export const LIGHTING_DEFAULTS = {
   ambientColor: AMBIENT_LIGHT_COLOR,
-  ambientIntensity: 0.9,
+  ambientIntensity: 0.7,
   sunColor: SUN_LIGHT_COLOR,
-  sunIntensity: 2.2,
+  sunIntensity: 1.9,
   sunX: 70,
   sunY: 45,
   sunZ: 35,
@@ -30,3 +30,12 @@ export const SUN_Y_STEP = 1;
 export const SUN_Z_MIN = -100;
 export const SUN_Z_MAX = 100;
 export const SUN_Z_STEP = 1;
+
+export const SHADOW_CONFIG = {
+  mapSize: 2048,
+  cameraSize: 95,
+  cameraNear: 0.5,
+  cameraFar: 300,
+  bias: 0,
+  normalBias: 0,
+} as const;

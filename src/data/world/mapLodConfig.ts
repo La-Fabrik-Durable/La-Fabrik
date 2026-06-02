@@ -13,12 +13,27 @@ export const MAP_LOD_MODEL_PATHS = {
   lafabrik: "/models/lafabrik-LOD/model.gltf",
   maison1: "/models/maison1-LOD/model.gltf",
   panneauaffichage: "/models/panneauaffichage-LOD/model.gltf",
-  talkie: "/models/talkie-LOD/model.gltf",
+  arbre: "/models/arbre-LOD/model.glb",
+  buisson: "/models/buisson-LOD/model.glb",
+  sapin: "/models/sapin-LOD/model.glb",
 } as const satisfies Record<string, string>;
 
 export function getMapLodModelPath(modelName: string): string | null {
   return (
     MAP_LOD_MODEL_PATHS[modelName as keyof typeof MAP_LOD_MODEL_PATHS] ?? null
+  );
+}
+
+export const MAP_LOD_SCALE_MULTIPLIERS = {
+  sapin: 0.35,
+  buisson: 0.7,
+} as const satisfies Partial<Record<keyof typeof MAP_LOD_MODEL_PATHS, number>>;
+
+export function getMapLodScaleMultiplier(modelName: string): number {
+  return (
+    MAP_LOD_SCALE_MULTIPLIERS[
+      modelName as keyof typeof MAP_LOD_SCALE_MULTIPLIERS
+    ] ?? 1
   );
 }
 

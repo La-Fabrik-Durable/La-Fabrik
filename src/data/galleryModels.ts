@@ -143,7 +143,7 @@ export const galleryModels: GalleryModel[] = [
   },
   { id: "sapin", name: "Sapin", path: "/models/sapin/model.gltf" },
   { id: "skybox", name: "Skybox", path: "/models/skybox/skybox.gltf" },
-  { id: "talkie", name: "Talkie", path: "/models/talkie/model.gltf" },
+  { id: "talkie", name: "Talkie", path: "/models/talkie/model.glb" },
   { id: "terrain", name: "Terrain", path: "/models/terrain/model.gltf" },
   {
     id: "tuyauxlac",

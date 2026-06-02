@@ -20,7 +20,13 @@ import { isPylonNarrativeStep } from "@/types/gameplay/repairMission";
 import type { RepairMissionTriggerConfig } from "@/types/gameplay/repairMission";
 import type { Vector3Tuple } from "@/types/three/three";
 import { getRepairMissionPosition } from "@/utils/gameplay/repairMissionPosition";
-import { EBIKE_WORLD_POSITION } from "@/data/ebike/ebikeConfig";
+import {
+  EBIKE_WORLD_POSITION,
+  EBIKE_WORLD_ROTATION_Y,
+  EBIKE_WORLD_SCALE,
+} from "@/data/ebike/ebikeConfig";
+
+const EBIKE_CONFIG_KEY = `${EBIKE_WORLD_POSITION.join(",")}:${EBIKE_WORLD_ROTATION_Y}:${EBIKE_WORLD_SCALE}`;
 
 interface StageAnchorProps {
   color: string;
