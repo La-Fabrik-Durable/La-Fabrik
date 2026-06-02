@@ -14,3 +14,9 @@ export const HAND_TRACKING_BROWSER_DELEGATE: "CPU" | "GPU" = "CPU";
 // Absorbs React StrictMode's mount/unmount/mount cycle in dev and rapid
 // `nearby` toggles at trigger borders. Invisible to the user (~5 frames).
 export const HAND_TRACKING_RUNTIME_START_DELAY_MS = 80;
+
+// How long the hand tracking stays active after the trigger condition
+// (nearby / holding / repair step) turns off. Gives MediaPipe enough time
+// to initialize webcam + model + first frame inference before we cleanup,
+// so the user actually sees their hands when entering a zone briefly.
+export const HAND_TRACKING_LINGER_MS = 2000;
