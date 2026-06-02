@@ -3,6 +3,10 @@ import type {
   RepairMissionConfig,
   RepairMissionId,
 } from "@/types/gameplay/repairMission";
+import {
+  EBIKE_WORLD_ROTATION_Y,
+  EBIKE_WORLD_SCALE,
+} from "@/data/ebike/ebikeConfig";
 
 const REPAIR_INTERACT_UI_PATH = "/assets/world/UI/interagir.webm";
 const REPAIR_BROKEN_UI_PATH = "/assets/world/UI/cassé.webm";
@@ -20,7 +24,8 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     description:
       "Repair the damaged cooling module before relaunching the bike",
     modelPath: "/models/ebike/model.gltf",
-    modelScale: 0.3,
+    modelScale: EBIKE_WORLD_SCALE,
+    modelRotation: [0, EBIKE_WORLD_ROTATION_Y, 0],
     stageUiPath: "/assets/world/UI/ebike-mission-notification.webm",
     interactUiPath: REPAIR_INTERACT_UI_PATH,
     brokenUiPath: REPAIR_BROKEN_UI_PATH,

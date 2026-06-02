@@ -64,6 +64,13 @@ export interface RepairMissionConfig {
   description: string;
   modelPath: string;
   modelScale?: ModelTransformProps["scale"];
+  /**
+   * World-space rotation applied to the model when mounted by RepairGame
+   * (fragmented + repairing steps). Should match the rotation used by the
+   * source object in the world (e.g. parked Ebike) so the fragmented model
+   * lines up visually with the inspection model.
+   */
+  modelRotation?: Vector3Tuple;
   stageUiPath: string;
   interactUiPath: string;
   brokenUiPath: string;

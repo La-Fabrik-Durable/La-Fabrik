@@ -143,6 +143,7 @@ export function RepairGame({
         {step === "fragmented" ? (
           <ExplodableModel
             modelPath={config.modelPath}
+            rotation={config.modelRotation ?? [0, 0, 0]}
             scale={config.modelScale ?? 1}
             split
           />
@@ -160,6 +161,7 @@ export function RepairGame({
           <>
             <ExplodableModel
               modelPath={config.modelPath}
+              rotation={config.modelRotation ?? [0, 0, 0]}
               scale={config.modelScale ?? 1}
               split
               hideNodeNames={brokenNodeNames}
