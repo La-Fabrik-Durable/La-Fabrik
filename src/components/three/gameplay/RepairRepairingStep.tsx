@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import type { RepairCasePlaceholder } from "@/components/three/gameplay/RepairCaseModel";
+import type {
+  RepairCasePartAnchors,
+  RepairCasePlaceholder,
+} from "@/components/three/gameplay/RepairCaseModel";
 import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
 import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
@@ -38,6 +41,7 @@ const STORED_BROKEN_PART_COLOR = "#38bdf8";
 let hasWarnedMissingPlaceholders = false;
 
 interface RepairRepairingStepProps {
+  anchors?: RepairCasePartAnchors;
   brokenParts: readonly RepairScannedBrokenPart[];
   config: RepairMissionConfig;
   placeholders: readonly RepairCasePlaceholder[];
@@ -63,6 +67,7 @@ interface RepairPartPlacementFeedbackProps {
 }
 
 export function RepairRepairingStep({
+  anchors = {},
   brokenParts,
   config,
   placeholders,
@@ -193,7 +198,11 @@ export function RepairRepairingStep({
       <RepairPlaceholderMarkers positions={placeholderPositions} />
 
       {replacementParts.map((part, index) => {
+        const anchorPosition = part.caseAnchor
+          ? anchors[part.caseAnchor]
+          : undefined;
         const placeholderPosition =
+          anchorPosition ??
           placeholderPositions[index % placeholderPositions.length] ??
           placeholderPositions[0]!;
         const isPlaced = Boolean(placedPartIds[part.id]);

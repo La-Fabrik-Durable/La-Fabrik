@@ -38,13 +38,33 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     replacementParts: [
       {
         id: "ebike-cooling-core-replacement",
-        label: "Replacement cooling core",
+        label: "Refroidisseur",
         modelPath: "/models/refroidisseur/model.gltf",
+        caseAnchor: "refroidisseur",
       },
       {
-        id: "ebike-glove-distractor",
-        label: "Insulation glove",
-        modelPath: "/models/gant_l/model.gltf",
+        id: "ebike-cable-right-distractor",
+        label: "Câble droit",
+        modelPath: "/models/cable1/model.gltf",
+        caseAnchor: "cabledroit",
+      },
+      {
+        id: "ebike-cable-left-distractor",
+        label: "Câble gauche",
+        modelPath: "/models/cable2/model.gltf",
+        caseAnchor: "cablegauche",
+      },
+      {
+        id: "ebike-puce-haut-distractor",
+        label: "Puce haute",
+        modelPath: "/models/puce/model.gltf",
+        caseAnchor: "pucehaut",
+      },
+      {
+        id: "ebike-puce-bas-distractor",
+        label: "Puce basse",
+        modelPath: "/models/puce/model.gltf",
+        caseAnchor: "pucebas",
       },
     ],
   },
@@ -59,7 +79,10 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     brokenUiPath: REPAIR_BROKEN_UI_PATH,
     case: DEFAULT_REPAIR_CASE,
     reassemblySeconds: 1.8,
-    requiredReplacementPartIds: ["pylon-grid-relay-replacement"],
+    requiredReplacementPartIds: [
+      "pylon-cable-right-replacement",
+      "pylon-cable-left-replacement",
+    ],
     scanPartSeconds: 1.4,
     brokenParts: [
       {
@@ -77,19 +100,36 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
     ],
     replacementParts: [
       {
-        id: "pylon-grid-relay-replacement",
-        label: "Replacement grid relay",
-        modelPath: "/models/pylone/model.gltf",
+        id: "pylon-cable-right-replacement",
+        label: "Câble droit",
+        modelPath: "/models/cable1/model.gltf",
+        caseAnchor: "cabledroit",
+        caseLockGroup: "pylon-cable",
       },
       {
-        id: "pylon-stone-distractor",
-        label: "Stone counterweight",
-        modelPath: "/models/galet/model.gltf",
+        id: "pylon-cable-left-replacement",
+        label: "Câble gauche",
+        modelPath: "/models/cable2/model.gltf",
+        caseAnchor: "cablegauche",
+        caseLockGroup: "pylon-cable",
       },
       {
         id: "pylon-cooling-distractor",
-        label: "Cooling core",
+        label: "Refroidisseur",
         modelPath: "/models/refroidisseur/model.gltf",
+        caseAnchor: "refroidisseur",
+      },
+      {
+        id: "pylon-puce-haut-distractor",
+        label: "Puce haute",
+        modelPath: "/models/puce/model.gltf",
+        caseAnchor: "pucehaut",
+      },
+      {
+        id: "pylon-puce-bas-distractor",
+        label: "Puce basse",
+        modelPath: "/models/puce/model.gltf",
+        caseAnchor: "pucebas",
       },
     ],
   },

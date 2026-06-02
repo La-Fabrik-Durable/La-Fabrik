@@ -1,7 +1,10 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
-import type { RepairCasePlaceholder } from "@/components/three/gameplay/RepairCaseModel";
+import type {
+  RepairCasePartAnchors,
+  RepairCasePlaceholder,
+} from "@/components/three/gameplay/RepairCaseModel";
 import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompletionStep";
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
@@ -63,6 +66,7 @@ export function RepairGame({
   const [casePlaceholders, setCasePlaceholders] = useState<
     readonly RepairCasePlaceholder[]
   >([]);
+  const [caseAnchors, setCaseAnchors] = useState<RepairCasePartAnchors>({});
   const [scannedBrokenParts, setScannedBrokenParts] = useState<
     readonly RepairScannedBrokenPart[]
   >([]);
@@ -81,6 +85,7 @@ export function RepairGame({
 
     const timeoutId = window.setTimeout(() => {
       setCasePlaceholders([]);
+      setCaseAnchors({});
       setScannedBrokenParts([]);
     }, 0);
 
@@ -137,6 +142,7 @@ export function RepairGame({
         ) : null}
         {step === "repairing" ? (
           <RepairRepairingStep
+            anchors={caseAnchors}
             brokenParts={scannedBrokenParts}
             config={config}
             placeholders={casePlaceholders}
@@ -159,6 +165,7 @@ export function RepairGame({
           <RepairMissionCase
             config={config}
             onPlaceholdersChange={setCasePlaceholders}
+            onAnchorsChange={setCaseAnchors}
             open={step === "repairing"}
             zoomed={step === "repairing"}
             showFragmentationPrompt={readyForFragmentation}
