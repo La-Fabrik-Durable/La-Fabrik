@@ -34,7 +34,10 @@ const _target = new THREE.Vector3();
  * Compute the Y rotation (radians) for a model whose default forward
  * direction is +Z, so that it faces from `from` toward `to`.
  */
-function faceToward(from: THREE.Vector3, to: readonly [number, number, number]): number {
+function faceToward(
+  from: THREE.Vector3,
+  to: readonly [number, number, number],
+): number {
   const dx = to[0] - from.x;
   const dz = to[2] - from.z;
   return Math.atan2(dx, dz);
@@ -71,6 +74,10 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
   // ─── playAnim ─────────────────────────────────────────────────────────────
   // NOTE: actions is intentionally in the dep array so this callback is
   // recreated when drei's internal state populates the actions map.
+  // External THREE.AnimationAction lifecycle methods (fadeOut/fadeIn/play +
+  // setLoop/clampWhenFinished mutations) are intentional side effects on
+  // drei-managed objects.
+  /* eslint-disable react-hooks/immutability */
   const playAnim = useCallback(
     (name: NPCAnimation, fade = ANIM_FADE): void => {
       if (currentAnimRef.current === name) return;
@@ -89,6 +96,7 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
     },
     [actions],
   );
+  /* eslint-enable react-hooks/immutability */
 
   // ─── Async audio after pylon is raised ────────────────────────────────────
   const playPostRaiseAudioAndAdvance = useCallback(async () => {
@@ -112,6 +120,8 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
 
   // ─── Step-driven animation ────────────────────────────────────────────────
   // Fires when step changes OR when playAnim changes (i.e. when actions load).
+  // playAnim mutates drei-managed AnimationAction internals (intentional).
+  /* eslint-disable react-hooks/immutability */
   useEffect(() => {
     currentAnimRef.current = null;
     if (step === "arrived") {
@@ -168,7 +178,10 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
         currentPosRef.current.lerp(_target, t);
       } else if (!isStraightening && currentAnimRef.current === "walk") {
         playAnim("idle");
-        savedRotationYRef.current = faceToward(currentPosRef.current, PYLON_WORLD_POSITION);
+        savedRotationYRef.current = faceToward(
+          currentPosRef.current,
+          PYLON_WORLD_POSITION,
+        );
       }
       group.position.copy(currentPosRef.current);
     } else if (step === "inspected") {
@@ -180,8 +193,15 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
     }
 
     // ── Rotation ──────────────────────────────────────────────────────────
-    if (step === "npc-return" && !isCompleted && currentAnimRef.current === "walk") {
-      const walkRotY = faceToward(currentPosRef.current, PYLON_FARMER_NPC_WALK_LOOK_AT);
+    if (
+      step === "npc-return" &&
+      !isCompleted &&
+      currentAnimRef.current === "walk"
+    ) {
+      const walkRotY = faceToward(
+        currentPosRef.current,
+        PYLON_FARMER_NPC_WALK_LOOK_AT,
+      );
       group.rotation.set(0, walkRotY, 0);
     } else {
       group.rotation.set(0, savedRotationYRef.current, 0);
@@ -189,6 +209,7 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
 
     group.scale.setScalar(PYLON_FARMER_NPC_AFTER_SCALE);
   });
+  /* eslint-enable react-hooks/immutability */
 
   if (mainState !== "pylon") return null;
   if (step !== "arrived" && step !== "npc-return" && step !== "inspected")

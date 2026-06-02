@@ -30,9 +30,26 @@ export function PylonDownedPylon(): React.JSX.Element | null {
   const straightenStartRef = useRef<number | null>(null);
   const hasPlayedFirstAudioRef = useRef(false);
 
+  const showUpright =
+    isRaised ||
+    mainState !== "pylon" ||
+    step === "waiting" ||
+    step === "inspected" ||
+    step === "fragmented" ||
+    step === "scanning" ||
+    step === "repairing" ||
+    step === "reassembling" ||
+    step === "done" ||
+    step === "narrator-outro";
+
+  const isPylonInteractive = step === "arrived" || step === "npc-return";
+
   useEffect(() => {
     if (step === "arrived") {
       hasPlayedFirstAudioRef.current = false;
+      // Reset the "raised" latch when a new run begins. This is derived
+      // resync from the step prop and runs once per step transition.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRaised(false);
     }
   }, [step]);
@@ -61,20 +78,6 @@ export function PylonDownedPylon(): React.JSX.Element | null {
       THREE.MathUtils.lerp(startEuler.z, 0, eased),
     );
   });
-
-  const showUpright =
-    isRaised ||
-    mainState !== "pylon" ||
-    step === "waiting" ||
-    step === "inspected" ||
-    step === "fragmented" ||
-    step === "scanning" ||
-    step === "repairing" ||
-    step === "reassembling" ||
-    step === "done" ||
-    step === "narrator-outro";
-
-  const isPylonInteractive = step === "arrived" || step === "npc-return";
 
   const beginStraighten = (): void => {
     setIsStraightening(true);

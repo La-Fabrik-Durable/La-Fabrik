@@ -123,6 +123,8 @@ export function EbikeSpeedmeter({
   );
 
   // ── Frame loop ──────────────────────────────────────────────────────────────
+  /* External Three.js canvas+texture sync — intentional side effects in useFrame. */
+  /* eslint-disable react-hooks/immutability */
   useFrame((_, delta) => {
     // 1. Smooth speed factor
     const target = THREE.MathUtils.clamp(window.ebikeSpeedFactor ?? 0, 0, 1);
@@ -181,6 +183,7 @@ export function EbikeSpeedmeter({
     }
 
     fillTexture.needsUpdate = true;
+    /* eslint-enable react-hooks/immutability */
   });
 
   return (
