@@ -8,7 +8,11 @@ import {
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { CHUNK_CONFIG } from "@/data/world/chunkStreamingConfig";
-import { selectMapModelPathByDistance } from "@/data/world/mapLodConfig";
+import {
+  getMapLodModelPath,
+  getMapLodScaleMultiplier,
+  selectMapModelPathByDistance,
+} from "@/data/world/mapLodConfig";
 import { useCameraMode } from "@/hooks/debug/useCameraMode";
 import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import {
@@ -205,12 +209,17 @@ export function VegetationSystem({
     <group name="vegetation-system">
       {visibleChunks.map((chunk) => {
         const modelPath = chunkModelPaths.get(chunk.key) ?? chunk.modelPath;
+        const mapName = VEGETATION_TYPES[chunk.type].mapName;
+        const isLod = modelPath === getMapLodModelPath(mapName);
+        const scaleMultiplier =
+          chunk.scaleMultiplier *
+          (isLod ? getMapLodScaleMultiplier(mapName) : 1);
         return (
           <Suspense key={`${chunk.key}:${modelPath}`} fallback={null}>
             <InstancedVegetation
               modelPath={modelPath}
               instances={chunk.instances}
-              scaleMultiplier={chunk.scaleMultiplier}
+              scaleMultiplier={scaleMultiplier}
               castShadow={chunk.castShadow}
               receiveShadow={chunk.receiveShadow}
               windStrength={chunk.windStrength}

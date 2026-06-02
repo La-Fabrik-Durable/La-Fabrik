@@ -25,6 +25,20 @@ export function getMapLodModelPath(modelName: string): string | null {
   );
 }
 
+
+export const MAP_LOD_SCALE_MULTIPLIERS = {
+  sapin: 0.35,
+  buisson: 0.7,
+} as const satisfies Partial<Record<keyof typeof MAP_LOD_MODEL_PATHS, number>>;
+
+export function getMapLodScaleMultiplier(modelName: string): number {
+  return (
+    MAP_LOD_SCALE_MULTIPLIERS[
+      modelName as keyof typeof MAP_LOD_SCALE_MULTIPLIERS
+    ] ?? 1
+  );
+}
+
 export function selectMapModelPathByDistance({
   distance,
   modelName,
