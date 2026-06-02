@@ -39,12 +39,12 @@ export const GRAPHICS_PRESETS = {
   },
   high: {
     label: "High",
-    chunkLoadRadius: 35,
-    chunkUnloadRadius: 45,
+    chunkLoadRadius: 30,
+    chunkUnloadRadius: 40,
     chunkStreamingEnabled: true,
     fogEnabled: false,
     forceLodModels: false,
-    lodHighDetailDistance: 10,
+    lodHighDetailDistance: 20,
   },
   ultra: {
     label: "Ultra",
@@ -53,7 +53,7 @@ export const GRAPHICS_PRESETS = {
     chunkStreamingEnabled: true,
     fogEnabled: false,
     forceLodModels: false,
-    lodHighDetailDistance: 20,
+    lodHighDetailDistance: 30,
   },
   max: {
     label: "Max",

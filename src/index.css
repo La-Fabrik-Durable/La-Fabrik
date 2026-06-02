@@ -1544,7 +1544,7 @@ canvas {
 }
 
 .game-settings-menu__choice-group--presets {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .game-settings-menu__choice-group button,

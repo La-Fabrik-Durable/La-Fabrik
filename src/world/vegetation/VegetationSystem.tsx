@@ -109,12 +109,17 @@ function useVegetationChunkModelPaths(
     const next = new Map<string, string>();
 
     for (const chunk of chunks) {
-      const distance = Math.hypot(
-        chunk.centerX - cameraX,
-        chunk.centerZ - cameraZ,
-      );
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const instance of chunk.instances) {
+        const distance = Math.hypot(
+          instance.position[0] - cameraX,
+          instance.position[2] - cameraZ,
+        );
+        if (distance < nearestDistance) nearestDistance = distance;
+      }
+
       const modelPath = selectMapModelPathByDistance({
-        distance,
+        distance: nearestDistance,
         modelName: VEGETATION_TYPES[chunk.type].mapName,
         modelPath: chunk.modelPath,
         preset,
