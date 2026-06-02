@@ -30,8 +30,8 @@ export const CHARACTER_CONFIGS = {
     position: [-40.5, 0, 45.5],
     rotation: [0, -0.35, 0],
     scale: [1.55, 1.55, 1.55],
-    animations: ["Dance"],
-    defaultAnimation: "Dance",
+    animations: ["idle", "walk"],
+    defaultAnimation: "idle",
   },
   gerant: {
     id: "gerant",
