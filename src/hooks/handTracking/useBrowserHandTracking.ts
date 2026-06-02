@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  HAND_TRACKING_FRAME_HEIGHT,
-  HAND_TRACKING_FRAME_WIDTH,
+  HAND_TRACKING_BROWSER_CAMERA_HEIGHT,
+  HAND_TRACKING_BROWSER_CAMERA_WIDTH,
   HAND_TRACKING_RUNTIME_START_DELAY_MS,
   HAND_TRACKING_TARGET_FPS,
 } from "@/data/handTrackingConfig";
@@ -66,8 +66,8 @@ export function useBrowserHandTracking({
       try {
         const stream = await getCameraStreamWithTimeout({
           video: {
-            width: HAND_TRACKING_FRAME_WIDTH,
-            height: HAND_TRACKING_FRAME_HEIGHT,
+            width: HAND_TRACKING_BROWSER_CAMERA_WIDTH,
+            height: HAND_TRACKING_BROWSER_CAMERA_HEIGHT,
             facingMode: "user",
           },
           audio: false,

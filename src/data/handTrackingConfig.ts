@@ -1,5 +1,11 @@
 export const HAND_TRACKING_FRAME_WIDTH = 320;
 export const HAND_TRACKING_FRAME_HEIGHT = 240;
+// The browser MediaPipe model (hand_landmarker.task float16) is more
+// sensitive than the backend Python model and needs a higher-resolution
+// frame to detect hands reliably. The backend keeps 320x240 because that
+// is the JPEG payload size sent over the WebSocket.
+export const HAND_TRACKING_BROWSER_CAMERA_WIDTH = 640;
+export const HAND_TRACKING_BROWSER_CAMERA_HEIGHT = 480;
 export const HAND_TRACKING_TARGET_FPS = 10;
 export const HAND_TRACKING_JPEG_QUALITY = 0.55;
 export const HAND_TRACKING_CAMERA_TIMEOUT_MS = 8_000;
