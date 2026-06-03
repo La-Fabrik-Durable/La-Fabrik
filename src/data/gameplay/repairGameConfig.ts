@@ -10,6 +10,7 @@ export const REPAIR_REASSEMBLY_SECONDS = 1.4;
  * speed (6) finishes in ~0.5s which feels rushed.
  */
 export const REPAIR_FRAGMENT_SPLIT_SPEED = 1.8;
+export const REPAIR_FRAGMENT_SPLIT_DURATION_SECONDS = 1.5;
 /**
  * Delay between the end of the inverse-explosion (parts settled back to
  * their original positions) and the auto-transition to the `done` step.

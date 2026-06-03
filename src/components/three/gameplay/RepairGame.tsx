@@ -16,6 +16,7 @@ import { RepairReassemblyStep } from "@/components/three/gameplay/RepairReassemb
 import { RepairScanSequence } from "@/components/three/gameplay/RepairScanSequence";
 import { REPAIR_CASE_MODEL_PATH } from "@/data/gameplay/repairCaseConfig";
 import {
+  REPAIR_FRAGMENT_SPLIT_DURATION_SECONDS,
   REPAIR_DONE_DIALOGUE_FALLBACK_MS,
   REPAIR_FRAGMENTATION_SEQUENCE_SECONDS,
   REPAIR_FRAGMENT_SPLIT_SPEED,
@@ -27,7 +28,11 @@ import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmenta
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
 import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
-import { playDialogueById } from "@/utils/dialogues/playDialogue";
+import {
+  clearQueuedDialogues,
+  playDialogueById,
+  stopCurrentDialogue,
+} from "@/utils/dialogues/playDialogue";
 import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type {
   MissionStep,
@@ -128,6 +133,17 @@ export function RepairGame({
   );
   const isSplitPhase = (SPLIT_PHASES as readonly MissionStep[]).includes(step);
   const isRepairing = step === "repairing";
+  const ebikeBrokenNodeName = config.brokenParts[0]?.targetNodeName;
+  const ebikeBrokenWorldAnchor = ebikeBrokenNodeName
+    ? brokenAnchors[ebikeBrokenNodeName]
+    : undefined;
+  const ebikeBrokenLocalAnchor = ebikeBrokenWorldAnchor
+    ? ([
+        ebikeBrokenWorldAnchor[0] - snappedPosition[0],
+        ebikeBrokenWorldAnchor[1] - snappedPosition[1],
+        ebikeBrokenWorldAnchor[2] - snappedPosition[2],
+      ] satisfies Vector3Tuple)
+    : ([0, 1, 0] satisfies Vector3Tuple);
 
   useRepairFragmentationInput({
     enabled: mainState === mission && readyForFragmentation,
@@ -149,6 +165,15 @@ export function RepairGame({
       window.clearTimeout(timeoutId);
     };
   }, [mainState, mission, step]);
+
+  useEffect(() => {
+    if (mission !== "ebike") return;
+    if (mainState === "ebike") return;
+
+    clearQueuedDialogues();
+    stopCurrentDialogue();
+    useSubtitleStore.getState().clearActiveSubtitle();
+  }, [mainState, mission]);
 
   // Drive the global focus bubble: active during the immersive repair
   // phases so the world dims/hides outside the dark sphere shroud.
@@ -355,6 +380,7 @@ export function RepairGame({
             scale={config.modelScale ?? 1}
             split={isSplitPhase}
             splitSpeed={REPAIR_FRAGMENT_SPLIT_SPEED}
+            splitDurationSeconds={REPAIR_FRAGMENT_SPLIT_DURATION_SECONDS}
             onPartsReady={setExplodedParts}
             onSplitSettled={handleSplitSettled}
             {...(isRepairing
@@ -378,6 +404,7 @@ export function RepairGame({
         ) : null}
         {step === "repairing" && mission === "ebike" ? (
           <RepairEbikeRepairTrigger
+            anchor={ebikeBrokenLocalAnchor}
             onRepair={() => setMissionStep(mission, "reassembling")}
           />
         ) : null}
@@ -409,8 +436,8 @@ export function RepairGame({
             config={config}
             onPlaceholdersChange={setCasePlaceholders}
             onAnchorsChange={setCaseAnchors}
-            open={step === "repairing"}
-            zoomed={step === "repairing"}
+            open={mission !== "ebike" && step === "repairing"}
+            zoomed={mission !== "ebike" && step === "repairing"}
             showFragmentationPrompt={
               readyForFragmentation && mission !== "ebike"
             }

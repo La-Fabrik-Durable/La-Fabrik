@@ -76,6 +76,7 @@ interface ExplodableModelInnerProps extends ModelTransformProps {
    * Defaults to ExplodedModel's internal default (6) when omitted.
    */
   splitSpeed?: number;
+  splitDurationSeconds?: number;
   onPartsReady?: (parts: readonly ExplodedPart[]) => void;
   /**
    * Fired once each time the explode/reassemble lerp converges on its
@@ -112,6 +113,7 @@ function ExplodableModelInner({
   scale = 1,
   splitDistance = 1.2,
   splitSpeed,
+  splitDurationSeconds,
   onPartsReady,
   onSplitSettled,
   hideNodeNames,
@@ -144,10 +146,13 @@ function ExplodableModelInner({
       // eslint-disable-next-line react-hooks/refs
       new ExplodedModel(model, {
         distance: splitDistance,
+        ...(splitDurationSeconds !== undefined
+          ? { durationSeconds: splitDurationSeconds }
+          : {}),
         ...(splitSpeed !== undefined ? { speed: splitSpeed } : {}),
         onSettled: handleSettled,
       }),
-    [model, splitDistance, splitSpeed, handleSettled],
+    [model, splitDistance, splitDurationSeconds, splitSpeed, handleSettled],
   );
   const parsedScale = toVector3Scale(scale);
   const anchorSignatureRef = useRef("");

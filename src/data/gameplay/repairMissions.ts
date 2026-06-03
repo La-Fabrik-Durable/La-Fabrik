@@ -38,7 +38,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         label: "Cooling core",
         modelPath: "/models/refroidisseur/model.gltf",
         nodeName: "Radiateur",
-        targetNodeName: "refroidisseur",
+        targetNodeName: "Radiateur",
         caseSlotName: "placeholder_1",
         // Plays during the scan landing on the refroidisseur node;
         // the scan sequence advances on this audio's `ended` event.
@@ -51,7 +51,7 @@ export const REPAIR_MISSIONS: Record<RepairMissionId, RepairMissionConfig> = {
         label: "Refroidisseur",
         modelPath: "/models/refroidisseur/model.gltf",
         caseAnchor: "refroidisseur",
-        targetNodeName: "refroidisseur",
+        targetNodeName: "Radiateur",
       },
       {
         id: "ebike-cable-right-distractor",

@@ -9,6 +9,7 @@ export interface ExplodedPart {
 interface ExplodedModelOptions {
   distance?: number;
   speed?: number;
+  durationSeconds?: number;
   /**
    * Fired exactly once each time the lerp converges on a target value
    * (1 = fully exploded, 0 = fully reassembled). Useful for chaining
@@ -25,6 +26,7 @@ export class ExplodedModel {
   private readonly parts: ExplodedPart[] = [];
   private readonly distance: number;
   private readonly speed: number;
+  private readonly durationSeconds: number | undefined;
   private readonly onSettled?: (settledAt: 0 | 1) => void;
   private progress = 0;
   private targetProgress = 0;
@@ -33,6 +35,7 @@ export class ExplodedModel {
   constructor(model: THREE.Object3D, options: ExplodedModelOptions = {}) {
     this.distance = options.distance ?? 1.2;
     this.speed = options.speed ?? 6;
+    this.durationSeconds = options.durationSeconds;
     if (options.onSettled) this.onSettled = options.onSettled;
     this.parts = this.createParts(model);
   }
@@ -57,6 +60,10 @@ export class ExplodedModel {
         this.settledAtTarget = true;
         this.onSettled?.(this.targetProgress === 1 ? 1 : 0);
       }
+    } else if (this.durationSeconds !== undefined) {
+      const direction = diff > 0 ? 1 : -1;
+      this.progress += direction * (delta / this.durationSeconds);
+      this.progress = THREE.MathUtils.clamp(this.progress, 0, 1);
     } else {
       this.progress += diff * Math.min(delta * this.speed, 1);
     }
