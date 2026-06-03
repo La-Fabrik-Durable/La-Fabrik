@@ -58,6 +58,11 @@ interface RepairMissionAssetPreloaderProps {
   config: RepairMissionConfig;
 }
 
+interface EbikeRepairTransform {
+  position: Vector3Tuple;
+  rotationY: number;
+}
+
 function RepairMissionAssetPreloader({
   config,
 }: RepairMissionAssetPreloaderProps): null {
@@ -107,6 +112,9 @@ export function RepairGame({
   const [explodedParts, setExplodedParts] = useState<readonly ExplodedPart[]>(
     [],
   );
+  const [ebikeRepairTransform, setEbikeRepairTransform] =
+    useState<EbikeRepairTransform | null>(null);
+  const [ebikeCoolingInstalled, setEbikeCoolingInstalled] = useState(false);
   const reassemblyDoneTimeoutRef = useRef<number | null>(null);
   // Ebike-specific: once the repair starts, keep the entire repair flow
   // exactly where the bike currently is. `Ebike` owns the live parked
@@ -115,11 +123,13 @@ export function RepairGame({
   const livePosition = useMemo<Vector3Tuple>(() => {
     if (mission !== "ebike" || step === "waiting") return position;
 
+    if (ebikeRepairTransform) return ebikeRepairTransform.position;
+
     const parked = window.ebikeParkedPosition;
     if (!parked) return position;
 
     return [parked[0], parked[1], parked[2]];
-  }, [mission, position, step]);
+  }, [ebikeRepairTransform, mission, position, step]);
   const usesLiveEbikePosition = mission === "ebike" && step !== "waiting";
   const parsedScale = toVector3Scale(scale);
   const terrainSnappedPosition = useTerrainSnappedPosition(livePosition);
@@ -133,6 +143,10 @@ export function RepairGame({
   );
   const isSplitPhase = (SPLIT_PHASES as readonly MissionStep[]).includes(step);
   const isRepairing = step === "repairing";
+  const repairModelRotation: Vector3Tuple =
+    mission === "ebike" && ebikeRepairTransform
+      ? [0, ebikeRepairTransform.rotationY, 0]
+      : (config.modelRotation ?? [0, 0, 0]);
   const ebikeBrokenNodeName = config.brokenParts[0]?.targetNodeName;
   const ebikeBrokenWorldAnchor = ebikeBrokenNodeName
     ? brokenAnchors[ebikeBrokenNodeName]
@@ -159,12 +173,52 @@ export function RepairGame({
       setCaseAnchors({});
       setBrokenAnchors({});
       setScannedBrokenParts([]);
+      setEbikeCoolingInstalled(false);
     }, 0);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
   }, [mainState, mission, step]);
+
+  useEffect(() => {
+    if (mission !== "ebike") return undefined;
+
+    if (mainState !== "ebike" || step === "waiting") {
+      const timeoutId = window.setTimeout(() => {
+        setEbikeRepairTransform(null);
+        setEbikeCoolingInstalled(false);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(timeoutId);
+      };
+    }
+
+    if (ebikeRepairTransform) return undefined;
+
+    const parked = window.ebikeParkedPosition;
+    const rotationY =
+      window.ebikeParkedRotation ?? config.modelRotation?.[1] ?? 0;
+    const snapshot: EbikeRepairTransform = {
+      position: parked ? [parked[0], parked[1], parked[2]] : position,
+      rotationY,
+    };
+    const timeoutId = window.setTimeout(() => {
+      setEbikeRepairTransform(snapshot);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    config.modelRotation,
+    ebikeRepairTransform,
+    mainState,
+    mission,
+    position,
+    step,
+  ]);
 
   useEffect(() => {
     if (mission !== "ebike") return;
@@ -350,6 +404,14 @@ export function RepairGame({
     };
   }, []);
 
+  function handleEbikeCoolingInstall(): void {
+    if (ebikeCoolingInstalled) return;
+    setEbikeCoolingInstalled(true);
+    window.setTimeout(() => {
+      setMissionStep(mission, "reassembling");
+    }, 450);
+  }
+
   if (mainState !== mission) return null;
   if (step === "locked") return null;
 
@@ -376,7 +438,7 @@ export function RepairGame({
         {isRepairPhase ? (
           <ExplodableModel
             modelPath={config.modelPath}
-            rotation={config.modelRotation ?? [0, 0, 0]}
+            rotation={repairModelRotation}
             scale={config.modelScale ?? 1}
             split={isSplitPhase}
             splitSpeed={REPAIR_FRAGMENT_SPLIT_SPEED}
@@ -405,7 +467,7 @@ export function RepairGame({
         {step === "repairing" && mission === "ebike" ? (
           <RepairEbikeRepairTrigger
             anchor={ebikeBrokenLocalAnchor}
-            onRepair={() => setMissionStep(mission, "reassembling")}
+            installed={ebikeCoolingInstalled}
           />
         ) : null}
         {step === "repairing" && mission !== "ebike" ? (
@@ -441,10 +503,15 @@ export function RepairGame({
             showFragmentationPrompt={
               readyForFragmentation && mission !== "ebike"
             }
+            {...(mission === "ebike" && step === "repairing"
+              ? { interactLabel: "Changez le refroidisseur" }
+              : {})}
             onInteract={
-              readyForFragmentation && mission !== "ebike"
-                ? () => setMissionStep(mission, "fragmented")
-                : undefined
+              mission === "ebike" && step === "repairing"
+                ? handleEbikeCoolingInstall
+                : readyForFragmentation && mission !== "ebike"
+                  ? () => setMissionStep(mission, "fragmented")
+                  : undefined
             }
           />
         ) : null}

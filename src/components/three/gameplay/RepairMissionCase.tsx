@@ -25,6 +25,7 @@ interface RepairMissionCaseProps {
   open?: boolean;
   zoomed?: boolean;
   showFragmentationPrompt?: boolean;
+  interactLabel?: string;
   onInteract?: (() => void) | undefined;
 }
 
@@ -37,6 +38,7 @@ export function RepairMissionCase({
   open = false,
   zoomed = false,
   showFragmentationPrompt = false,
+  interactLabel,
   onInteract,
 }: RepairMissionCaseProps): React.JSX.Element {
   const casePosition = zoomed
@@ -51,7 +53,7 @@ export function RepairMissionCase({
         <TriggerObject
           position={casePosition}
           colliders="ball"
-          label={`Ouvrir ${config.label}`}
+          label={interactLabel ?? `Ouvrir ${config.label}`}
           radius={REPAIR_INTERACTION_RADIUS}
           onTrigger={onInteract}
         >

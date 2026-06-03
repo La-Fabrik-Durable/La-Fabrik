@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { RigidBody } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
@@ -35,6 +35,7 @@ interface GrabbableObjectProps {
   label?: string;
   handControlled?: boolean;
   disabled?: boolean;
+  lockUntilGrab?: boolean;
   onGrabChange?: (held: boolean) => void;
   onPositionChange?: (position: THREE.Vector3) => void;
   onSnap?: (position: THREE.Vector3) => void;
@@ -134,6 +135,7 @@ export function GrabbableObject({
   label = GRAB_DEFAULT_LABEL,
   handControlled = false,
   disabled = false,
+  lockUntilGrab = false,
   onGrabChange,
   onPositionChange,
   onSnap,
@@ -148,6 +150,7 @@ export function GrabbableObject({
   const rbRef = useRef<RapierRigidBody>(null);
   const isHolding = useRef(false);
   const isHandHolding = useRef(false);
+  const [hasBeenGrabbed, setHasBeenGrabbed] = useState(false);
   const snapTween = useRef<gsap.core.Tween | null>(null);
 
   useEffect(() => {
@@ -288,6 +291,7 @@ export function GrabbableObject({
 
         const hadHit = Boolean(hit);
         if (hadHit) {
+          setHasBeenGrabbed(true);
           isHandHolding.current = true;
           InteractionManager.getInstance().setHandHolding(true);
           onGrabChange?.(true);
@@ -330,7 +334,7 @@ export function GrabbableObject({
     <group ref={spaceRef}>
       <RigidBody
         ref={rbRef}
-        type="dynamic"
+        type={lockUntilGrab && !hasBeenGrabbed ? "fixed" : "dynamic"}
         colliders={colliders}
         position={position}
       >
@@ -344,6 +348,7 @@ export function GrabbableObject({
               position={position}
               bodyRef={rbRef}
               onPress={() => {
+                setHasBeenGrabbed(true);
                 isHolding.current = true;
                 onGrabChange?.(true);
               }}

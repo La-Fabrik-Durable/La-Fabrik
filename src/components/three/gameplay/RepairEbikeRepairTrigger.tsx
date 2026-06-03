@@ -1,43 +1,32 @@
-import { useState } from "react";
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
-import { TriggerObject } from "@/components/three/interaction/TriggerObject";
 import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
-import { REPAIR_INTERACTION_RADIUS } from "@/data/gameplay/repairGameConfig";
 import type { Vector3Tuple } from "@/types/three/three";
 
 interface RepairEbikeRepairTriggerProps {
   anchor: Vector3Tuple;
-  onRepair: () => void;
+  installed: boolean;
 }
 
 const REPLACEMENT_MODEL_PATH = "/models/refroidisseur/model.gltf";
-const TRIGGER_OFFSET: Vector3Tuple = [0, 0.9, 0];
 
 /**
  * Ebike-specific fake replacement flow: the broken radiator node is
  * hidden in the shared ExplodableModel, a grabbable copy appears at the
- * same anchor, then pressing E respawns a fresh part with a halo before
- * the reassembly step starts.
+ * same anchor, then RepairGame/RepairMissionCase controls the install
+ * interaction and this component swaps the copy for a fresh glowing part.
  */
 export function RepairEbikeRepairTrigger({
   anchor,
-  onRepair,
+  installed,
 }: RepairEbikeRepairTriggerProps): React.JSX.Element {
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  function handleRepair(): void {
-    if (isInstalled) return;
-    setIsInstalled(true);
-    window.setTimeout(onRepair, 450);
-  }
-
   return (
     <group>
-      {!isInstalled ? (
+      {!installed ? (
         <GrabbableObject
           position={anchor}
           colliders="ball"
           handControlled
+          lockUntilGrab
           label="Retirer le refroidisseur"
         >
           <RepairObjectModel
@@ -63,23 +52,6 @@ export function RepairEbikeRepairTrigger({
           </mesh>
         </group>
       )}
-
-      <TriggerObject
-        position={[
-          anchor[0] + TRIGGER_OFFSET[0],
-          anchor[1] + TRIGGER_OFFSET[1],
-          anchor[2] + TRIGGER_OFFSET[2],
-        ]}
-        colliders="ball"
-        label="Changez le refroidisseur"
-        radius={REPAIR_INTERACTION_RADIUS}
-        onTrigger={handleRepair}
-      >
-        <mesh>
-          <sphereGeometry args={[0.55, 16, 16]} />
-          <meshBasicMaterial colorWrite={false} depthWrite={false} />
-        </mesh>
-      </TriggerObject>
     </group>
   );
 }
