@@ -6,6 +6,12 @@ import type { RepairMissionId } from "@/types/gameplay/repairMission";
 // <video> element renders at the wrong dimensions and shifts the layout.
 const NOTIFICATION_ASPECT_RATIO = "589 / 211";
 
+// Same clip-path as `.mission-notification__image-wrap` in index.css. Inlined
+// here so the video branch can re-use the silhouette without inheriting the
+// scan-line `::before` and CRT animations applied to the PNG branch.
+const NOTIFICATION_CLIP_PATH =
+  "polygon(0 0, 100% 0, 100% 69%, 88% 100%, 0 100%)";
+
 interface MissionNotificationProps {
   mission?: RepairMissionId;
   imagePath?: string;
@@ -24,14 +30,34 @@ export function MissionNotification({
   return (
     <div
       className={`mission-notification${visible ? "" : " mission-notification--hidden"}`}
+      // Webm assets already animate themselves; suppress the CRT entrance
+      // flicker + drop-shadow that index.css applies to all .mission-notification
+      // nodes so the video plays in a clean container.
+      style={
+        isVideo
+          ? {
+              animation: "none",
+              filter: "none",
+            }
+          : undefined
+      }
       aria-live="polite"
     >
-      <div className="mission-notification__glow" />
-      <span className="mission-notification__image-wrap">
-        {isVideo ? (
+      {isVideo ? null : <div className="mission-notification__glow" />}
+      {isVideo ? (
+        <span
+          style={{
+            position: "relative",
+            display: "block",
+            overflow: "hidden",
+            clipPath: NOTIFICATION_CLIP_PATH,
+          }}
+        >
           <video
-            className="mission-notification__image"
             style={{
+              display: "block",
+              width: "100%",
+              height: "auto",
               aspectRatio: NOTIFICATION_ASPECT_RATIO,
               objectFit: "cover",
             }}
@@ -43,14 +69,16 @@ export function MissionNotification({
             playsInline
             preload="auto"
           />
-        ) : (
+        </span>
+      ) : (
+        <span className="mission-notification__image-wrap">
           <img
             className="mission-notification__image"
             src={src}
             alt="Nouvel objectif de mission"
           />
-        )}
-      </span>
+        </span>
+      )}
     </div>
   );
 }

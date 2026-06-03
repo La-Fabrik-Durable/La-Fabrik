@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { HAND_TRACKING_LINGER_MS } from "@/data/handTrackingConfig";
-import { useSceneMode } from "@/hooks/debug/useSceneMode";
 import { useDebugStore } from "@/hooks/debug/useDebugStore";
-import { useInteraction } from "@/hooks/interaction/useInteraction";
 import {
   HAND_TRACKING_IDLE_SNAPSHOT,
   HandTrackingContext,
@@ -25,8 +23,14 @@ export function HandTrackingProvider({
 }: {
   children: ReactNode;
 }): React.JSX.Element {
-  const sceneMode = useSceneMode();
-  const repairNeedsHands = useGameStore((state) => {
+  // Hand tracking is gated *only* by the active repair-mission step. We
+  // intentionally do NOT activate it from generic interactable proximity
+  // (e.g. standing next to the ebike to mount it) — that previously caused
+  // hand tracking to spin up around any interactable in the physics
+  // (TestMap) scene mode, even though the player wasn't in a step that
+  // actually uses hands. Use the GameStateDebugPanel to set
+  // mainState=ebike + currentStep=inspected when testing in TestMap.
+  const requested = useGameStore((state) => {
     switch (state.mainState) {
       case "ebike":
         return REPAIR_HAND_TRACKING_STEPS.has(state.ebike.currentStep);
@@ -39,10 +43,6 @@ export function HandTrackingProvider({
         return false;
     }
   });
-  const { nearby, holding, handHolding } = useInteraction();
-  const requested =
-    repairNeedsHands ||
-    (sceneMode === "physics" && (nearby || holding || handHolding));
 
   // Keep the runtime active a little after `requested` turns off so
   // MediaPipe has time to initialize the webcam + model + first frame
