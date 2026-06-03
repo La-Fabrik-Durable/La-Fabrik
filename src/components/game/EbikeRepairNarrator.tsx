@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { EBIKE_SCAN_HINT_DIALOGUE_ID } from "@/data/ebike/ebikeConfig";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type { MissionStep } from "@/types/gameplay/repairMission";
@@ -7,8 +6,11 @@ import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { playDialogueById } from "@/utils/dialogues/playDialogue";
 
 /**
- * Plays narrator cues during the ebike repair game:
- * - `fragmented`  -> "Alors? Pas magnifique ça?... ces galets vont scanner..."
+ * Previously played the ebike repair cues directly. `RepairGame` now
+ * owns the repair-game cue timings that gate gameplay transitions
+ * (`fragmented` waits for `narrateur_galetscan`, `done` waits for
+ * `narrateur_ebikerepare`). This component remains as the central
+ * safety cleanup for legacy/queued ebike narrator audio.
  *
  * The `narrateur_refroidisseur_diagnostic` line is triggered by the
  * scan sequence itself when it lands on the refroidisseur node
@@ -26,9 +28,7 @@ import { playDialogueById } from "@/utils/dialogues/playDialogue";
  * mission transition, etc.), the active audio is paused and the
  * subtitle is force-cleared so nothing bleeds into pylon/farm/outro.
  */
-const STEP_TO_DIALOGUE_ID: Partial<Record<MissionStep, string>> = {
-  fragmented: EBIKE_SCAN_HINT_DIALOGUE_ID,
-};
+const STEP_TO_DIALOGUE_ID: Partial<Record<MissionStep, string>> = {};
 
 function stopAudio(audio: HTMLAudioElement | null): void {
   if (!audio) return;

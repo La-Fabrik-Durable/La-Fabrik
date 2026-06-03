@@ -23,7 +23,10 @@ import {
   REPAIR_REASSEMBLY_HOLD_MS,
 } from "@/data/gameplay/repairGameConfig";
 import { REPAIR_MISSIONS } from "@/data/gameplay/repairMissions";
-import { EBIKE_REPAIRED_DIALOGUE_ID } from "@/data/ebike/ebikeConfig";
+import {
+  EBIKE_REPAIRED_DIALOGUE_ID,
+  EBIKE_SCAN_HINT_DIALOGUE_ID,
+} from "@/data/ebike/ebikeConfig";
 import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmentationInput";
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
 import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
@@ -115,6 +118,8 @@ export function RepairGame({
   const [ebikeRepairTransform, setEbikeRepairTransform] =
     useState<EbikeRepairTransform | null>(null);
   const [ebikeCoolingInstalled, setEbikeCoolingInstalled] = useState(false);
+  const fragmentedSplitSettledRef = useRef(false);
+  const fragmentedDialogueDoneRef = useRef(false);
   const reassemblyDoneTimeoutRef = useRef<number | null>(null);
   // Ebike-specific: once the repair starts, keep the entire repair flow
   // exactly where the bike currently is. `Ebike` owns the live parked
@@ -275,6 +280,7 @@ export function RepairGame({
   useEffect(() => {
     if (mainState !== mission) return undefined;
     if (step !== "fragmented") return undefined;
+    if (mission === "ebike") return undefined;
 
     const timeoutId = window.setTimeout(
       () => {
@@ -285,6 +291,71 @@ export function RepairGame({
 
     return () => {
       window.clearTimeout(timeoutId);
+    };
+  }, [mainState, mission, setMissionStep, step]);
+
+  useEffect(() => {
+    if (mainState !== mission) return undefined;
+    if (mission !== "ebike") return undefined;
+    if (step !== "fragmented") return undefined;
+
+    fragmentedSplitSettledRef.current = false;
+    fragmentedDialogueDoneRef.current = false;
+
+    let cancelled = false;
+    let activeAudio: HTMLAudioElement | null = null;
+    let fallbackTimeoutId: number | null = null;
+
+    const tryAdvance = (): void => {
+      if (cancelled) return;
+      if (!fragmentedSplitSettledRef.current) return;
+      if (!fragmentedDialogueDoneRef.current) return;
+      setMissionStep(mission, "scanning");
+    };
+
+    const markDialogueDone = (): void => {
+      if (cancelled) return;
+      fragmentedDialogueDoneRef.current = true;
+      tryAdvance();
+    };
+
+    void (async () => {
+      const manifest = await loadDialogueManifest();
+      if (cancelled) return;
+      const audio = manifest
+        ? await playDialogueById(manifest, EBIKE_SCAN_HINT_DIALOGUE_ID)
+        : null;
+      if (cancelled) {
+        if (audio && !audio.paused) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        useSubtitleStore.getState().clearActiveSubtitle();
+        return;
+      }
+
+      activeAudio = audio;
+      if (audio) {
+        audio.addEventListener("ended", markDialogueDone, { once: true });
+        fallbackTimeoutId = window.setTimeout(markDialogueDone, 15000);
+      } else {
+        fallbackTimeoutId = window.setTimeout(markDialogueDone, 1000);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (activeAudio) {
+        activeAudio.removeEventListener("ended", markDialogueDone);
+        if (!activeAudio.paused) {
+          activeAudio.pause();
+          activeAudio.currentTime = 0;
+        }
+      }
+      if (fallbackTimeoutId !== null) {
+        window.clearTimeout(fallbackTimeoutId);
+      }
+      useSubtitleStore.getState().clearActiveSubtitle();
     };
   }, [mainState, mission, setMissionStep, step]);
 
@@ -381,6 +452,13 @@ export function RepairGame({
     () => (settledAt: 0 | 1) => {
       const currentStep = stepRef.current;
       if (settledAt === 1 && currentStep === "fragmented") {
+        if (mission === "ebike") {
+          fragmentedSplitSettledRef.current = true;
+          if (fragmentedDialogueDoneRef.current) {
+            setMissionStep(mission, "scanning");
+          }
+          return;
+        }
         setMissionStep(mission, "scanning");
       }
       if (settledAt === 0 && currentStep === "reassembling") {
