@@ -46,14 +46,28 @@ export function EbikeRepairNarrator(): null {
     playedRef.current.add(ebikeStep);
 
     let cancelled = false;
+    let activeAudio: HTMLAudioElement | null = null;
+
     void (async () => {
       const manifest = await loadDialogueManifest();
       if (cancelled || !manifest) return;
-      await playDialogueById(manifest, dialogueId);
+      const audio = await playDialogueById(manifest, dialogueId);
+      if (cancelled) {
+        if (audio && !audio.paused) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        return;
+      }
+      activeAudio = audio;
     })();
 
     return () => {
       cancelled = true;
+      if (activeAudio && !activeAudio.paused) {
+        activeAudio.pause();
+        activeAudio.currentTime = 0;
+      }
     };
   }, [mainState, ebikeStep]);
 
