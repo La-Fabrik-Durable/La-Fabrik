@@ -20,6 +20,7 @@ import {
   isMapModelVisible,
   useMapPerformanceStore,
 } from "@/managers/stores/useMapPerformanceStore";
+import { useGameStore } from "@/managers/stores/useGameStore";
 import { InstancedMapAsset } from "@/world/map-instancing/InstancedMapAsset";
 import {
   MAP_INSTANCING_ASSETS,
@@ -27,6 +28,8 @@ import {
   type MapInstancingAssetConfig,
   type MapInstancingAssetType,
 } from "@/data/world/mapInstancingConfig";
+import { REPAIR_MISSION_ANCHOR_IDS } from "@/data/gameplay/repairMissionAnchors";
+import { isRepairGameStep } from "@/types/gameplay/repairMission";
 import { useMapInstancingData } from "@/hooks/world/useMapInstancingData";
 import type { MapAssetInstance } from "@/types/map/mapScene";
 import type { GraphicsPreset } from "@/data/world/graphicsConfig";
@@ -146,12 +149,23 @@ export function MapInstancingSystem({
   const groups = useMapPerformanceStore((state) => state.groups);
   const models = useMapPerformanceStore((state) => state.models);
   const { data, isLoading } = useMapInstancingData();
+  const mainState = useGameStore((state) => state.mainState);
+  const pylonStep = useGameStore((state) => state.pylon.currentStep);
   const streamingEnabled =
     streaming &&
     CHUNK_CONFIG.enabled &&
     graphicsPresetConfig.chunkStreamingEnabled &&
     sceneMode === "game" &&
     cameraMode === "player";
+
+  // During the pylon narrative phase (before the pylon is raised), hide the
+  // repair:pylon instanced mesh so the PylonDownedPylon component takes its place.
+  // Once the pylon is raised (repair-game steps), restore it so the normal model
+  // appears upright in the world while the repair mini-game runs.
+  const hidePylonAnchorId =
+    mainState === "pylon" && !isRepairGameStep(pylonStep)
+      ? REPAIR_MISSION_ANCHOR_IDS.pylon
+      : undefined;
 
   const chunks = useMemo(() => {
     if (!data) return [];
@@ -168,12 +182,18 @@ export function MapInstancingSystem({
         return [];
       }
 
-      const instances = data.get(type);
+      let instances = data.get(type);
       if (!instances || instances.length === 0) return [];
+
+      // Filter out the repair-mission pylon instance during the narrative phase
+      if (hidePylonAnchorId && config.mapName === "pylone") {
+        instances = instances.filter((inst) => inst.id !== hidePylonAnchorId);
+        if (instances.length === 0) return [];
+      }
 
       return createMapAssetChunks(type, config, instances);
     });
-  }, [data, groups, models, onlyMapName]);
+  }, [data, groups, models, onlyMapName, hidePylonAnchorId]);
 
   const visibleChunks = useVisibleWorldChunks(chunks, streamingEnabled, {
     loadRadius: graphicsPresetConfig.chunkLoadRadius,

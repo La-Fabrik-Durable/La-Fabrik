@@ -11,6 +11,8 @@ export interface MapNode {
 }
 
 export interface MapNodeInstanceTransform {
+  /** Node id from map.json — preserved so specific instances can be excluded at runtime. */
+  id?: string;
   position: Vector3Tuple;
   rotation: Vector3Tuple;
   scale: Vector3Tuple;

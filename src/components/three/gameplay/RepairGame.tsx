@@ -204,7 +204,7 @@ export function RepairGame({
             onComplete={() => setMissionStep(mission, "done")}
           />
         ) : null}
-        {step === "done" ? (
+        {step === "done" && mission !== "pylon" ? (
           <RepairCompletionStep
             config={config}
             onComplete={() => completeMission(mission)}

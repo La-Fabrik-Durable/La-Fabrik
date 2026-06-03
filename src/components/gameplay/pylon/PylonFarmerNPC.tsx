@@ -43,8 +43,31 @@ function faceToward(
   return Math.atan2(dx, dz);
 }
 
+/**
+ * Outer shell — only checks visibility conditions.
+ * Rendering is delegated to PylonFarmerNPCContent so that the heavy hooks
+ * (useFrame, useAnimations) are only active while the NPC is actually shown.
+ */
 export function PylonFarmerNPC(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
+  const step = useGameStore((state) => state.pylon.currentStep);
+
+  if (mainState !== "pylon") return null;
+  // Visible during narrative + at repair completion (hides during repair steps)
+  if (
+    step !== "arrived" &&
+    step !== "npc-return" &&
+    step !== "inspected" &&
+    step !== "done"
+  ) {
+    return null;
+  }
+
+  return <PylonFarmerNPCContent />;
+}
+
+// ─── Inner component — heavy hooks only run when NPC is mounted ──────────────
+function PylonFarmerNPCContent(): React.JSX.Element {
   const step = useGameStore((state) => state.pylon.currentStep);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
   const camera = useThree((state) => state.camera);
@@ -102,7 +125,6 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
   const playPostRaiseAudioAndAdvance = useCallback(async () => {
     const manifest = await loadDialogueManifest();
     if (manifest) {
-      // "N'hésite pas, si tu as besoin d'autre chose !"
       const audio = await playDialogueById(
         manifest,
         PYLON_NARRATIVE_DIALOGUES.electricienneApresMontage,
@@ -133,6 +155,15 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
     } else if (step === "npc-return") {
       playAnim("walk");
     } else if (step === "inspected") {
+      playAnim("idle");
+    } else if (step === "done") {
+      // NPC reappears at repair completion — position at the post-raise spot,
+      // facing the pylon, playing idle.
+      currentPosRef.current.set(...PYLON_FARMER_NPC_AFTER_POSITION_pylone_straight);
+      savedRotationYRef.current = faceToward(
+        currentPosRef.current,
+        PYLON_WORLD_POSITION,
+      );
       playAnim("idle");
     }
   }, [step, playAnim]);
@@ -184,7 +215,7 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
         );
       }
       group.position.copy(currentPosRef.current);
-    } else if (step === "inspected") {
+    } else if (step === "inspected" || step === "done") {
       group.position.set(...PYLON_FARMER_NPC_AFTER_POSITION_pylone_straight);
     } else if (isCompleted) {
       group.position.copy(currentPosRef.current);
@@ -211,10 +242,6 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
   });
   /* eslint-enable react-hooks/immutability */
 
-  if (mainState !== "pylon") return null;
-  if (step !== "arrived" && step !== "npc-return" && step !== "inspected")
-    return null;
-
   return (
     <group ref={groupRef} position={PYLON_FARMER_NPC_POSITION}>
       <primitive object={model} />
@@ -225,6 +252,13 @@ export function PylonFarmerNPC(): React.JSX.Element | null {
           position={PYLON_FARMER_NPC_POSITION}
           radius={PYLON_NARRATIVE_INTERACT_RADIUS}
           onPress={() => {
+            // Turn to face the player the moment they engage the NPC
+            savedRotationYRef.current = faceToward(currentPosRef.current, [
+              camera.position.x,
+              camera.position.y,
+              camera.position.z,
+            ]);
+
             void (async () => {
               const manifest = await loadDialogueManifest();
               if (!manifest) {
