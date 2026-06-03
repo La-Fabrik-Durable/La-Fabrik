@@ -4,6 +4,8 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { InteractableObject } from "@/components/three/interaction/InteractableObject";
 import { useGameStore } from "@/managers/stores/useGameStore";
+import { useRepairMissionAnchorStore } from "@/managers/stores/useRepairMissionAnchorStore";
+import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { playDialogueById } from "@/utils/dialogues/playDialogue";
 import {
@@ -14,6 +16,7 @@ import {
   PYLON_UPRIGHT_ROTATION,
   PYLON_WORLD_POSITION,
 } from "@/data/gameplay/pylonConfig";
+import { isRepairGameStep } from "@/types/gameplay/repairMission";
 import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
 
 const PYLON_MODEL_PATH = "/models/pylone/model.glb";
@@ -22,6 +25,15 @@ export function PylonDownedPylon(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
   const step = useGameStore((state) => state.pylon.currentStep);
   const setCanMove = useGameStore((state) => state.setCanMove);
+  // Use the repair:pylon anchor from the store so the downed pylon is always
+  // co-located with the instanced mesh it replaces. Falls back to the
+  // hard-coded constant while the map is loading or unavailable.
+  const pylonAnchor = useRepairMissionAnchorStore(
+    (state) => state.anchors.pylon,
+  );
+  // Snap to terrain so the downed/upright model sits flush on the ground,
+  // matching the Y adjustment that InstancedMapAsset applies to the same node.
+  const position = useTerrainSnappedPosition(pylonAnchor ?? PYLON_WORLD_POSITION);
   const [isStraightening, setIsStraightening] = useState(false);
   // Keeps the pylon upright after the animation completes while
   // PylonFarmerNPC plays the post-raise audio sequence.
@@ -30,19 +42,9 @@ export function PylonDownedPylon(): React.JSX.Element | null {
   const straightenStartRef = useRef<number | null>(null);
   const hasPlayedFirstAudioRef = useRef(false);
 
-  const showUpright =
-    isRaised ||
-    mainState !== "pylon" ||
-    step === "waiting" ||
-    step === "inspected" ||
-    step === "fragmented" ||
-    step === "scanning" ||
-    step === "repairing" ||
-    step === "reassembling" ||
-    step === "done" ||
-    step === "narrator-outro";
-
-  const isPylonInteractive = step === "arrived" || step === "npc-return";
+  // Hidden outside the pylon mission and once the pylon has been raised
+  // (repair-game steps take over from there).
+  const shouldRender = mainState === "pylon" && !isRepairGameStep(step);
 
   useEffect(() => {
     if (step === "arrived") {
@@ -61,9 +63,7 @@ export function PylonDownedPylon(): React.JSX.Element | null {
     if (!group) return;
 
     if (!isStraightening || straightenStartRef.current === null) {
-      group.rotation.set(
-        ...(showUpright ? PYLON_UPRIGHT_ROTATION : PYLON_DOWNED_ROTATION),
-      );
+      group.rotation.set(...(isRaised ? PYLON_UPRIGHT_ROTATION : PYLON_DOWNED_ROTATION));
       return;
     }
 
@@ -78,6 +78,8 @@ export function PylonDownedPylon(): React.JSX.Element | null {
       THREE.MathUtils.lerp(startEuler.z, 0, eased),
     );
   });
+
+  const isPylonInteractive = step === "arrived" || step === "npc-return";
 
   const beginStraighten = (): void => {
     setIsStraightening(true);
@@ -99,10 +101,12 @@ export function PylonDownedPylon(): React.JSX.Element | null {
     }, PYLON_STRAIGHTEN_ANIMATION_DURATION_MS);
   };
 
+  if (!shouldRender) return null;
+
   return (
     <group
       ref={groupRef}
-      position={PYLON_WORLD_POSITION}
+      position={position}
       rotation={PYLON_DOWNED_ROTATION}
     >
       <primitive object={scene.clone(true)} />
@@ -112,7 +116,7 @@ export function PylonDownedPylon(): React.JSX.Element | null {
           label={
             step === "arrived" ? "Inspecter le pylône" : "Redresser le pylône"
           }
-          position={PYLON_WORLD_POSITION}
+          position={position}
           radius={PYLON_NARRATIVE_INTERACT_RADIUS}
           onPress={() => {
             if (step === "arrived") {
