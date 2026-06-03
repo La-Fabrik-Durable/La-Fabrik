@@ -14,6 +14,11 @@ const HAND_TUTORIAL_STEPS: ReadonlySet<MissionStep> = new Set([
   "inspected",
 ]);
 
+// Fallback: if hand detection never fires (camera blocked, MediaPipe failure,
+// player using mouse), the tutorial auto-dismisses after this delay so it
+// never blocks the screen indefinitely.
+const HAND_TUTORIAL_FALLBACK_TIMEOUT_MS = 5000;
+
 /**
  * First-time hand-tracking tutorial. Visible during the early ebike repair
  * steps until MediaPipe actually detects a hand on screen. Once dismissed it
@@ -38,6 +43,17 @@ export function HandTrackingTutorial(): React.JSX.Element | null {
       setDismissed(true);
     }
   }, [handsDetected, dismissed]);
+
+  // Fallback timeout: dismiss the tutorial even if no hand is ever detected,
+  // so the overlay never gets stuck on screen.
+  useEffect(() => {
+    if (!isInShowWindow || dismissed) return undefined;
+    const timer = window.setTimeout(
+      () => setDismissed(true),
+      HAND_TUTORIAL_FALLBACK_TIMEOUT_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [isInShowWindow, dismissed]);
 
   if (!isInShowWindow || dismissed) return null;
 

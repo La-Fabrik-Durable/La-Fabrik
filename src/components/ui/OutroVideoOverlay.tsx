@@ -6,6 +6,8 @@ const OUTRO_VIDEO_SRC = "/cinematics/outro.mp4";
 const TRANSITION_FADE_MS = 600;
 const TRANSITION_HOLD_MS = 2000;
 const TRANSITION_TEXT_FADE_MS = 500;
+// Delay between "Next step :" appearing and "La ferme" fading in.
+const TRANSITION_LAFERME_DELAY_MS = 500;
 
 const MUTED_CATEGORIES: readonly AudioCategory[] = ["music", "sfx", "dialogue"];
 
@@ -28,6 +30,7 @@ type Stage =
  */
 export function OutroVideoOverlay(): React.JSX.Element | null {
   const [stage, setStage] = useState<Stage>("hidden");
+  const [lafermeVisible, setLafermeVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const savedVolumesRef = useRef<Partial<Record<AudioCategory, number>>>({});
 
@@ -70,6 +73,24 @@ export function OutroVideoOverlay(): React.JSX.Element | null {
         TRANSITION_TEXT_FADE_MS,
       );
       return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [stage]);
+
+  // Stagger the second word ("La ferme") so it fades in after "Next step :"
+  // is already visible.
+  useEffect(() => {
+    if (stage === "showing-text") {
+      const timer = window.setTimeout(
+        () => setLafermeVisible(true),
+        TRANSITION_LAFERME_DELAY_MS,
+      );
+      return () => window.clearTimeout(timer);
+    }
+    if (stage === "hidden" || stage === "fading-in") {
+      // Reset the staged reveal so a re-triggered outro replays correctly.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLafermeVisible(false);
     }
     return undefined;
   }, [stage]);
@@ -135,7 +156,15 @@ export function OutroVideoOverlay(): React.JSX.Element | null {
             transition: `opacity ${TRANSITION_TEXT_FADE_MS}ms ease-in`,
           }}
         >
-          Next step : La ferme
+          Next step :{" "}
+          <span
+            style={{
+              opacity: lafermeVisible ? 1 : 0,
+              transition: `opacity ${TRANSITION_TEXT_FADE_MS}ms ease-in`,
+            }}
+          >
+            La ferme
+          </span>
         </div>
       ) : null}
       {stage === "video" ? (
