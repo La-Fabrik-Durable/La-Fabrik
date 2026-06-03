@@ -9,6 +9,7 @@ import type {
 import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompletionStep";
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
+import { BUBBLE_GROW_DURATION_SECONDS } from "@/components/three/gameplay/RepairFocusBubble";
 import { RepairRepairingStep } from "@/components/three/gameplay/RepairRepairingStep";
 import { RepairReassemblyStep } from "@/components/three/gameplay/RepairReassemblyStep";
 import { RepairScanSequence } from "@/components/three/gameplay/RepairScanSequence";
@@ -118,7 +119,7 @@ export function RepairGame({
   const focusCenterZ = snappedPosition[2];
   useEffect(() => {
     const inFocusPhase =
-      mainState === mission && shouldFocusBubbleBeActive(step);
+      mainState === mission && shouldFocusBubbleBeActive(step, mission);
     if (inFocusPhase) {
       useRepairFocusStore
         .getState()
@@ -129,6 +130,24 @@ export function RepairGame({
     }
     return undefined;
   }, [mainState, mission, step, focusCenterX, focusCenterY, focusCenterZ]);
+
+  // Ebike-only: auto-advance inspected -> fragmented once the focus
+  // bubble's grow tween has finished isolating the bike inside the dark
+  // cocoon. The 2.5s delay matches BUBBLE_GROW_DURATION_SECONDS so the
+  // fragmentation visual coincides with the fully-formed shroud.
+  useEffect(() => {
+    if (mainState !== mission) return undefined;
+    if (mission !== "ebike") return undefined;
+    if (step !== "inspected") return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setMissionStep(mission, "fragmented");
+    }, BUBBLE_GROW_DURATION_SECONDS * 1000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [mainState, mission, setMissionStep, step]);
 
   useEffect(() => {
     if (mainState !== mission) return undefined;
@@ -210,16 +229,24 @@ export function RepairGame({
             onComplete={() => completeMission(mission)}
           />
         ) : null}
-        {step !== "waiting" && step !== "done" && step !== "reassembling" ? (
+        {step !== "waiting" &&
+        step !== "done" &&
+        step !== "reassembling" &&
+        // Ebike's inspected phase is a 2.5s sphere-reveal cinematic that
+        // auto-advances to fragmented; the case + "press to fragment"
+        // prompt would only flash on screen, so suppress them here.
+        !(mission === "ebike" && step === "inspected") ? (
           <RepairMissionCase
             config={config}
             onPlaceholdersChange={setCasePlaceholders}
             onAnchorsChange={setCaseAnchors}
             open={step === "repairing"}
             zoomed={step === "repairing"}
-            showFragmentationPrompt={readyForFragmentation}
+            showFragmentationPrompt={
+              readyForFragmentation && mission !== "ebike"
+            }
             onInteract={
-              readyForFragmentation
+              readyForFragmentation && mission !== "ebike"
                 ? () => setMissionStep(mission, "fragmented")
                 : undefined
             }
@@ -234,7 +261,15 @@ function shouldKeepRepairRuntimeState(step: MissionStep): boolean {
   return step === "repairing" || step === "reassembling" || step === "done";
 }
 
-function shouldFocusBubbleBeActive(step: MissionStep): boolean {
+function shouldFocusBubbleBeActive(
+  step: MissionStep,
+  mission: RepairMissionId,
+): boolean {
+  // Ebike opens the focus bubble one phase earlier (inspected) so the
+  // sphere visibly engulfs the bike during the inspect-then-explode
+  // build-up. Pylon/farm keep their original behaviour where the bubble
+  // appears once the model has fragmented.
+  if (mission === "ebike" && step === "inspected") return true;
   return (
     step === "fragmented" ||
     step === "scanning" ||

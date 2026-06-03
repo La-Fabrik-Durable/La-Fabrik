@@ -4,7 +4,12 @@ import * as THREE from "three";
 import { useRepairFocusStore } from "@/managers/stores/useRepairFocusStore";
 
 const BUBBLE_RADIUS_METERS = 10;
-const BUBBLE_GROW_DURATION_SECONDS = 2.5;
+/**
+ * Duration of the GSAP `expo.out` grow tween. Exported so step-driven
+ * code (e.g. `RepairGame` advancing inspected -> fragmented) can wait
+ * the same amount of time before triggering the next phase.
+ */
+export const BUBBLE_GROW_DURATION_SECONDS = 2.5;
 const BUBBLE_SHRINK_DURATION_SECONDS = 1.2;
 const BUBBLE_COLOR = "#060814";
 const BUBBLE_OPACITY = 0.92;

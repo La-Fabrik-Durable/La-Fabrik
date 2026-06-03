@@ -366,10 +366,10 @@ export function Ebike({
         return;
       }
 
-      if (mainState === "ebike" && ebikeStep === "inspected") {
-        setMissionStep("ebike", "fragmented");
-        return;
-      }
+      // Note: inspected -> fragmented is no longer driven by press-E.
+      // It auto-advances after the focus bubble's grow tween (see
+      // RepairGame, gated on BUBBLE_GROW_DURATION_SECONDS), so the
+      // sphere visibly engulfs the bike before the explode animation.
 
       const cameraOffset = new THREE.Vector3(
         ...EBIKE_CAMERA_TRANSFORM.position,
