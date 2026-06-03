@@ -163,23 +163,20 @@ Both paths move to `fragmented`.
 
 ### Fragmented
 
-File:
+Files:
 
 ```txt
 src/components/three/models/ExplodableModel.tsx
+src/utils/three/ExplodedModel.ts
 ```
 
-The mission object is shown split apart. A timer then moves the mission to `scanning`.
+The mission object is shown split apart. `RepairGame` mounts a **single** `ExplodableModel` instance for the entire repair flow (`fragmented` -> `done`) so the model loads once, animates from its real authored positions, and is never re-instantiated when the player advances to scanning, repairing, reassembling or done. This eliminates the visible position/rotation jumps and re-explosion that occurred when each step instantiated its own model.
 
 `ExplodedModel.createParts` walks the GLTF tree recursively, descending through any single mesh-bearing wrapper node (e.g. `Scene > Moto > Eclatement` for the Ebike) until it reaches a node with multiple mesh-bearing children. Those children are the natural "explosion groups" authored by the modeler. This avoids exploding raw leaf meshes in local space when the model has extra empty wrapper nodes above the intended group.
 
-When mounted, `RepairGame` applies `RepairMissionConfig.modelRotation` and `modelScale` to the fragmented model so it lines up with the source inspection model in world space (e.g. the parked Ebike using `EBIKE_WORLD_ROTATION_Y` / `EBIKE_WORLD_SCALE`).
+When mounted, `RepairGame` applies `RepairMissionConfig.modelRotation` and `modelScale` to the shared model so it lines up with the source inspection model in world space (e.g. the parked Ebike using `EBIKE_WORLD_ROTATION_Y` / `EBIKE_WORLD_SCALE`). The explode/reassemble lerp speed is configurable via `splitSpeed` (default `REPAIR_FRAGMENT_SPLIT_SPEED = 1.8`, ~1.5s) so each node is clearly seen leaving its origin.
 
-The default delay comes from:
-
-```txt
-REPAIR_FRAGMENTATION_SEQUENCE_SECONDS
-```
+Transition out is event-driven: the model fires `onSplitSettled(1)` when the lerp converges and `RepairGame` advances to `scanning`. A `REPAIR_FRAGMENTATION_SEQUENCE_SECONDS + 2` fallback timer guards against load failures.
 
 ### Scanning
 
@@ -189,50 +186,33 @@ File:
 src/components/three/gameplay/RepairScanSequence.tsx
 ```
 
-The scan sequence:
+The scan sequence is now stateless w.r.t. the model: it receives `parts: ExplodedPart[]` from the upstream shared `ExplodableModel` and:
 
-- keeps the exploded model visible
-- receives model parts from `ExplodableModel`
 - advances an active part index over time
 - renders `RepairScanVisual` on the active part
-- reveals broken-part highlights when configured broken parts have been reached
+- reveals broken-part highlights cumulatively as scan progresses
+- when the active part has a `voiceLineId`, gates the advance on the audio's `ended` event (with a 15s ceiling fallback) so the diagnostic line plays in full
 - returns `RepairScannedBrokenPart[]` when done
 
-Broken-part lookup first tries `brokenParts[].nodeName`. If no configured node matches, it falls back to the first available exploded parts. This fallback is useful while GLTF node names are still unstable, but precise `nodeName` config is safer for production.
+Broken-part lookup uses `brokenParts[].nodeName` against the exploded parts (deep traverse). When a configured node can't be matched, the available part names are logged so config drift is visible in the console.
 
 ### Repairing
 
-File:
+For pylon/farm:
 
 ```txt
 src/components/three/gameplay/RepairRepairingStep.tsx
 ```
 
-This is the densest gameplay step.
+This is the densest gameplay step. It renders install target, placeholder markers, grabbable replacement parts, grabbable broken parts to store, placement feedback and a ready-to-install prompt. Validation requires the correct replacement part placed AND every scanned broken part deposited.
 
-It renders:
-
-- install target
-- placeholder markers
-- grabbable replacement parts
-- grabbable broken parts to store
-- placement feedback
-- ready-to-install prompt
-
-Important local state:
-
-- `placedPartIds`: replacement parts that snapped near a placeholder
-- `depositedBrokenPartIds`: broken parts stored in the case
-- `showBlockedInstallFeedback`: temporary visual feedback when install is attempted too early
-
-Validation:
+For ebike (mission 1, simplified):
 
 ```txt
-correct replacement part placed
-AND every scanned broken part deposited
+src/components/three/gameplay/RepairEbikeRepairTrigger.tsx
 ```
 
-Only then does the install target call `onRepair()` and move to `reassembling`.
+Replaces the heavier grabbable UX with a single "Changez le refroidisseur" prompt. Pressing E advances directly to `reassembling`. The cercles décoratifs and grabbable parts are omitted to keep the first repair experience low-friction.
 
 ### Reassembling
 
@@ -242,23 +222,24 @@ File:
 src/components/three/gameplay/RepairReassemblyStep.tsx
 ```
 
-The exploded model animates back into assembled form and completion particles play. A timer then moves the mission to `done`.
+The shared `ExplodableModel` flips `split=false`, animating each node back to its original position (inverse of fragmented). `RepairReassemblyStep` itself is now reduced to:
 
-Mission configs can override the default reassembly duration.
+- the completion particles
+- a `delayMs` timer (`REPAIR_REASSEMBLY_HOLD_MS = 1500`) that fires `onSettled` so `RepairGame` auto-advances to `done`
 
 ### Done
 
-File:
+For pylon/farm:
 
 ```txt
 src/components/three/gameplay/RepairCompletionStep.tsx
 ```
 
-The repaired object remains visible. The player validates the completion target, then:
+The shared exploded model (now reassembled) remains visible. The player validates a green completion target, the case closes and exits, then `completeMission(mission)` advances the global game progression.
 
-1. the repair case closes
-2. the case plays its exit animation
-3. `completeMission(mission)` advances the global game progression
+For ebike (mission 1, auto-complete):
+
+`RepairGame` plays `narrateur_ebikerepare` directly on entry to `done`. When the audio's `ended` event fires (with `REPAIR_DONE_DIALOGUE_FALLBACK_MS = 6000` fallback) `completeMission("ebike")` is called automatically and the world hands off to the pylon mission. The bubble shrinks via `shouldFocusBubbleBeActive(done) === false`. No Validate button is shown.
 
 ## Focus Bubble
 
@@ -279,11 +260,15 @@ The bubble is mounted both in `GameStageContent` (production scene) and `TestMap
 
 `EbikeRepairNarrator` (`src/components/game/EbikeRepairNarrator.tsx`) is a headless component mounted in `src/pages/page.tsx` next to `EbikeIntroSequence`. It subscribes to `useGameStore` and plays one-shot narrator cues at specific repair-step transitions for the `ebike` mission only:
 
-| Step entered | Dialogue ID                          | Audio file                         | Subtitle |
-| ------------ | ------------------------------------ | ---------------------------------- | -------- |
-| `fragmented` | `narrateur_galetscan`                | `narrateur_galetscan.mp3`          | cue 6    |
-| `repairing`  | `narrateur_refroidisseur_diagnostic` | `narrateur_refroidisseurcassé.mp3` | cue 24   |
-| `done`       | `narrateur_ebikerepare`              | `narrateur_ebikeréparé.mp3`        | cue 7    |
+| Step entered | Dialogue ID                          | Audio file                         | Subtitle | Owner                  |
+| ------------ | ------------------------------------ | ---------------------------------- | -------- | ---------------------- |
+| `fragmented` | `narrateur_galetscan`                | `narrateur_galetscan.mp3`          | cue 6    | `EbikeRepairNarrator`  |
+| `scanning`   | `narrateur_refroidisseur_diagnostic` | `narrateur_refroidisseurcassé.mp3` | cue 24   | `RepairScanSequence`\* |
+| `done`       | `narrateur_ebikerepare`              | `narrateur_ebikeréparé.mp3`        | cue 7    | `RepairGame`\*\*       |
+
+\* The diagnostic line is triggered by the scan sequence when it lands on the broken part configured with `voiceLineId` (refroidisseur for ebike). The advance to `repairing` is gated on the audio's `ended` event so the line plays in full with the red highlight on screen.
+
+\*\* `RepairGame` plays the success line directly on entering `done` so the audio's `ended` event can drive `completeMission` and hand off to pylon. A `REPAIR_DONE_DIALOGUE_FALLBACK_MS` timer guards against load failures. `EbikeRepairNarrator` no longer owns this cue.
 
 A `useRef<Set<MissionStep>>` guards against double-fires (StrictMode, re-renders) and is cleared when the mission rolls back to `locked` or `waiting`, so debug-panel replays still trigger the narration.
 
