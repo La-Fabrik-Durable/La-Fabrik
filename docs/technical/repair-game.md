@@ -275,6 +275,22 @@ While the player is in `fragmented`, `scanning`, `repairing` or `reassembling`, 
 
 The bubble is mounted both in `GameStageContent` (production scene) and `TestMap` (physics test scene) so the behaviour matches in both contexts.
 
+## Narrator Audio (Ebike Mission)
+
+`EbikeRepairNarrator` (`src/components/game/EbikeRepairNarrator.tsx`) is a headless component mounted in `src/pages/page.tsx` next to `EbikeIntroSequence`. It subscribes to `useGameStore` and plays one-shot narrator cues at specific repair-step transitions for the `ebike` mission only:
+
+| Step entered | Dialogue ID                          | Audio file                         | Subtitle |
+| ------------ | ------------------------------------ | ---------------------------------- | -------- |
+| `fragmented` | `narrateur_galetscan`                | `narrateur_galetscan.mp3`          | cue 6    |
+| `repairing`  | `narrateur_refroidisseur_diagnostic` | `narrateur_refroidisseurcassé.mp3` | cue 24   |
+| `done`       | `narrateur_ebikerepare`              | `narrateur_ebikeréparé.mp3`        | cue 7    |
+
+A `useRef<Set<MissionStep>>` guards against double-fires (StrictMode, re-renders) and is cleared when the mission rolls back to `locked` or `waiting`, so debug-panel replays still trigger the narration.
+
+Cue 7 was previously a single subtitle covering both the diagnostic line and the "Eeeet voilà!" completion line. It was split into cue 7 (completion only) and a new cue 24 (diagnostic) so the two sentences can be triggered at independent moments — they correspond to two distinct `.mp3` files.
+
+The breakdown line (`narrateur_ebikecasse`, cue 5) is still triggered by `EbikeIntroSequence` at distance threshold, not by this component. Pylon and farm narrator cues are not yet wired through `EbikeRepairNarrator`; the same per-mission lookup pattern can be extended when those flows need narration.
+
 ## Repair Case Details
 
 The case model implementation lives in:
