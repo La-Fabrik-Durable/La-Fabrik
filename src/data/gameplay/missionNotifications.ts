@@ -5,7 +5,7 @@ export const INTRO_MISSION_NOTIFICATION_IMAGE_PATH =
 
 export const MISSION_NOTIFICATION_IMAGE_PATHS: Record<RepairMissionId, string> =
   {
-    ebike: "/assets/world/UI/ebike-mission-notification.webm",
-    pylon: "/assets/world/UI/pylon-mission-notification.webm",
-    farm: "/assets/world/UI/farm-mission-notification.webm",
+    ebike: "/assets/world/UI/ebike.webm",
+    pylon: "/assets/world/UI/centrale.webm",
+    farm: "/assets/world/UI/laferme.webm",
   };
