@@ -99,6 +99,7 @@ export interface RepairMissionConfig {
 
 export type MissionStep =
   | "locked"
+  | "tampon"
   | "approaching"
   | "arrived"
   | "npc-return"
@@ -113,6 +114,7 @@ export type MissionStep =
   | "electricienne_history";
 
 export const PYLON_NARRATIVE_STEPS = [
+  "tampon",
   "approaching",
   "arrived",
   "npc-return",

@@ -41,6 +41,8 @@ export const PYLON_NARRATIVE_INTERACT_RADIUS = 3.5;
 
 export const PYLON_STRAIGHTEN_ANIMATION_DURATION_MS = 2200;
 
+export const PYLON_APPROACH_DELAY_MS = 7500;
+
 export const PYLON_NARRATIVE_DIALOGUES = {
   electricOutage: "narrateur_coupureelec",
   searchCentral: "narrateur_fouillelecentre",

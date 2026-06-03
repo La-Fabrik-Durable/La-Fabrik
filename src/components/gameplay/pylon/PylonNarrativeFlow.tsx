@@ -5,7 +5,10 @@ import { ZoneDetection } from "@/components/zone/ZoneDetection";
 import { PylonFarmerNPC } from "@/components/gameplay/pylon/PylonFarmerNPC";
 import { PylonNarratorOutro } from "@/components/gameplay/pylon/PylonNarratorOutro";
 import { PYLON_APPROACH_ZONE, PYLON_ARRIVED_ZONE } from "@/data/gameplay/zones";
-import { PYLON_NARRATIVE_DIALOGUES } from "@/data/gameplay/pylonConfig";
+import {
+  PYLON_APPROACH_DELAY_MS,
+  PYLON_NARRATIVE_DIALOGUES,
+} from "@/data/gameplay/pylonConfig";
 import { AudioManager } from "@/managers/AudioManager";
 import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
 import { playDialogueById } from "@/utils/dialogues/playDialogue";
@@ -18,6 +21,18 @@ export function PylonNarrativeFlow(): React.JSX.Element | null {
   const step = useGameStore((state) => state.pylon.currentStep);
   const setMissionStep = useGameStore((state) => state.setMissionStep);
   const setCanMove = useGameStore((state) => state.setCanMove);
+
+  useEffect(() => {
+    if (mainState !== "pylon" || step !== "tampon") return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setMissionStep("pylon", "approaching");
+    }, PYLON_APPROACH_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [mainState, setMissionStep, step]);
 
   // ── approaching : powerdown sfx → then electricOutage dialogue ────────────
   useEffect(() => {
@@ -129,7 +144,7 @@ export function PylonNarrativeFlow(): React.JSX.Element | null {
       <ZoneDetection
         key="pylon-approach"
         zone={PYLON_APPROACH_ZONE}
-        onEnter={() => setMissionStep("pylon", "approaching")}
+        onEnter={() => setMissionStep("pylon", "tampon")}
       />
     );
   }

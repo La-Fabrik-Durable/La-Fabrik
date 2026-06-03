@@ -11,6 +11,7 @@ const REPAIR_MISSION_ID_VALUES: ReadonlySet<string> = new Set(
 export const MISSION_STEPS = [
   "locked",
   "electricienne_history",
+  "tampon",
   "approaching",
   "arrived",
   "npc-return",
@@ -26,6 +27,7 @@ export const MISSION_STEPS = [
 const MISSION_STEP_VALUES: ReadonlySet<string> = new Set(MISSION_STEPS);
 
 const PYLON_ONLY_MISSION_STEPS = new Set<MissionStep>([
+  "tampon",
   "approaching",
   "arrived",
   "npc-return",
@@ -61,9 +63,11 @@ export function getNextMissionStep(
 ): MissionStep {
   switch (step) {
     case "locked":
-      return mission === "pylon" ? "approaching" : "waiting";
+      return mission === "pylon" ? "tampon" : "waiting";
     case "electricienne_history":
       return "done";
+    case "tampon":
+      return "approaching";
     case "approaching":
       return "arrived";
     case "arrived":
@@ -98,8 +102,10 @@ export function getPreviousMissionStep(
       return "locked";
     case "electricienne_history":
       return "locked";
-    case "approaching":
+    case "tampon":
       return "locked";
+    case "approaching":
+      return "tampon";
     case "arrived":
       return "approaching";
     case "npc-return":
