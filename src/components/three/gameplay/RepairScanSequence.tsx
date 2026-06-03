@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import * as THREE from "three";
 import { RepairBrokenPartHighlight } from "@/components/three/gameplay/RepairBrokenPartHighlight";
 import { RepairBrokenPartPrompt } from "@/components/three/gameplay/RepairBrokenPartPrompt";
-import { ExplodableModel } from "@/components/three/models/ExplodableModel";
 import { RepairScanVisual } from "@/components/three/gameplay/RepairScanVisual";
 import { REPAIR_SCAN_PART_SECONDS } from "@/data/gameplay/repairGameConfig";
 import type {
@@ -18,6 +17,14 @@ import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 
 interface RepairScanSequenceProps {
   config: RepairMissionConfig;
+  /**
+   * Parts of the (already mounted) ExplodableModel managed upstream by
+   * RepairGame. The scan sequence drives its visuals against these
+   * parts so the model isn't re-instantiated when entering the scanning
+   * phase (which would cause the explosion animation to replay and the
+   * world transform to differ between phases).
+   */
+  parts: readonly ExplodedPart[];
   onComplete: (brokenParts: readonly RepairScannedBrokenPart[]) => void;
 }
 
@@ -30,9 +37,9 @@ const warnedMissingScanParts = new Set<string>();
 
 export function RepairScanSequence({
   config,
+  parts,
   onComplete,
 }: RepairScanSequenceProps): React.JSX.Element {
-  const [parts, setParts] = useState<readonly ExplodedPart[]>([]);
   const [activePartIndex, setActivePartIndex] = useState(0);
   const activePart = parts[activePartIndex];
   const scanPartSeconds = config.scanPartSeconds ?? REPAIR_SCAN_PART_SECONDS;
@@ -145,12 +152,6 @@ export function RepairScanSequence({
 
   return (
     <group>
-      <ExplodableModel
-        modelPath={config.modelPath}
-        scale={config.modelScale ?? 1}
-        split
-        onPartsReady={setParts}
-      />
       <RepairScanVisual target={activePart?.object} />
       {visibleBrokenPartMatches.map((match) => {
         const part = parts[match.partIndex];
@@ -218,6 +219,7 @@ function getBrokenPartMatches(
       logger.warn("RepairScan", "Broken parts missing from exploded model", {
         missionId: config.id,
         missingIds,
+        availablePartNames: parts.map((part) => part.object.name),
       });
     }
   }

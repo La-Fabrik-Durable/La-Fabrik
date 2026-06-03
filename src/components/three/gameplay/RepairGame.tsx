@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { ExplodableModel } from "@/components/three/models/ExplodableModel";
 import type { ExplodedNodeAnchors } from "@/components/three/models/ExplodableModel";
@@ -7,6 +7,7 @@ import type {
   RepairCasePlaceholder,
 } from "@/components/three/gameplay/RepairCaseModel";
 import { RepairCompletionStep } from "@/components/three/gameplay/RepairCompletionStep";
+import { RepairEbikeRepairTrigger } from "@/components/three/gameplay/RepairEbikeRepairTrigger";
 import { RepairInspectionObject } from "@/components/three/gameplay/RepairInspectionObject";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
 import { BUBBLE_GROW_DURATION_SECONDS } from "@/components/three/gameplay/RepairFocusBubble";
@@ -14,11 +15,20 @@ import { RepairRepairingStep } from "@/components/three/gameplay/RepairRepairing
 import { RepairReassemblyStep } from "@/components/three/gameplay/RepairReassemblyStep";
 import { RepairScanSequence } from "@/components/three/gameplay/RepairScanSequence";
 import { REPAIR_CASE_MODEL_PATH } from "@/data/gameplay/repairCaseConfig";
-import { REPAIR_FRAGMENTATION_SEQUENCE_SECONDS } from "@/data/gameplay/repairGameConfig";
+import {
+  REPAIR_DONE_DIALOGUE_FALLBACK_MS,
+  REPAIR_FRAGMENTATION_SEQUENCE_SECONDS,
+  REPAIR_FRAGMENT_SPLIT_SPEED,
+  REPAIR_REASSEMBLY_HOLD_MS,
+} from "@/data/gameplay/repairGameConfig";
 import { REPAIR_MISSIONS } from "@/data/gameplay/repairMissions";
+import { EBIKE_REPAIRED_DIALOGUE_ID } from "@/data/ebike/ebikeConfig";
 import { useRepairFragmentationInput } from "@/hooks/gameplay/useRepairFragmentationInput";
 import { useRepairMissionStep } from "@/hooks/gameplay/useRepairMissionStep";
 import { useTerrainSnappedPosition } from "@/hooks/three/useTerrainHeight";
+import { loadDialogueManifest } from "@/utils/dialogues/loadDialogueManifest";
+import { playDialogueById } from "@/utils/dialogues/playDialogue";
+import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type {
   MissionStep,
   RepairMissionConfig,
@@ -28,6 +38,7 @@ import type {
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useRepairFocusStore } from "@/managers/stores/useRepairFocusStore";
 import type { ModelTransformProps, Vector3Tuple } from "@/types/three/three";
+import type { ExplodedPart } from "@/utils/three/ExplodedModel";
 import { toVector3Scale } from "@/utils/three/scale";
 
 interface RepairGameProps extends Required<
@@ -55,6 +66,20 @@ function RepairMissionAssetPreloader({
   return null;
 }
 
+const REPAIR_PHASES: readonly MissionStep[] = [
+  "fragmented",
+  "scanning",
+  "repairing",
+  "reassembling",
+  "done",
+];
+
+const SPLIT_PHASES: readonly MissionStep[] = [
+  "fragmented",
+  "scanning",
+  "repairing",
+];
+
 export function RepairGame({
   mission,
   position,
@@ -74,22 +99,22 @@ export function RepairGame({
   const [scannedBrokenParts, setScannedBrokenParts] = useState<
     readonly RepairScannedBrokenPart[]
   >([]);
-  // For the ebike mission, use the bike's live parked world position once
-  // the repair flow leaves the waiting phase so the repair happens
-  // wherever the player parked the bike, not at the static zone anchor.
-  // window.ebikeParkedPosition is set by Ebike when the player drops the
-  // bike and stays stable through the rest of the repair flow.
-  const livePosition = useMemo<Vector3Tuple>(() => {
-    if (mission !== "ebike" || mainState !== mission) return position;
-    if (step === "waiting") return position;
-    const parked = window.ebikeParkedPosition;
-    if (!parked) return position;
-    return [parked[0], parked[1], parked[2]];
-  }, [mainState, mission, position, step]);
+  const [explodedParts, setExplodedParts] = useState<readonly ExplodedPart[]>(
+    [],
+  );
+  // Position of the repair flow is the static zone position. Ebike
+  // movement is disabled during the mission so we don't need to track
+  // window.ebikeParkedPosition: the bike, the case and the exploded
+  // model all sit at the zone's anchor.
   const parsedScale = toVector3Scale(scale);
-  const snappedPosition = useTerrainSnappedPosition(livePosition);
+  const snappedPosition = useTerrainSnappedPosition(position);
   const readyForFragmentation = step === "inspected";
   const brokenNodeNames = useMemo(() => getBrokenNodeNames(config), [config]);
+  const isRepairPhase = (REPAIR_PHASES as readonly MissionStep[]).includes(
+    step,
+  );
+  const isSplitPhase = (SPLIT_PHASES as readonly MissionStep[]).includes(step);
+  const isRepairing = step === "repairing";
 
   useRepairFragmentationInput({
     enabled: mainState === mission && readyForFragmentation,
@@ -150,22 +175,19 @@ export function RepairGame({
   }, [mainState, mission, setMissionStep, step]);
 
   // fragmented -> scanning is now driven by `onSplitSettled` from the
-  // ExplodableModel below (fires once the lerp actually converges on
-  // progress=1). The legacy REPAIR_FRAGMENTATION_SEQUENCE_SECONDS timer
-  // is kept as a safety-net fallback in case the model fails to load
-  // (no part anchors -> no settled event) so the flow can never get
-  // stuck on the fragmented step.
+  // shared ExplodableModel below (fires once the lerp actually
+  // converges on progress=1). The legacy
+  // REPAIR_FRAGMENTATION_SEQUENCE_SECONDS timer is kept as a safety-net
+  // fallback in case the model fails to load (no settled event) so the
+  // flow can never get stuck on the fragmented step.
   useEffect(() => {
     if (mainState !== mission) return undefined;
-
     if (step !== "fragmented") return undefined;
 
     const timeoutId = window.setTimeout(
       () => {
         setMissionStep(mission, "scanning");
       },
-      // Generous fallback: actual anim usually finishes in <1s, so this
-      // only fires if something went wrong.
       (REPAIR_FRAGMENTATION_SEQUENCE_SECONDS + 2) * 1000,
     );
 
@@ -173,6 +195,95 @@ export function RepairGame({
       window.clearTimeout(timeoutId);
     };
   }, [mainState, mission, setMissionStep, step]);
+
+  // Ebike-only: at `done`, play the success narrator line and complete
+  // the mission when the audio ends (handing off to pylon). A fallback
+  // timer guarantees the transition even if the audio fails.
+  useEffect(() => {
+    if (mainState !== mission) return undefined;
+    if (mission !== "ebike") return undefined;
+    if (step !== "done") return undefined;
+
+    let cancelled = false;
+    let activeAudio: HTMLAudioElement | null = null;
+    let fallbackTimeoutId: number | null = null;
+
+    const finish = (): void => {
+      if (cancelled) return;
+      cancelled = true;
+      completeMission(mission);
+    };
+
+    void (async () => {
+      const manifest = await loadDialogueManifest();
+      if (cancelled) return;
+      const audio = manifest
+        ? await playDialogueById(manifest, EBIKE_REPAIRED_DIALOGUE_ID)
+        : null;
+      if (cancelled) {
+        if (audio && !audio.paused) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        useSubtitleStore.getState().clearActiveSubtitle();
+        return;
+      }
+      activeAudio = audio;
+      if (audio) {
+        audio.addEventListener("ended", finish, { once: true });
+        fallbackTimeoutId = window.setTimeout(
+          finish,
+          REPAIR_DONE_DIALOGUE_FALLBACK_MS,
+        );
+      } else {
+        fallbackTimeoutId = window.setTimeout(
+          finish,
+          REPAIR_DONE_DIALOGUE_FALLBACK_MS,
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (activeAudio) {
+        activeAudio.removeEventListener("ended", finish);
+        if (!activeAudio.paused) {
+          activeAudio.pause();
+          activeAudio.currentTime = 0;
+        }
+      }
+      if (fallbackTimeoutId !== null) {
+        window.clearTimeout(fallbackTimeoutId);
+      }
+      useSubtitleStore.getState().clearActiveSubtitle();
+    };
+  }, [completeMission, mainState, mission, step]);
+
+  // The shared ExplodableModel resets its parts to a fresh array each
+  // time it remounts (i.e. when leaving the repair flow back to
+  // waiting/inspected). The cached `explodedParts` will be overwritten
+  // by `onPartsReady` on the next mount; we don't need an explicit
+  // reset because no rendered code path uses the stale parts outside
+  // the repair phases.
+
+  // Settled callback: drives event-based transitions out of the
+  // explode/reassemble lerp.
+  const stepRef = useRef(step);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+  const handleSplitSettled = useMemo(
+    () => (settledAt: 0 | 1) => {
+      const currentStep = stepRef.current;
+      if (settledAt === 1 && currentStep === "fragmented") {
+        setMissionStep(mission, "scanning");
+      }
+      // settledAt === 0 happens when the model finishes the inverse
+      // explosion at reassembling. The reassembly step's particle hold
+      // takes care of advancing to `done`.
+    },
+    [mission, setMissionStep],
+  );
 
   if (mainState !== mission) return null;
   if (step === "locked") return null;
@@ -190,54 +301,63 @@ export function RepairGame({
             onInspect={() => setMissionStep(mission, "inspected")}
           />
         ) : null}
-        {step === "fragmented" ? (
+        {/*
+          Single ExplodableModel mounted across the entire repair flow
+          (fragmented -> done) so the model loads once, animates from
+          its real original positions, never re-instantiates between
+          phases, and stays at a stable transform. `split` toggles drive
+          the explode/reassemble lerps in place.
+        */}
+        {isRepairPhase ? (
           <ExplodableModel
             modelPath={config.modelPath}
             rotation={config.modelRotation ?? [0, 0, 0]}
             scale={config.modelScale ?? 1}
-            split
-            onSplitSettled={(settledAt) => {
-              if (settledAt === 1) setMissionStep(mission, "scanning");
-            }}
+            split={isSplitPhase}
+            splitSpeed={REPAIR_FRAGMENT_SPLIT_SPEED}
+            onPartsReady={setExplodedParts}
+            onSplitSettled={handleSplitSettled}
+            {...(isRepairing
+              ? {
+                  hideNodeNames: brokenNodeNames,
+                  nodeAnchorNames: brokenNodeNames,
+                  onNodeAnchorsChange: setBrokenAnchors,
+                }
+              : {})}
           />
         ) : null}
         {step === "scanning" ? (
           <RepairScanSequence
             config={config}
+            parts={explodedParts}
             onComplete={(brokenParts) => {
               setScannedBrokenParts(brokenParts);
               setMissionStep(mission, "repairing");
             }}
           />
         ) : null}
-        {step === "repairing" ? (
-          <>
-            <ExplodableModel
-              modelPath={config.modelPath}
-              rotation={config.modelRotation ?? [0, 0, 0]}
-              scale={config.modelScale ?? 1}
-              split
-              hideNodeNames={brokenNodeNames}
-              nodeAnchorNames={brokenNodeNames}
-              onNodeAnchorsChange={setBrokenAnchors}
-            />
-            <RepairRepairingStep
-              anchors={caseAnchors}
-              brokenAnchors={brokenAnchors}
-              brokenParts={scannedBrokenParts}
-              config={config}
-              placeholders={casePlaceholders}
-              onRepair={() => setMissionStep(mission, "reassembling")}
-            />
-          </>
+        {step === "repairing" && mission === "ebike" ? (
+          <RepairEbikeRepairTrigger
+            onRepair={() => setMissionStep(mission, "reassembling")}
+          />
+        ) : null}
+        {step === "repairing" && mission !== "ebike" ? (
+          <RepairRepairingStep
+            anchors={caseAnchors}
+            brokenAnchors={brokenAnchors}
+            brokenParts={scannedBrokenParts}
+            config={config}
+            placeholders={casePlaceholders}
+            onRepair={() => setMissionStep(mission, "reassembling")}
+          />
         ) : null}
         {step === "reassembling" ? (
           <RepairReassemblyStep
-            config={config}
-            onComplete={() => setMissionStep(mission, "done")}
+            delayMs={REPAIR_REASSEMBLY_HOLD_MS}
+            onSettled={() => setMissionStep(mission, "done")}
           />
         ) : null}
-        {step === "done" && mission !== "pylon" ? (
+        {step === "done" && mission !== "pylon" && mission !== "ebike" ? (
           <RepairCompletionStep
             config={config}
             onComplete={() => completeMission(mission)}

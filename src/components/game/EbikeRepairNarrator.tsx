@@ -1,8 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  EBIKE_REPAIRED_DIALOGUE_ID,
-  EBIKE_SCAN_HINT_DIALOGUE_ID,
-} from "@/data/ebike/ebikeConfig";
+import { EBIKE_SCAN_HINT_DIALOGUE_ID } from "@/data/ebike/ebikeConfig";
 import { useGameStore } from "@/managers/stores/useGameStore";
 import { useSubtitleStore } from "@/managers/stores/useSubtitleStore";
 import type { MissionStep } from "@/types/gameplay/repairMission";
@@ -12,14 +9,13 @@ import { playDialogueById } from "@/utils/dialogues/playDialogue";
 /**
  * Plays narrator cues during the ebike repair game:
  * - `fragmented`  -> "Alors? Pas magnifique ça?... ces galets vont scanner..."
- * - `done`        -> "Eeeet voilà! Il fonctionne comme une horloge!..."
  *
- * The `narrateur_refroidisseur_diagnostic` line is no longer played
- * here on the `repairing` step. It is now triggered by the scan
- * sequence itself when it lands on the refroidisseur node (configured
- * via `RepairMissionPartConfig.voiceLineId` on the broken part). That
- * keeps the audio synchronized with the red broken-part highlight and
- * gates the `scanning -> repairing` transition on the audio's `ended`.
+ * The `narrateur_refroidisseur_diagnostic` line is triggered by the
+ * scan sequence itself when it lands on the refroidisseur node
+ * (configured via `RepairMissionPartConfig.voiceLineId` on the broken
+ * part). The `narrateur_ebikerepare` line is triggered by RepairGame
+ * directly at the `done` step so its `ended` event can drive the
+ * mission completion handoff.
  *
  * Each cue is one-shot per mission run; the played-set resets when the
  * mission state rolls back to `waiting` so debug-panel replays still
@@ -32,7 +28,6 @@ import { playDialogueById } from "@/utils/dialogues/playDialogue";
  */
 const STEP_TO_DIALOGUE_ID: Partial<Record<MissionStep, string>> = {
   fragmented: EBIKE_SCAN_HINT_DIALOGUE_ID,
-  done: EBIKE_REPAIRED_DIALOGUE_ID,
 };
 
 function stopAudio(audio: HTMLAudioElement | null): void {

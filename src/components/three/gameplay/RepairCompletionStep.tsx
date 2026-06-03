@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
 import { RepairPromptVideo } from "@/components/three/gameplay/RepairPromptVideo";
 import { RepairMissionCase } from "@/components/three/gameplay/RepairMissionCase";
 import { TriggerObject } from "@/components/three/interaction/TriggerObject";
@@ -40,11 +39,12 @@ export function RepairCompletionStep({
         onExitComplete={onComplete}
       />
 
-      <RepairObjectModel
-        label={config.label}
-        modelPath={config.modelPath}
-        scale={config.modelScale ?? 1}
-      />
+      {/*
+        The repaired model is now rendered by the shared ExplodableModel
+        in RepairGame (split=false at done) so a single instance covers
+        the whole repair flow. Rendering RepairObjectModel here would
+        duplicate the model on top of the unified one.
+      */}
 
       {!isClosingCase ? (
         <TriggerObject
