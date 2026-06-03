@@ -33,3 +33,7 @@ export const EBIKE_SOUNDS = {
 } as const;
 
 export const EBIKE_BREAKDOWN_DIALOGUE_ID = "narrateur_ebikecasse";
+export const EBIKE_SCAN_HINT_DIALOGUE_ID = "narrateur_galetscan";
+export const EBIKE_DIAGNOSTIC_DIALOGUE_ID =
+  "narrateur_refroidisseur_diagnostic";
+export const EBIKE_REPAIRED_DIALOGUE_ID = "narrateur_ebikerepare";

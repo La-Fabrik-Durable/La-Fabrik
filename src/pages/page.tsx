@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
 import { DebugPerf } from "@/components/debug/DebugPerf";
 import { EbikeIntroSequence } from "@/components/game/EbikeIntroSequence";
+import { EbikeRepairNarrator } from "@/components/game/EbikeRepairNarrator";
 import { AppLoadingIndicator } from "@/components/ui/AppLoadingIndicator";
 import { DialogMessage } from "@/components/ui/DialogMessage";
 import { GameUI } from "@/components/ui/GameUI";
@@ -259,6 +260,7 @@ export function HomePage(): React.JSX.Element | null {
       ) : null}
       {renderIntroOverlay()}
       <EbikeIntroSequence />
+      <EbikeRepairNarrator />
     </HandTrackingProvider>
   );
 }
