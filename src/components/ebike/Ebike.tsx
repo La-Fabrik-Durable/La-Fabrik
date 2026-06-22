@@ -24,7 +24,7 @@ import type { Vector3Tuple } from "@/types/three/three";
 import "@/types/ebike/ebikeWindow";
 import { assetUrl } from "@/utils/assetUrl";
 
-const EBIKE_MODEL_PATH = "/models/ebike/model.gltf";
+const EBIKE_MODEL_PATH = assetUrl("/models/ebike/model.gltf");
 
 // Reusable vectors — allocated once to avoid per-frame GC pressure
 const _phareWorldPos = new THREE.Vector3();

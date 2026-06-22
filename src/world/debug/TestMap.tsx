@@ -279,7 +279,7 @@ export function TestMap({ onOctreeReady }: TestMapProps): React.JSX.Element {
             height={4}
             startPos={{ x: 10, y: 0, z: -10 }}
             destPos={{ x: -40, y: 0, z: 30 }}
-            mapImageUrl="/assets/world/gps/map_background.png"
+            mapImageUrl={assetUrl("/assets/world/gps/map_background.png")}
             worldBounds={{
               minX: -166,
               maxX: 163,
