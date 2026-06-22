@@ -22,17 +22,31 @@ Current Zustand stores:
 src/managers/stores/useGameStore.ts
 src/managers/stores/useSettingsStore.ts
 src/managers/stores/useSubtitleStore.ts
+src/managers/stores/useRepairFocusStore.ts
+src/managers/stores/useRepairMissionAnchorStore.ts
+src/managers/stores/useSiteStore.ts
+src/managers/stores/useWorldSettingsStore.ts
+src/managers/stores/useMapPerformanceStore.ts
+src/managers/stores/useCharacterDebugStore.ts
+src/managers/stores/useDebugVisualsStore.ts
 ```
 
 They are under `src/managers/stores/` because they are shared runtime state, not state owned by one visual component.
 
 ## Store Responsibilities
 
-| Store              | Responsibility                                                |
-| ------------------ | ------------------------------------------------------------- |
-| `useGameStore`     | Durable game progression, mission steps, cinematic input lock |
-| `useSettingsStore` | Menu visibility, volumes, and subtitle options                |
-| `useSubtitleStore` | Currently displayed subtitle cue                              |
+| Store                         | Responsibility                                                         |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `useGameStore`                | Durable game progression, mission steps, cinematic input lock          |
+| `useSettingsStore`            | Menu visibility, volumes, and subtitle options                         |
+| `useSubtitleStore`            | Currently displayed subtitle cue                                       |
+| `useRepairFocusStore`         | Repair focus bubble state (active flag + world-space center)           |
+| `useRepairMissionAnchorStore` | World-space anchor positions for each repair mission                   |
+| `useSiteStore`                | Onboarding `/site` page step and selection state                       |
+| `useWorldSettingsStore`       | Persisted world graphics, fog, wind, and cloud settings                |
+| `useMapPerformanceStore`      | Debug visibility toggles for map model groups and individual models    |
+| `useCharacterDebugStore`      | Per-character debug overrides for animation, position, rotation, scale |
+| `useDebugVisualsStore`        | Debug overlay toggles for player model and octree visualization        |
 
 ## Managers vs Stores
 
@@ -180,6 +194,156 @@ State/actions:
 - `clearActiveSubtitle`
 
 `playDialogueById()` writes to this store while dialogue audio plays. `Subtitles` reads from it and respects `useSettingsStore().subtitlesEnabled`.
+
+## Repair Focus Store
+
+`useRepairFocusStore` tracks whether a repair mini-game is in its focused phase (fragmented / scanning / repairing / reassembling).
+
+When active, a dark sphere (`RepairFocusBubble`) expands around the repair model to visually isolate the player from the surrounding map.
+
+State:
+
+| Field    | Type           | Default     | Description                                 |
+| -------- | -------------- | ----------- | ------------------------------------------- |
+| `active` | `boolean`      | `false`     | Whether the focus bubble is expanded        |
+| `center` | `Vector3Tuple` | `[0, 0, 0]` | World-space center of the bubble            |
+
+Action:
+
+- `setFocus(active, center?)` — enables or disables the bubble; `center` is optional and retains the previous value when omitted
+
+Used by:
+
+- `RepairGame` — writes `setFocus` when the mission step enters or leaves a focused phase
+- `RepairFocusBubble` — reads `active` and `center` to drive the sphere scale animation
+
+## Repair Mission Anchor Store
+
+`useRepairMissionAnchorStore` holds the world-space position of each repair mission's origin, registered at mount time.
+
+State:
+
+| Field     | Type                                           | Description                              |
+| --------- | ---------------------------------------------- | ---------------------------------------- |
+| `anchors` | `Partial<Record<RepairMissionId, Vector3Tuple>>` | Map from mission id to world position    |
+
+Action:
+
+- `setAnchors(anchors)` — bulk-replaces the anchor map
+
+Used by:
+
+- `RepairGame` — registers its `position` prop so other systems can locate a mission's world origin without duplicating the prop
+
+## Site Store
+
+`useSiteStore` drives the pre-game onboarding flow served at `/site`.
+
+State:
+
+| Field                     | Type              | Default        | Description                                 |
+| ------------------------- | ----------------- | -------------- | ------------------------------------------- |
+| `currentStep`             | `SiteStep`        | `"disclaimer"` | Current screen in the onboarding sequence   |
+| `selectedExperienceIndex` | `number \| null`  | `null`         | Experience selection made by the user       |
+| `selectedSituationIndex`  | `number \| null`  | `null`         | Situation selection made by the user        |
+
+`SiteStep` values in order: `"disclaimer"` → `"welcome"` → `"situation"` → `"naming"` → `"transition"`.
+
+Actions: `setStep`, `setSelectedExperienceIndex`, `setSelectedSituationIndex`, `reset`.
+
+Used by:
+
+- `SiteDisclaimerScreen`, `SiteWelcomeScreen`, `SiteSituationScreen`, `SiteNamingScreen` — each screen reads `currentStep` and calls `setStep` to advance
+- `SiteTransitionOverlay` — reads `currentStep` to trigger the fade-out transition
+
+## World Settings Store
+
+`useWorldSettingsStore` holds all adjustable world-rendering parameters and is persisted to `localStorage` under the key `la-fabrik-world-settings`.
+
+State groups:
+
+| Group      | Key fields                                           | Config source         |
+| ---------- | ---------------------------------------------------- | --------------------- |
+| `clouds`   | spread from `CLOUD_DEFAULTS`                         | `cloudConfig.ts`      |
+| `fog`      | `density`, `near`, `far`, `mode`                     | `fogConfig.ts`        |
+| `wind`     | `speed`, `direction`, `strength` (from `WIND_DEFAULTS`) | `windConfig.ts`    |
+| `graphics` | `preset`, `dynamicGrass`, `dynamicTrees`, `dynamicClouds`, `shadowsEnabled`, `grassDensity` | `graphicsConfig.ts` |
+
+Key actions: `setClouds`, `setFog`, `setWind`, `setWindSpeed`, `setWindDirection`, `setWindStrength`, `setGraphicsPreset`, `setGraphics`, `setDynamicGrass`, `setDynamicTrees`, `setDynamicClouds`, `setShadowsEnabled`, `setGrassDensity`, `resetToDefaults`.
+
+Used by:
+
+- `useCloudSettings`, `useFogSettings`, `useWind`, `useGraphicsSettings` — hooks that bridge store values to Three.js scene properties
+- `useEnvironmentDebug` — debug panel for live-tweaking all world settings
+- `GameSettingsMenu` — exposes the graphics preset to the player-facing settings UI
+
+## Map Performance Store
+
+`useMapPerformanceStore` provides debug-only visibility toggles for map models and model groups defined in `mapPerformanceConfig.ts`.
+
+State:
+
+| Field    | Type                                        | Default             |
+| -------- | ------------------------------------------- | ------------------- |
+| `groups` | `Record<MapPerformanceGroupName, boolean>`  | all `true`          |
+| `models` | `Record<MapPerformanceModelName, boolean>`  | all `true`          |
+
+A model is visible only if its own toggle is `true` **and** every group it belongs to is `true`. The helper `isMapModelVisible(name, visibility)` encodes this logic and is exported alongside the store.
+
+Actions: `setGroupVisible`, `setModelVisible`, `resetVisibility`.
+
+Used by:
+
+- `MapInstancingSystem` — calls `isMapModelVisible` each frame to decide whether to render each instanced model
+- `useMapPerformanceDebug` — debug panel for toggling individual models and groups
+
+## Character Debug Store
+
+`useCharacterDebugStore` holds per-character transform and animation overrides used exclusively by the debug panel.
+
+State:
+
+Each `CharacterId` key maps to a `CharacterDebugState`:
+
+| Field       | Type           | Description                               |
+| ----------- | -------------- | ----------------------------------------- |
+| `animation` | `string`       | Name of the currently playing animation   |
+| `position`  | `Vector3Tuple` | World position override                   |
+| `rotation`  | `Vector3Tuple` | Euler rotation override (radians)         |
+| `scale`     | `Vector3Tuple` | Scale override                            |
+
+Initial values come from `CHARACTER_CONFIGS[id]` for each character defined in `characterConfig.ts`.
+
+Actions: `setAnimation(id, animation)`, `setPosition(id, axis, value)`, `setRotation(id, axis, value)`, `setScale(id, axis, value)`. Each action performs an immutable update on the per-axis value using a shared `updateVector` helper.
+
+Used by:
+
+- `useCharacterDebug` — debug panel hook that reads and writes each character's state
+- `CharacterSystem` — reads animation and transform values to drive character instances
+
+## Debug Visuals Store
+
+`useDebugVisualsStore` controls the visibility of low-level debug visualizations rendered in the Three.js scene.
+
+State:
+
+| Field             | Type      | Default | Description                                        |
+| ----------------- | --------- | ------- | -------------------------------------------------- |
+| `showPlayerModel` | `boolean` | `false` | Renders the invisible player collision capsule     |
+| `showOctree`      | `boolean` | `false` | Renders the collision octree wireframe             |
+| `octreeMaxDepth`  | `number`  | `8`     | Maximum octree depth level to display              |
+| `octreeMinDepth`  | `number`  | `4`     | Minimum octree depth level to display              |
+| `octreeLeavesOnly`| `boolean` | `true`  | Show only leaf nodes instead of all levels         |
+| `octreeOpacity`   | `number`  | `0.35`  | Wireframe opacity                                  |
+| `octreeFabrikOnly`| `boolean` | `false` | Restrict octree display to the La Fabrik mesh only |
+
+Each field has a matching setter action (e.g. `setShowPlayerModel`, `setOctreeMaxDepth`).
+
+Used by:
+
+- `useDebugVisualsDebug` — debug panel hook that drives all toggles
+- `DebugOctreeVisualization` — reads octree settings to render the collision wireframe
+- `GameMapCollision` — reads `showPlayerModel` to optionally render the player capsule mesh
 
 ## World Integration
 
