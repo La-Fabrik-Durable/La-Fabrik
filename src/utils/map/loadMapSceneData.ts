@@ -229,8 +229,8 @@ async function loadModelEntry(modelName: string): Promise<ModelEntry | null> {
     return modelEntryCache.get(modelName) ?? null;
   }
 
-  const modelUrls = [...MODEL_FILE_NAMES, `${modelName}.gltf`].map(
-    (fileName) => assetUrl(`/models/${modelName}/${fileName}`),
+  const modelUrls = [...MODEL_FILE_NAMES, `${modelName}.gltf`].map((fileName) =>
+    assetUrl(`/models/${modelName}/${fileName}`),
   );
 
   const results = await Promise.all(

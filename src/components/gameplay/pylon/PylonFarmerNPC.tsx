@@ -23,7 +23,9 @@ import {
 import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
 import { assetUrl } from "@/utils/assetUrl";
 
-const ELECTRICIENNE_MODEL_PATH = assetUrl("/models/electricienne-animated/model.gltf");
+const ELECTRICIENNE_MODEL_PATH = assetUrl(
+  "/models/electricienne-animated/model.gltf",
+);
 const ANIM_FADE = 0.3;
 const ARRIVE_THRESHOLD = 0.12;
 

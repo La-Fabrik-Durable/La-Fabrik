@@ -1,7 +1,9 @@
 import type { Vector3Tuple } from "@/types/three/three";
 import { assetUrl } from "@/utils/assetUrl";
 
-export const REPAIR_CASE_MODEL_PATH = assetUrl("/models/packderelance/model.gltf");
+export const REPAIR_CASE_MODEL_PATH = assetUrl(
+  "/models/packderelance/model.gltf",
+);
 export const REPAIR_CASE_OPEN_SOUND_PATH = assetUrl(
   "/sounds/effect/open-malette.mp3",
 );
