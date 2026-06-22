@@ -5,8 +5,9 @@ import {
 } from "@/components/three/world/MergedStaticMapModel";
 import { getMapLodModelPath } from "@/data/world/mapLodConfig";
 import { useMapLodModelPath } from "@/hooks/world/useMapLodModelPath";
+import { assetUrl } from "@/utils/assetUrl";
 
-const ECOLE_MODEL_PATH = "/models/ecole/model.gltf";
+const ECOLE_MODEL_PATH = assetUrl("/models/ecole/model.gltf");
 const ECOLE_LOD_MODEL_PATH = getMapLodModelPath("ecole");
 
 type EcoleModelProps = Omit<MergedStaticMapModelProps, "modelPath">;

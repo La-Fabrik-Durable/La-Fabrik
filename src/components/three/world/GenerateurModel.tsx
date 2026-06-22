@@ -3,8 +3,9 @@ import {
   MergedStaticMapModel,
   type MergedStaticMapModelProps,
 } from "@/components/three/world/MergedStaticMapModel";
+import { assetUrl } from "@/utils/assetUrl";
 
-const GENERATEUR_MODEL_PATH = "/models/generateur/model.gltf";
+const GENERATEUR_MODEL_PATH = assetUrl("/models/generateur/model.gltf");
 
 type GenerateurModelProps = Omit<MergedStaticMapModelProps, "modelPath">;
 

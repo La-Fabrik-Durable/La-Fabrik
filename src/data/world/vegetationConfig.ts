@@ -1,7 +1,9 @@
+import { assetUrl } from "@/utils/assetUrl";
+
 export const VEGETATION_TYPES = {
   buissons: {
     mapName: "buisson",
-    modelPath: "/models/buisson/model.gltf",
+    modelPath: assetUrl("/models/buisson/model.gltf"),
     scaleMultiplier: 1.5,
     castShadow: true,
     receiveShadow: true,
@@ -11,7 +13,7 @@ export const VEGETATION_TYPES = {
   },
   sapin: {
     mapName: "sapin",
-    modelPath: "/models/sapin/model.gltf",
+    modelPath: assetUrl("/models/sapin/model.gltf"),
     scaleMultiplier: 4,
     castShadow: true,
     receiveShadow: true,
@@ -21,7 +23,7 @@ export const VEGETATION_TYPES = {
   },
   arbre: {
     mapName: "arbre",
-    modelPath: "/models/arbre/model.gltf",
+    modelPath: assetUrl("/models/arbre/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -31,7 +33,7 @@ export const VEGETATION_TYPES = {
   },
   champdeble: {
     mapName: "champdeble",
-    modelPath: "/models/champdeble/model.gltf",
+    modelPath: assetUrl("/models/champdeble/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -41,7 +43,7 @@ export const VEGETATION_TYPES = {
   },
   champdesoja: {
     mapName: "champdesoja",
-    modelPath: "/models/champdesoja/model.gltf",
+    modelPath: assetUrl("/models/champdesoja/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -51,7 +53,7 @@ export const VEGETATION_TYPES = {
   },
   champsdetournesol: {
     mapName: "champsdetournesol",
-    modelPath: "/models/champsdetournesol/model.gltf",
+    modelPath: assetUrl("/models/champsdetournesol/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -61,7 +63,7 @@ export const VEGETATION_TYPES = {
   },
   potager: {
     mapName: "potager",
-    modelPath: "/models/potager/potager.gltf",
+    modelPath: assetUrl("/models/potager/potager.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,

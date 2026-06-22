@@ -1,13 +1,14 @@
 import { GrabbableObject } from "@/components/three/interaction/GrabbableObject";
 import { RepairObjectModel } from "@/components/three/gameplay/RepairObjectModel";
 import type { Vector3Tuple } from "@/types/three/three";
+import { assetUrl } from "@/utils/assetUrl";
 
 interface RepairEbikeRepairTriggerProps {
   anchor: Vector3Tuple;
   installed: boolean;
 }
 
-const REPLACEMENT_MODEL_PATH = "/models/refroidisseur/model.gltf";
+const REPLACEMENT_MODEL_PATH = assetUrl("/models/refroidisseur/model.gltf");
 
 /**
  * Ebike-specific fake replacement flow: the broken radiator node is

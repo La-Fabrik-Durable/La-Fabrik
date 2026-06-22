@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import { assetUrl } from "@/utils/assetUrl";
 
-const MODEL_PATH = "/models/persoprincipal/model.gltf";
+const MODEL_PATH = assetUrl("/models/persoprincipal/model.gltf");
 // Offset expressed in the camera's local space:
 // - x: horizontal (0 = centered)
 // - y: vertical relative to camera eye (negative = below)

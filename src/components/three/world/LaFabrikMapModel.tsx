@@ -5,8 +5,9 @@ import {
 } from "@/components/three/world/MergedStaticMapModel";
 import { getMapLodModelPath } from "@/data/world/mapLodConfig";
 import { useMapLodModelPath } from "@/hooks/world/useMapLodModelPath";
+import { assetUrl } from "@/utils/assetUrl";
 
-const LA_FABRIK_MODEL_PATH = "/models/lafabrik/model.glb";
+const LA_FABRIK_MODEL_PATH = assetUrl("/models/lafabrik/model.glb");
 const LA_FABRIK_LOD_MODEL_PATH = getMapLodModelPath("lafabrik");
 
 type LaFabrikMapModelProps = Omit<MergedStaticMapModelProps, "modelPath">;

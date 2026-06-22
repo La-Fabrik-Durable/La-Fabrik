@@ -35,9 +35,11 @@ import {
 import { useOctreeGraphNode } from "@/hooks/three/useOctreeGraphNode";
 import type { OctreeReadyHandler } from "@/types/three/three";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
+import { assetUrl } from "@/utils/assetUrl";
 
-const ELECTRICIENNE_ANIMATED_MODEL_PATH =
-  "/models/electricienne-animated/model.gltf";
+const ELECTRICIENNE_ANIMATED_MODEL_PATH = assetUrl(
+  "/models/electricienne-animated/model.gltf",
+);
 
 interface TestMapProps {
   onOctreeReady: OctreeReadyHandler;

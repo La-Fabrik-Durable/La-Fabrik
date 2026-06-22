@@ -3,8 +3,9 @@ import {
   MergedStaticMapModel,
   type MergedStaticMapModelProps,
 } from "@/components/three/world/MergedStaticMapModel";
+import { assetUrl } from "@/utils/assetUrl";
 
-const FERME_VERTICALE_MODEL_PATH = "/models/fermeverticale/model.gltf";
+const FERME_VERTICALE_MODEL_PATH = assetUrl("/models/fermeverticale/model.gltf");
 
 type FermeVerticaleModelProps = Omit<MergedStaticMapModelProps, "modelPath">;
 

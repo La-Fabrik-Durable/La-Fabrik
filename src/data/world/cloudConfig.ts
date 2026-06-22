@@ -1,8 +1,9 @@
 import type { Vector3Tuple } from "@/types/three/three";
+import { assetUrl } from "@/utils/assetUrl";
 
 export const CLOUD_CONFIG = {
   enabled: true,
-  modelPath: "/models/cloud/model.glb",
+  modelPath: assetUrl("/models/cloud/model.glb"),
   center: [0, 40, 0] as Vector3Tuple,
   areaSize: [240, 180] as const,
   minDriftSpeed: 0.05,

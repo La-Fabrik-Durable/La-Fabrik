@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { MapControls, OrthographicCamera, useGLTF } from "@react-three/drei";
+import { assetUrl } from "@/utils/assetUrl";
 import * as THREE from "three";
 import type { MapControls as MapControlsImpl } from "three-stdlib";
 
@@ -34,7 +35,7 @@ declare global {
 // 1. Terrain Scene
 // ----------------------------------------------------------------------------
 function TerrainScene() {
-  const { scene } = useGLTF("/models/terrain/terrain.glb");
+  const { scene } = useGLTF(assetUrl("/models/terrain/terrain.glb"));
   return (
     <group>
       <ambientLight intensity={1.5} />

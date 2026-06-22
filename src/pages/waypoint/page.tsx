@@ -7,6 +7,7 @@ import {
   MapControls,
   Line,
 } from "@react-three/drei";
+import { assetUrl } from "@/utils/assetUrl";
 import * as THREE from "three";
 import {
   Trash2,
@@ -65,7 +66,7 @@ const EditorScene: React.FC<EditorSceneProps> = ({
   hoveredConnection,
   setHoveredConnection,
 }) => {
-  const { scene } = useGLTF("/models/terrain/terrain.glb");
+  const { scene } = useGLTF(assetUrl("/models/terrain/terrain.glb"));
   const { raycaster, pointer, camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   const rubberLineRef = useRef<THREE.Line>(null);

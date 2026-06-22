@@ -1,7 +1,9 @@
+import { assetUrl } from "@/utils/assetUrl";
+
 export const MAP_INSTANCING_ASSETS = {
   boiteauxlettres: {
     mapName: "boiteauxlettres",
-    modelPath: "/models/boiteauxlettres/model.gltf",
+    modelPath: assetUrl("/models/boiteauxlettres/model.gltf"),
     scaleMultiplier: 2,
     castShadow: true,
     receiveShadow: true,
@@ -9,7 +11,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   pylone: {
     mapName: "pylone",
-    modelPath: "/models/pylone/model.glb",
+    modelPath: assetUrl("/models/pylone/model.glb"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -17,7 +19,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   immeuble1: {
     mapName: "immeuble1",
-    modelPath: "/models/immeuble1/model.gltf",
+    modelPath: assetUrl("/models/immeuble1/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -25,7 +27,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   maison1: {
     mapName: "maison1",
-    modelPath: "/models/maison1/model.gltf",
+    modelPath: assetUrl("/models/maison1/model.gltf"),
     scaleMultiplier: 3,
     castShadow: true,
     receiveShadow: true,
@@ -33,7 +35,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   eolienne: {
     mapName: "eolienne",
-    modelPath: "/models/eolienne/model.gltf",
+    modelPath: assetUrl("/models/eolienne/model.gltf"),
     scaleMultiplier: 0.85,
     castShadow: true,
     receiveShadow: true,
@@ -41,7 +43,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   parcebike: {
     mapName: "parcebike",
-    modelPath: "/models/parcebike/model.gltf",
+    modelPath: assetUrl("/models/parcebike/model.gltf"),
     scaleMultiplier: 2,
     castShadow: true,
     receiveShadow: true,
@@ -49,7 +51,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   panneauaffichage: {
     mapName: "panneauaffichage",
-    modelPath: "/models/panneauaffichage/model.gltf",
+    modelPath: assetUrl("/models/panneauaffichage/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -57,7 +59,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   panneauclassique: {
     mapName: "panneauclassique",
-    modelPath: "/models/panneauclassique/model.gltf",
+    modelPath: assetUrl("/models/panneauclassique/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -65,7 +67,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   panneaufleche: {
     mapName: "panneaufleche",
-    modelPath: "/models/panneaufleche/model.gltf",
+    modelPath: assetUrl("/models/panneaufleche/model.gltf"),
     scaleMultiplier: 1,
     castShadow: true,
     receiveShadow: true,
@@ -73,7 +75,7 @@ export const MAP_INSTANCING_ASSETS = {
   },
   panneausolaire: {
     mapName: "panneausolaire",
-    modelPath: "/models/panneausolaire/model.gltf",
+    modelPath: assetUrl("/models/panneausolaire/model.gltf"),
     scaleMultiplier: 0.85,
     castShadow: true,
     receiveShadow: true,

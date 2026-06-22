@@ -1,6 +1,7 @@
 import type { TerrainSurfaceColorConfig } from "@/types/world/terrainSurface";
+import { assetUrl } from "@/utils/assetUrl";
 
-export const TERRAIN_MODEL_PATH = "/models/terrain/model.gltf";
+export const TERRAIN_MODEL_PATH = assetUrl("/models/terrain/model.gltf");
 export const TERRAIN_WATER_HEIGHT = 0.8;
 
 const TERRAIN_TILE_SIZE = 1;
@@ -28,7 +29,7 @@ export const TERRAIN_COLORS = {
     hex: "#342420",
     rgb: [52, 36, 32] as const,
     kind: "garden",
-    modelPath: "/models/potager/potager.gltf",
+    modelPath: assetUrl("/models/potager/potager.gltf"),
     tileSize: TERRAIN_TILE_SIZE,
   },
   terre: {
@@ -40,7 +41,7 @@ export const TERRAIN_COLORS = {
     hex: "#F5D896",
     rgb: [245, 216, 150] as const,
     kind: "path",
-    modelPath: "/models/chemins/model.gltf",
+    modelPath: assetUrl("/models/chemins/model.gltf"),
     tileSize: TERRAIN_TILE_SIZE,
   },
   eau: {

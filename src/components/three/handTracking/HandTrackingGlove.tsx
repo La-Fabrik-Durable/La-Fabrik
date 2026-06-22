@@ -11,6 +11,7 @@ import {
 import { useLoggedGLTF } from "@/hooks/three/useLoggedGLTF";
 import type { HandTrackingLandmark } from "@/types/handTracking/handTracking";
 import { logModelLoadError } from "@/utils/three/modelLoadLogger";
+import { assetUrl } from "@/utils/assetUrl";
 
 // Both gloves share the same source mesh (gant_l). The right glove is
 // rendered by mirroring scale.x at the group level — this is more
@@ -25,11 +26,11 @@ const GLOVE_CONFIGS: Record<
   }
 > = {
   left: {
-    modelPath: "/models/gant_l/model.gltf",
+    modelPath: assetUrl("/models/gant_l/model.gltf"),
     rootNodeName: "Armature",
   },
   right: {
-    modelPath: "/models/gant_l/model.gltf",
+    modelPath: assetUrl("/models/gant_l/model.gltf"),
     rootNodeName: "Armature",
   },
 };

@@ -5,6 +5,7 @@ import type {
 } from "@/types/map/mapScene";
 import { logger } from "@/utils/core/Logger";
 import { parseMapData } from "@/utils/map/mapNodeValidation";
+import { assetUrl } from "@/utils/assetUrl";
 import {
   createPotagerMapNode,
   isPotagerSourceMapNode,
@@ -229,7 +230,7 @@ async function loadModelEntry(modelName: string): Promise<ModelEntry | null> {
   }
 
   const modelUrls = [...MODEL_FILE_NAMES, `${modelName}.gltf`].map(
-    (fileName) => `/models/${modelName}/${fileName}`,
+    (fileName) => assetUrl(`/models/${modelName}/${fileName}`),
   );
 
   const results = await Promise.all(

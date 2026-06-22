@@ -18,8 +18,9 @@ import {
 } from "@/data/gameplay/pylonConfig";
 import { isRepairGameStep } from "@/types/gameplay/repairMission";
 import { pylonStraighteningSignal } from "@/components/gameplay/pylon/pylonSignals";
+import { assetUrl } from "@/utils/assetUrl";
 
-const PYLON_MODEL_PATH = "/models/pylone/model.glb";
+const PYLON_MODEL_PATH = assetUrl("/models/pylone/model.glb");
 
 export function PylonDownedPylon(): React.JSX.Element | null {
   const mainState = useGameStore((state) => state.mainState);
