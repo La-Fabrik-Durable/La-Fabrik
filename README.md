@@ -118,6 +118,39 @@ Regenerate runtime map data after editing `public/map_raw.json` that came from t
 npm run map:transform
 ```
 
+## Assets (Cloudflare R2)
+
+Static assets (`public/models/`, `public/sounds/`, `public/assets/`, `public/cinematics/`, `public/fonts/`, `public/textures/`) are hosted on Cloudflare R2 and are not committed to the repository.
+
+**Before building** (local or CI), download the assets from R2:
+
+```bash
+npm run download:assets
+```
+
+To upload new or updated assets to R2:
+
+```bash
+npm run upload:assets
+```
+
+Both commands require a `.env.upload` file at the project root (never committed):
+
+```
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=<your-access-key-id>
+R2_SECRET_ACCESS_KEY=<your-secret-access-key>
+R2_BUCKET=lafabrik-assets
+```
+
+Credentials are in Cloudflare Dashboard → R2 → Manage R2 API Tokens.
+
+**Coolify build command:**
+
+```bash
+npm run download:assets && npm run build
+```
+
 ## Optional Hand-Tracking Backend
 
 The app can use the local Python backend, but the default debug source is browser-side MediaPipe.

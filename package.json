@@ -17,7 +17,8 @@
     "map:transform": "node scripts/transformMap.cjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "upload:assets": "node scripts/uploadAssets.mjs"
+    "upload:assets": "node scripts/uploadAssets.mjs",
+    "download:assets": "node scripts/downloadAssets.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",
