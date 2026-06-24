@@ -6,7 +6,8 @@ import {
 import { config } from "dotenv";
 import { mkdirSync, createWriteStream, existsSync } from "fs";
 import { join, dirname } from "path";
-import { fileURLToPath, Readable } from "url";
+import { fileURLToPath } from "url";
+import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 
 config({ path: ".env.upload" });
