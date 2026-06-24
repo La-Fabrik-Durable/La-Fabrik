@@ -42,4 +42,11 @@ Thumbs.db
 # 3D Assets Cache (drei, GLTFJSX)
 .drei/
 .glitchdrei-cache/
-public/
+
+# Heavy assets — hosted on Cloudflare R2 (downloaded at build time via npm run download:assets)
+public/assets/
+public/cinematics/
+public/fonts/
+public/models/
+public/sounds/
+public/textures/

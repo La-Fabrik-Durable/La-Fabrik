@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "cinematics": [
+    {
+      "id": "outro_farm_drone",
+      "timecode": 0,
+      "cameraKeyframes": [
+        {
+          "time": 0,
+          "position": [-24, 5, 65],
+          "target": [-24, 2, 42]
+        },
+        {
+          "time": 10,
+          "position": [-24, 90, 200],
+          "target": [-24, 0, 42]
+        }
+      ]
+    }
+  ]
+}
